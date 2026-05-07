@@ -1,0 +1,181 @@
+import React, { useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { LogIn, UserPlus, Chrome, Mail, Lock, User as UserIcon, Calendar, VenusAndMars } from 'lucide-react';
+import { cn } from '../lib/utils';
+
+export const Auth: React.FC<{ initialIsRegister?: boolean }> = ({ initialIsRegister = false }) => {
+  const [loading, setLoading] = useState(false);
+  const [isRegister, setIsRegister] = useState(initialIsRegister);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    username: '',
+    usia: '',
+    gender: 'Other'
+  });
+
+  const handleGoogleLogin = async () => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      alert(error.error_description || error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (isRegister) {
+        const { data, error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              username: formData.username,
+              usia: parseInt(formData.usia),
+              gender: formData.gender
+            }
+          }
+        });
+        if (error) throw error;
+        alert('Check your email for confirmation!');
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+        if (error) throw error;
+      }
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="w-full max-w-md p-8 glass-panel border border-rpg-border shadow-[0_0_50px_rgba(255,255,255,0.05)] transition-all duration-300">
+      <div className="mb-8 text-center">
+        <h2 className="text-4xl font-black text-white mb-2 tracking-tight italic">
+          {isRegister ? 'JOIN GUILD' : 'WELCOME BACK'}
+        </h2>
+        <p className="text-neutral-400 font-medium text-sm tracking-widest uppercase">
+          {isRegister ? 'Create your character' : 'Sign in to your account'}
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {isRegister && (
+          <div className="relative group">
+            <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-white transition-colors" />
+            <input
+              type="text"
+              placeholder="Username"
+              required
+              className="w-full pl-12 pr-4 py-4 bg-rpg-black/50 border border-rpg-border focus:border-white rounded-2xl outline-none transition-all text-white placeholder:text-neutral-600"
+              value={formData.username}
+              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+            />
+          </div>
+        )}
+
+        <div className="relative group">
+          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-white transition-colors" />
+          <input
+            type="email"
+            placeholder="Email Address"
+            required
+            className="w-full pl-12 pr-4 py-4 bg-rpg-black/50 border border-rpg-border focus:border-white rounded-2xl outline-none transition-all text-white placeholder:text-neutral-600"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          />
+        </div>
+
+        <div className="relative group">
+          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-white transition-colors" />
+          <input
+            type="password"
+            placeholder="Password"
+            required
+            className="w-full pl-12 pr-4 py-4 bg-rpg-black/50 border border-rpg-border focus:border-white rounded-2xl outline-none transition-all text-white placeholder:text-neutral-600"
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+          />
+        </div>
+
+        {isRegister && (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="relative group">
+              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-white transition-colors" />
+              <input
+                type="number"
+                placeholder="Usia"
+                required
+                className="w-full pl-12 pr-4 py-4 bg-rpg-black/50 border border-rpg-border focus:border-white rounded-2xl outline-none transition-all text-white placeholder:text-neutral-600"
+                value={formData.usia}
+                onChange={(e) => setFormData({ ...formData, usia: e.target.value })}
+              />
+            </div>
+            <div className="relative group">
+              <VenusAndMars className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-white transition-colors" />
+              <select
+                className="w-full pl-12 pr-4 py-4 bg-rpg-black/50 border border-rpg-border focus:border-white rounded-2xl outline-none transition-all text-white appearance-none"
+                value={formData.gender}
+                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+              >
+                <option value="Male" className="bg-rpg-card">Male</option>
+                <option value="Female" className="bg-rpg-card">Female</option>
+                <option value="Other" className="bg-rpg-card">Other</option>
+              </select>
+            </div>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-4 bg-white hover:bg-neutral-200 text-black font-black rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {isRegister ? <UserPlus className="w-5 h-5" /> : <LogIn className="w-5 h-5" />}
+          {loading ? 'Processing...' : (isRegister ? 'CREATE CHARACTER' : 'ENTER WORLD')}
+        </button>
+      </form>
+
+      <div className="my-8 flex items-center gap-4">
+        <div className="h-px flex-1 bg-rpg-border" />
+        <span className="text-xs font-bold text-neutral-600 uppercase tracking-widest">OR</span>
+        <div className="h-px flex-1 bg-rpg-border" />
+      </div>
+
+      <button
+        onClick={handleGoogleLogin}
+        disabled={loading}
+        className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-transparent text-white font-bold rounded-2xl border border-rpg-border hover:border-white hover:bg-white/5 transition-all active:scale-[0.98]"
+      >
+        <Chrome className="w-6 h-6" />
+        Continue with Google
+      </button>
+
+      <p className="mt-8 text-center text-sm font-medium text-neutral-500">
+        {isRegister ? 'Already have an account?' : "Don't have an account?"}{' '}
+        <button
+          onClick={() => setIsRegister(!isRegister)}
+          className="text-white hover:underline font-bold"
+        >
+          {isRegister ? 'Sign In' : 'Register'}
+        </button>
+      </p>
+    </div>
+  );
+};

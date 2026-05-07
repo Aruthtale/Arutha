@@ -1,0 +1,57 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String   @id @default(cuid())
+  supabase_id     String?  @unique
+  email           String   @unique
+  password        String?
+  username        String   @unique
+  usia            Int?
+  gender          String?
+  level           Int      @default(1)
+  xp              Int      @default(0)
+  activeQuests    Json?    // Menyimpan quest harian aktif
+  lastQuestUpdate DateTime @default(now())
+  
+  // Fitur Anti-Curang
+  refreshCount    Int      @default(0)
+  lastRefreshDate DateTime @default(now())
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  profiles    CharacterProfile[]
+
+  @@map("arutha_user") // Nama tabel huruf kecil semua
+}
+
+model CharacterProfile {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  personality_type  String
+  personality_title String
+  personality_desc  String
+  character_summary String
+  
+  jiwa              Int
+  raga              Int
+  harta             Int
+  ilmu              Int
+  karma             Int
+  
+  createdAt         DateTime @default(now())
+
+  @@index([userId])
+  @@map("character_profile") // Nama tabel huruf kecil semua
+}

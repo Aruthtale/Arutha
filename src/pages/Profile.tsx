@@ -1,0 +1,141 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import { 
+  ArrowLeft, Shield, Star, Zap, Award, Target, TrendingUp, Heart, Brain, Dumbbell, Coins, BookOpen, Users
+} from 'lucide-react';
+import { cn } from '../lib/utils';
+
+interface Stats {
+  JIWA: number; RAGA: number; HARTA: number; ILMU: number; KARMA: number;
+}
+
+interface ProfileProps {
+  name: string;
+  level: number;
+  xp: number;
+  stats: Stats;
+  analysis: any;
+  onBack: () => void;
+}
+
+export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analysis, onBack }) => {
+  const achievements = [
+    { title: "Langkah Pertama", desc: "Menyelesaikan quest perdana", icon: <Zap className="w-4 h-4" />, color: "bg-jiwa/20 text-jiwa" },
+    { title: "Integritas Tinggi", desc: "Lulus verifikasi AI 5 kali berturut-turut", icon: <Shield className="w-4 h-4" />, color: "bg-raga/20 text-raga" },
+    { title: "Pelajar Tekun", desc: "Mencapai level 70 di dimensi ILMU", icon: <BookOpen className="w-4 h-4" />, color: "bg-ilmu/20 text-ilmu" },
+  ];
+
+  return (
+    <div className="min-h-screen bg-rpg-black text-white p-6 pb-32 pt-24">
+      <div className="max-w-4xl mx-auto space-y-12">
+        {/* Header Navigation */}
+        <header className="flex items-center justify-between">
+          <button onClick={onBack} className="p-3 bg-rpg-card border border-rpg-border rounded-2xl hover:bg-neutral-800 transition-all flex items-center gap-2 group">
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-xs font-black tracking-widest">KEMBALI</span>
+          </button>
+          <div className="text-right">
+            <p className="text-[10px] font-black tracking-[0.3em] text-neutral-500 uppercase">Profile Arutha</p>
+            <h2 className="text-xl font-bold">Character Sheet</h2>
+          </div>
+        </header>
+
+        {/* Hero Profile Card */}
+        <section className="relative glass-panel p-10 overflow-hidden bg-gradient-to-br from-rpg-card to-rpg-black border-white/5 shadow-2xl shadow-jiwa/5">
+          <div className="absolute top-0 right-0 p-8 opacity-5"><Zap className="w-64 h-64" /></div>
+          <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
+            {/* Avatar Visual */}
+            <div className="relative">
+              <div className="w-32 h-32 rounded-[40px] bg-gradient-to-tr from-jiwa via-ilmu to-raga rotate-6 flex items-center justify-center font-black text-4xl shadow-2xl shadow-jiwa/30 border-4 border-rpg-black">
+                {name.substring(0, 2).toUpperCase()}
+              </div>
+              <div className="absolute -bottom-3 -right-3 bg-white text-black px-3 py-1.5 rounded-xl font-black text-sm border-4 border-rpg-black">
+                LVL {level}
+              </div>
+            </div>
+
+            <div className="text-center md:text-left space-y-3">
+              <div className="flex items-center justify-center md:justify-start gap-3">
+                <h1 className="text-4xl font-black tracking-tight">{name}</h1>
+                <span className="px-3 py-1 bg-jiwa/10 border border-jiwa/20 text-jiwa text-[10px] font-black rounded-lg uppercase tracking-[0.2em]">
+                  {analysis?.personality_type || "UNKNOWN"}
+                </span>
+              </div>
+              <p className="text-neutral-400 font-medium italic text-lg">"{analysis?.personality_title || "New Traveler"}"</p>
+              <div className="w-full md:w-64">
+                <div className="h-2 w-full bg-neutral-900 rounded-full overflow-hidden">
+                  <motion.div className="h-full bg-white" initial={{ width: 0 }} animate={{ width: `${(xp / (level * 1000)) * 100}%` }} />
+                </div>
+                <div className="flex justify-between mt-1.5">
+                  <span className="text-[10px] font-mono text-neutral-500 tracking-tighter">PROGRESS XP</span>
+                  <span className="text-[10px] font-mono text-white font-bold">{xp} / {level * 1000}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Stats & Dimension Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <section className="glass-panel p-8 space-y-6">
+            <h3 className="text-xs font-black tracking-[0.3em] text-neutral-500 uppercase flex items-center gap-2">
+              <Target className="w-4 h-4" /> Core Statistics
+            </h3>
+            <div className="space-y-5">
+              {[
+                { name: 'JIWA', val: stats.JIWA, color: 'bg-jiwa', icon: <Brain /> },
+                { name: 'RAGA', val: stats.RAGA, color: 'bg-raga', icon: <Dumbbell /> },
+                { name: 'HARTA', val: stats.HARTA, color: 'bg-harta', icon: <Coins /> },
+                { name: 'ILMU', val: stats.ILMU, color: 'bg-ilmu', icon: <BookOpen /> },
+                { name: 'KARMA', val: stats.KARMA, color: 'bg-karma', icon: <Users /> },
+              ].map(s => (
+                <div key={s.name} className="space-y-1.5">
+                  <div className="flex justify-between items-center px-1">
+                    <span className="text-[10px] font-black text-neutral-400 tracking-widest flex items-center gap-2">{s.icon} {s.name}</span>
+                    <span className="text-xs font-mono font-bold">{s.val}%</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-neutral-900 rounded-full overflow-hidden">
+                    <motion.div className={cn("h-full", s.color)} initial={{ width: 0 }} animate={{ width: `${s.val}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="glass-panel p-8 space-y-6 bg-gradient-to-b from-rpg-card to-rpg-black">
+            <h3 className="text-xs font-black tracking-[0.3em] text-neutral-500 uppercase flex items-center gap-2">
+              <Award className="w-4 h-4" /> Achievements
+            </h3>
+            <div className="space-y-4">
+              {achievements.map((ach, i) => (
+                <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center gap-4 group hover:border-white/10 transition-all">
+                  <div className={cn("p-3 rounded-xl transition-transform group-hover:scale-110", ach.color)}>
+                    {ach.icon}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold">{ach.title}</h4>
+                    <p className="text-[10px] text-neutral-500">{ach.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button className="w-full py-3 border border-dashed border-neutral-800 rounded-2xl text-[10px] font-black text-neutral-600 tracking-widest hover:border-neutral-700 hover:text-neutral-500 transition-all uppercase">
+              Lihat Semua Pencapaian
+            </button>
+          </section>
+        </div>
+
+        {/* Narrative Summary */}
+        <section className="glass-panel p-8 border-l-4 border-l-jiwa bg-jiwa/5">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="w-4 h-4 text-jiwa" />
+            <span className="text-[10px] font-black tracking-[0.3em] text-neutral-500 uppercase">Analisis Psikologis AI</span>
+          </div>
+          <p className="text-lg text-neutral-300 italic leading-relaxed">
+            "{analysis?.character_summary || "Perjalanan Anda baru saja dimulai. Terus selesaikan quest harian untuk membangun narasi hidup yang lebih kuat."}"
+          </p>
+        </section>
+      </div>
+    </div>
+  );
+};
