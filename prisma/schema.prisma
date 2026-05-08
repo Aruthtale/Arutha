@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
 }
 
 model User {
@@ -29,7 +29,10 @@ model User {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  profiles    CharacterProfile[]
+  profiles        CharacterProfile[]
+  statHistory     StatHistory[]
+  questLogs       QuestLog[]
+  reflections     DimensionReflection[]
 
   @@map("arutha_user") // Nama tabel huruf kecil semua
 }
@@ -54,4 +57,52 @@ model CharacterProfile {
 
   @@index([userId])
   @@map("character_profile") // Nama tabel huruf kecil semua
+}
+
+model StatHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  jiwa      Int      @default(0)
+  raga      Int      @default(0)
+  harta     Int      @default(0)
+  ilmu      Int      @default(0)
+  karma     Int      @default(0)
+  
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("stat_history")
+}
+
+model QuestLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title       String
+  description String?
+  stat_type   String   // 'JIWA', 'RAGA', 'HARTA', 'ILMU', 'KARMA'
+  xp_gained   Int
+  user_note   String?  // Bukti penyelesaian quest
+  
+  completedAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("quest_logs")
+}
+
+model DimensionReflection {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  dimension       String   // 'JIWA', 'RAGA', 'HARTA', 'ILMU', 'KARMA'
+  reflection_text String
+  
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+  @@map("dimension_reflections")
 }

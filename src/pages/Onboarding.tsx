@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Loader2, Sparkles } from 'lucide-react';
-import { analyzeCharacter, type OnboardingAnswer, type CharacterAnalysis } from '../lib/gemini';
+import { analyzeCharacter, generateOnboardingQuestions, type OnboardingAnswer, type CharacterAnalysis } from '../lib/gemini';
 
-const QUESTIONS = [
+const FALLBACK_QUESTIONS = [
   "Ceritakan, bagaimana harimu hari ini?",
   "Apa yang biasanya kamu lakukan ketika punya waktu senggang?",
   "Kalau ada uang 10 juta tiba-tiba masuk rekeningmu, apa yang pertama kamu pikirkan?",
@@ -18,7 +18,9 @@ interface OnboardingProps {
 }
 
 export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(-1); // -1 is Intro
+  const [questions, setQuestions] = useState<string[]>(FALLBACK_QUESTIONS);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [answers, setAnswers] = useState<OnboardingAnswer[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -26,25 +28,41 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    // Auto-focus the input on each step
-    const timer = setTimeout(() => {
-      inputRef.current?.focus();
-    }, 500);
-    return () => clearTimeout(timer);
+    // Auto-focus the input on each step (except intro)
+    if (step >= 0) {
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
   }, [step]);
+
+  const handleStart = async () => {
+    setIsLoadingQuestions(true);
+    try {
+      const generated = await generateOnboardingQuestions();
+      setQuestions(generated);
+    } catch (e) {
+      console.warn("Failed to fetch questions, using fallback.");
+      // fallback already set in state
+    } finally {
+      setIsLoadingQuestions(false);
+      setStep(0);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!currentAnswer.trim()) return;
 
     const newAnswer: OnboardingAnswer = {
-      question: QUESTIONS[step],
+      question: questions[step],
       answer: currentAnswer.trim(),
     };
     const updatedAnswers = [...answers, newAnswer];
     setAnswers(updatedAnswers);
     setCurrentAnswer('');
 
-    if (step < QUESTIONS.length - 1) {
+    if (step < questions.length - 1) {
       setStep(s => s + 1);
     } else {
       // All questions answered — analyze with AI
@@ -68,7 +86,49 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     }
   };
 
-  const progress = ((step) / QUESTIONS.length) * 100;
+  const progress = step >= 0 ? ((step) / questions.length) * 100 : 0;
+
+  // --- Intro Screen ---
+  if (step === -1) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-rpg-black relative overflow-hidden">
+        <div className="absolute w-[500px] h-[500px] bg-jiwa/10 blur-[150px] rounded-full pointer-events-none" />
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative z-10 max-w-xl text-center space-y-8"
+        >
+          <div className="mx-auto w-16 h-16 bg-white/5 rounded-full flex items-center justify-center border border-white/10 mb-6">
+            <Sparkles className="w-8 h-8 text-jiwa" />
+          </div>
+          <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">
+            Kenali Dirimu Lebih Dalam
+          </h1>
+          <div className="space-y-4 text-neutral-400 text-sm md:text-base leading-relaxed">
+            <p>
+              Setiap pahlawan memiliki awal ceritanya masing-masing. Sebelum kamu memulai petualangan ini, Arutha perlu memahami siapa kamu yang sebenarnya.
+            </p>
+            <p>
+              Kami akan mengajukan 7 pertanyaan acak yang dirancang khusus oleh AI untuk mengukur potensimu dalam 5 Dimensi Kehidupan: <strong className="text-jiwa">Jiwa</strong>, <strong className="text-raga">Raga</strong>, <strong className="text-harta">Harta</strong>, <strong className="text-ilmu">Ilmu</strong>, dan <strong className="text-karma">Karma</strong>.
+            </p>
+            <p className="text-white font-medium">
+              Jawablah sejujur mungkin. Tidak ada jawaban benar atau salah.
+            </p>
+          </div>
+          
+          <button
+            onClick={handleStart}
+            disabled={isLoadingQuestions}
+            className="w-full md:w-auto px-8 py-4 bg-white text-black font-black rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 mx-auto disabled:opacity-50 disabled:hover:scale-100"
+          >
+            {isLoadingQuestions ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+            {isLoadingQuestions ? 'Meracik Pertanyaan...' : 'Mulai Analisis'}
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
 
   // --- Analyzing Screen ---
   if (isAnalyzing) {
@@ -139,7 +199,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           </div>
           <div className="flex justify-between mt-2">
             <span className="text-[8px] md:text-[10px] font-mono text-neutral-600 uppercase tracking-widest">Analisis Profil</span>
-            <span className="text-[8px] md:text-[10px] font-mono text-neutral-600">{step + 1} / {QUESTIONS.length}</span>
+            <span className="text-[8px] md:text-[10px] font-mono text-neutral-600">{step + 1} / {questions.length}</span>
           </div>
         </div>
       </div>
@@ -175,7 +235,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 </span>
               </div>
               <h2 className="text-2xl md:text-4xl font-bold tracking-tight leading-snug">
-                {QUESTIONS[step]}
+                {questions[step]}
               </h2>
             </div>
 

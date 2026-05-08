@@ -4,8 +4,7 @@ import {
   LogOut, Sparkles, Star, LayoutDashboard, Users, Map, Brain, Dumbbell, Coins, BookOpen, TrendingUp, Clock, Target, ArrowRight, Shield, RefreshCw, Loader2
 } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-
+import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
 type Dimension = 'JIWA' | 'RAGA' | 'HARTA' | 'ILMU' | 'KARMA';
 
 interface Stats {
@@ -23,17 +22,41 @@ interface DashboardProps {
   addXp: (amount: number, stat?: Dimension) => void;
   onReOnboard: () => void;
   onRefreshQuests: () => void;
+  onGenerateInitialQuests?: (mood: string) => void;
   isRefreshing: boolean;
   lastEvolutionDate: string | null;
   refreshCount: number;
   setPage: (page: any) => void;
 }
 
+const EMOJIS = ['😡', '😔', '😐', '😊', '🤩'];
+
 export const Dashboard: React.FC<DashboardProps> = ({ 
-  name, level, xp, stats, quests, analysis, completeQuest, handleLogout, onReOnboard, onRefreshQuests, isRefreshing, lastEvolutionDate, refreshCount, setPage 
+  name, level, xp, stats, quests, analysis, completeQuest, handleLogout, onReOnboard, onRefreshQuests, onGenerateInitialQuests, isRefreshing, lastEvolutionDate, refreshCount, setPage 
 }) => {
   const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => { setIsMounted(true); }, []);
+  
+  const [showMoodModal, setShowMoodModal] = useState(false);
+  const [moodEmoji, setMoodEmoji] = useState('');
+  const [moodNote, setMoodNote] = useState('');
+  const [isGeneratingInitial, setIsGeneratingInitial] = useState(false);
+
+  useEffect(() => { 
+    setIsMounted(true);
+    // Tampilkan modal mood jika belum ada quest hari ini (awal hari)
+    if (quests && quests.length === 0 && !isRefreshing && !isGeneratingInitial && onGenerateInitialQuests) {
+      setShowMoodModal(true);
+    }
+  }, [quests, isRefreshing, isGeneratingInitial, onGenerateInitialQuests]);
+
+  const handleMoodSubmit = () => {
+    const moodContext = `${moodEmoji} ${moodNote}`.trim();
+    setShowMoodModal(false);
+    setIsGeneratingInitial(true);
+    if (onGenerateInitialQuests) {
+      onGenerateInitialQuests(moodContext);
+    }
+  };
 
   const [view, setView] = useState<'DASHBOARD' | 'DIMENSION'>('DASHBOARD');
   const [currentDimension, setCurrentDimension] = useState<Dimension | null>(null);
@@ -88,22 +111,96 @@ export const Dashboard: React.FC<DashboardProps> = ({
       KARMA: { title: 'Social Standing', icon: <Users />, color: 'text-karma', desc: 'Berdampak bagi orang lain dan bangun komunitas positif.' },
     };
     const active = config[currentDimension];
+    
+    // Mock data grafik 7 hari (bisa diubah nanti ke Supabase query)
+    const mockStatHistory = [
+      { day: 'H-6', val: Math.max(0, stats[currentDimension] - 12) },
+      { day: 'H-5', val: Math.max(0, stats[currentDimension] - 10) },
+      { day: 'H-4', val: Math.max(0, stats[currentDimension] - 8) },
+      { day: 'H-3', val: Math.max(0, stats[currentDimension] - 6) },
+      { day: 'H-2', val: Math.max(0, stats[currentDimension] - 4) },
+      { day: 'H-1', val: Math.max(0, stats[currentDimension] - 2) },
+      { day: 'Hari Ini', val: stats[currentDimension] },
+    ];
+
+    // Menggabungkan quest hari ini yang selesai dengan mock quest lampau
+    const todayCompleted = quests.filter(q => q.stat === currentDimension && q.completed);
+
     return (
-      <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-12 pb-32 pt-24 text-white">
+      <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-8 pb-32 pt-24 text-white">
         <header className="flex items-center gap-6">
-          <button onClick={() => setView('DASHBOARD')} className="p-3 bg-rpg-card border border-rpg-border rounded-2xl"><LayoutDashboard className="w-6 h-6" /></button>
+          <button onClick={() => setView('DASHBOARD')} className="p-3 bg-rpg-card border border-rpg-border rounded-2xl hover:scale-105 transition-all"><LayoutDashboard className="w-6 h-6" /></button>
           <div>
             <div className="flex items-center gap-2 mb-1"><span className={cn(active.color)}>{active.icon}</span><span className="text-xs font-mono font-bold text-neutral-500 uppercase">{currentDimension}</span></div>
             <h2 className="text-3xl font-bold">{active.title}</h2>
           </div>
         </header>
-        <section className="glass-panel p-8 space-y-6">
-          <p className="text-lg text-neutral-400">{active.desc}</p>
-          <div className="p-6 rounded-2xl bg-white/5 border border-white/5 space-y-4">
-            <h4 className="font-bold flex items-center gap-2"><Clock className="w-4 h-4 text-ilmu" /> Aktivitas Baru</h4>
-            <p className="text-sm text-neutral-500 italic">Selesaikan quest harian untuk meningkatkan stat ini secara otomatis.</p>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-6">
+            <section className="glass-panel p-6 border-t-2" style={{ borderTopColor: 'var(--tw-border-opacity)' }}>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-6 flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Grafik 7 Hari Terakhir</h3>
+              <div className="h-48 w-full relative -ml-4">
+                {isMounted && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={mockStatHistory}>
+                      <XAxis dataKey="day" stroke="#555" fontSize={10} tickMargin={10} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={{ backgroundColor: '#0A0A0A', border: '1px solid #333', borderRadius: '8px' }} itemStyle={{ color: '#fff' }} />
+                      <Line type="monotone" dataKey="val" stroke="#fff" strokeWidth={3} dot={{ r: 4, fill: '#000', stroke: '#fff', strokeWidth: 2 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </section>
+
+            <section className="glass-panel p-6">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-6 flex items-center gap-2"><BookOpen className="w-4 h-4" /> Jurnal Refleksi</h3>
+              <div className="space-y-4">
+                <textarea 
+                  placeholder={`Apa yang kamu pelajari hari ini tentang ${currentDimension}? (Catatan ini akan tersimpan di Supabase)`}
+                  className="w-full p-4 bg-rpg-black border border-rpg-border rounded-xl focus:border-white/30 outline-none text-sm resize-none"
+                  rows={3}
+                />
+                <button className="w-full py-3 bg-white text-black font-black rounded-xl text-xs hover:scale-[1.02] transition-all" onClick={() => alert('Fitur simpan refleksi membutuhkan integrasi tabel Supabase.')}>Simpan Refleksi</button>
+              </div>
+            </section>
           </div>
-        </section>
+
+          <div className="space-y-6">
+            <section className="glass-panel p-6 h-full flex flex-col">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-6 flex items-center gap-2"><Target className="w-4 h-4" /> Riwayat Quest Selesai</h3>
+              <div className="space-y-3 overflow-y-auto flex-1 pr-2">
+                {todayCompleted.length > 0 ? (
+                  todayCompleted.map(q => (
+                    <div key={q.id} className="p-4 bg-white/5 border border-white/5 rounded-xl transition-all hover:bg-white/10">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="text-xs font-bold text-neutral-200">{q.title}</span>
+                        <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest bg-rpg-black px-2 py-0.5 rounded">Hari ini</span>
+                      </div>
+                      <p className="text-[10px] text-neutral-500 line-clamp-2">{q.desc}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 bg-white/5 border border-dashed border-white/10 rounded-xl text-center py-6">
+                    <p className="text-xs text-neutral-500 italic">Belum ada quest diselesaikan hari ini.</p>
+                  </div>
+                )}
+                
+                {/* Mock data past quests */}
+                <div className="relative pt-6 mt-6 border-t border-white/5">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-rpg-black px-3 text-[10px] font-mono text-neutral-600">Riwayat Lampau</span>
+                  <div className="p-4 bg-white/5 border border-white/5 rounded-xl opacity-60">
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="text-xs font-bold text-neutral-300">Quest Lampau Mock 1</span>
+                      <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest">H-1</span>
+                    </div>
+                    <p className="text-[10px] text-neutral-500 line-clamp-1">Data riwayat quest dari Supabase akan tampil berderet di sini.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
       </div>
     );
   }
@@ -277,6 +374,58 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="w-px h-6 bg-neutral-800" />
         <button onClick={() => setView('DASHBOARD')} className="text-neutral-600 hover:text-white transition-all hover:scale-110"><Sparkles className="w-5 h-5 md:w-6 md:h-6" /></button>
       </nav>
+
+      <AnimatePresence>
+        {showMoodModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="w-full max-w-sm glass-panel p-8 text-center border-white/10 shadow-2xl space-y-6"
+            >
+              <h2 className="text-xl font-black tracking-tight">Bagaimana kabarmu hari ini?</h2>
+              <p className="text-xs text-neutral-400">Pilih satu untuk mengatur tingkat kesulitan questmu hari ini.</p>
+              
+              <div className="flex justify-center gap-3">
+                {EMOJIS.map(emoji => (
+                  <button
+                    key={emoji}
+                    onClick={() => setMoodEmoji(emoji)}
+                    className={cn(
+                      "text-3xl p-3 rounded-2xl transition-all hover:scale-110 active:scale-95 bg-rpg-black/50 border",
+                      moodEmoji === emoji ? "border-white scale-110 shadow-[0_0_15px_rgba(255,255,255,0.2)]" : "border-rpg-border opacity-50 hover:opacity-100"
+                    )}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+
+              <textarea
+                value={moodNote}
+                onChange={e => setMoodNote(e.target.value)}
+                placeholder="Ada yang ingin diceritakan? (Opsional)"
+                rows={2}
+                className="w-full p-4 bg-rpg-black/50 border border-rpg-border focus:border-white/30 rounded-xl outline-none transition-all text-white placeholder:text-neutral-600 resize-none text-sm"
+              />
+
+              <button
+                onClick={handleMoodSubmit}
+                disabled={!moodEmoji || isGeneratingInitial}
+                className="w-full py-4 bg-white text-black font-black rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-20 flex items-center justify-center gap-2"
+              >
+                {isGeneratingInitial ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Mulai Hari Ini'}
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

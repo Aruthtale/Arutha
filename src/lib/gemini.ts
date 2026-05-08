@@ -38,6 +38,66 @@ export interface OnboardingAnswer {
   answer: string;
 }
 
+export async function generateOnboardingQuestions(): Promise<string[]> {
+  const aiClient = getClient();
+  const prompt = `Buatkan 7 pertanyaan unik dan kreatif dalam bahasa Indonesia yang digunakan untuk menganalisis kepribadian seseorang layaknya karakter RPG. 
+Tujuan dari 7 pertanyaan ini adalah untuk memetakan orang tersebut ke dalam 5 dimensi:
+- JIWA (Mental, spiritual, kedamaian batin)
+- RAGA (Fisik, kesehatan, kekuatan)
+- HARTA (Manajemen keuangan, karir, materi)
+- ILMU (Pengetahuan, kebijaksanaan, rasa ingin tahu)
+- KARMA (Hubungan sosial, empati, dampak pada orang lain)
+
+Pertanyaan harus terdengar seperti percakapan biasa (casual, tidak kaku), bukan seperti tes psikologi formal.
+Kembalikan HANYA array JSON berisi 7 string pertanyaan, tanpa markdown tambahan.
+Contoh format output:
+[
+  "Apa yang kamu lakukan kalau tiba-tiba punya waktu kosong seharian tanpa rencana?",
+  "Pernah nggak sih kamu ngerasa bangga banget sama tubuhmu sendiri? Pas kapan itu?",
+  ...dll
+]`;
+
+  const tryGenerate = async (modelName: string) => {
+    const response = await aiClient.models.generateContent({
+      model: modelName,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    });
+    const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    let jsonStr = text.trim();
+    if (jsonStr.includes('\`\`\`')) {
+      jsonStr = jsonStr.split('\`\`\`')[1].replace(/^json/, '').trim();
+    }
+    return JSON.parse(jsonStr);
+  };
+
+  const modelsToTry = [
+    'gemini-3.1-flash-lite-preview',
+    'gemini-3.1-flash-lite',
+    'gemini-3-flash-preview',
+    'gemini-3.1-pro-preview'
+  ];
+
+  for (const modelName of modelsToTry) {
+    try {
+      return await tryGenerate(modelName);
+    } catch (e: any) {
+      console.warn(`Gen Questions ${modelName} gagal:`, e.message || e);
+      continue;
+    }
+  }
+  
+  // Fallback if all models fail
+  return [
+    "Ceritakan, bagaimana harimu hari ini?",
+    "Apa yang biasanya kamu lakukan ketika punya waktu senggang?",
+    "Kalau ada uang 10 juta tiba-tiba masuk rekeningmu, apa yang pertama kamu pikirkan?",
+    "Hal terakhir apa yang membuatmu penasaran dan ingin tahu lebih dalam?",
+    "Bagaimana hubunganmu dengan orang-orang di sekitarmu belakangan ini?",
+    "Apa yang paling sering membuatmu cemas atau khawatir?",
+    "Kalau hidupmu dijadikan sebuah novel, kira-kira apa judul chapter yang sedang kamu jalani sekarang?",
+  ];
+}
+
 export interface CharacterAnalysis {
   personality_type: string;
   personality_title: string;
@@ -114,10 +174,11 @@ Output JSON format:
   };
 }
 
-export async function generateDailyQuests(stats: Stats): Promise<Quest[]> {
+export async function generateDailyQuests(stats: Stats, moodContext?: string): Promise<Quest[]> {
   const aiClient = getClient();
+  const moodPrompt = moodContext ? `\nMood User Hari Ini: "${moodContext}". Sesuaikan tingkat kesulitan dan gaya quest dengan mood ini. Jika mood buruk/sedih, buat quest yang lebih ringan dan menghibur.` : '';
   const prompt = `Kamu adalah game master untuk aplikasi RPG pengembangan diri bernama ARUTHA.
-Buatlah 3 quest harian yang dipersonalisasi berdasarkan statistik user saat ini:
+Buatlah 3 quest harian yang dipersonalisasi berdasarkan statistik user saat ini:${moodPrompt}
 JIWA: ${stats.JIWA}, RAGA: ${stats.RAGA}, HARTA: ${stats.HARTA}, ILMU: ${stats.ILMU}, KARMA: ${stats.KARMA}
 
 Ketentuan:

@@ -129,19 +129,12 @@ export default function App() {
           const isQuestExpired = lastUpdate.getDate() !== new Date().getDate();
 
           if (isQuestExpired || !userData.activeQuests || (userData.activeQuests as any[]).length === 0) {
-            const aiQuests = await generateDailyQuests(loadedStats);
-            setQuests(aiQuests);
+            setQuests([]);
             setRefreshCount(0);
-            refreshLockRef.current = false; // Buka kunci untuk hari baru
-            await supabase.from('arutha_user').update({ 
-              activeQuests: aiQuests, 
-              lastQuestUpdate: new Date().toISOString(),
-              refreshCount: 0,
-              lastRefreshDate: new Date().toISOString()
-            }).eq('id', userData.id);
+            refreshLockRef.current = false;
+            // Kita tidak generate sekarang, kita biarkan Dashboard yang urus setelah Mood Check-in
           } else {
             setQuests(userData.activeQuests as Quest[]);
-            // Jika sudah refresh hari ini, kunci agar tidak bisa refresh lagi
             if ((userData.refreshCount || 0) >= 1) {
               refreshLockRef.current = true;
             }
@@ -250,6 +243,26 @@ export default function App() {
     return { success: false, feedback: "Quest tidak ditemukan." };
   };
 
+  const generateInitialQuests = async (mood: string) => {
+    if (!dbUserId) return;
+    setIsRefreshing(true);
+    try {
+      const aiQuests = await generateDailyQuests(stats, mood);
+      setQuests(aiQuests);
+      
+      await supabase.from('arutha_user').update({ 
+        activeQuests: aiQuests,
+        lastQuestUpdate: new Date().toISOString(),
+        refreshCount: 0, // Still have 1 free refresh
+        lastRefreshDate: new Date().toISOString()
+      }).eq('id', dbUserId);
+    } catch (err) {
+      console.error("Generate initial quests error:", err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const refreshQuests = async () => {
     // Kunci gerbang instan — mencegah double-click & race condition
     if (refreshLockRef.current || !dbUserId || refreshCount >= 1) return;
@@ -271,6 +284,7 @@ export default function App() {
       console.error("Refresh error:", err);
       // Jika gagal, kembalikan state agar user bisa coba lagi
       setRefreshCount(0);
+      refreshLockRef.current = false;
     } finally {
       setIsRefreshing(false);
       // Jangan buka kunci — refresh hanya boleh sekali per hari
@@ -309,7 +323,7 @@ export default function App() {
               completeQuest={completeQuest} handleLogout={() => supabase.auth.signOut()} addXp={addXp}
               onReOnboard={() => setPage('ONBOARDING')} onRefreshQuests={refreshQuests} isRefreshing={isRefreshing}
               lastEvolutionDate={lastEvolutionDate} refreshCount={refreshCount}
-              setPage={setPage}
+              setPage={setPage} onGenerateInitialQuests={generateInitialQuests}
             />
           </motion.div>
         )}
