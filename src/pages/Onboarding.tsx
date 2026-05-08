@@ -128,7 +128,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-jiwa/5 blur-[120px] rounded-full pointer-events-none" />
 
       {/* Progress bar */}
-      <div className="fixed top-20 left-0 right-0 z-40 px-6">
+      <div className="fixed top-16 md:top-20 left-0 right-0 z-40 px-4 md:px-6">
         <div className="max-w-lg mx-auto">
           <div className="h-1 w-full bg-rpg-border rounded-full overflow-hidden">
             <motion.div 
@@ -138,8 +138,8 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             />
           </div>
           <div className="flex justify-between mt-2">
-            <span className="text-[10px] font-mono text-neutral-600 uppercase tracking-widest">Analisis Profil</span>
-            <span className="text-[10px] font-mono text-neutral-600">{step + 1} / {QUESTIONS.length}</span>
+            <span className="text-[8px] md:text-[10px] font-mono text-neutral-600 uppercase tracking-widest">Analisis Profil</span>
+            <span className="text-[8px] md:text-[10px] font-mono text-neutral-600">{step + 1} / {QUESTIONS.length}</span>
           </div>
         </div>
       </div>
@@ -188,14 +188,14 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 onKeyDown={handleKeyDown}
                 placeholder="Ketik jawabanmu di sini..."
                 rows={3}
-                className="w-full p-6 pr-16 bg-rpg-card border border-rpg-border focus:border-white/30 rounded-2xl outline-none transition-all text-white placeholder:text-neutral-600 resize-none text-lg leading-relaxed"
+                className="w-full p-4 md:p-6 pr-14 md:pr-16 bg-rpg-card border border-rpg-border focus:border-white/30 rounded-2xl outline-none transition-all text-white placeholder:text-neutral-600 resize-none text-base md:text-lg leading-relaxed"
               />
               <button
                 onClick={handleSubmit}
                 disabled={!currentAnswer.trim()}
-                className="absolute bottom-4 right-4 p-3 bg-white text-black rounded-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-20 disabled:hover:scale-100 shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+                className="absolute bottom-3 right-3 md:bottom-4 md:right-4 p-2.5 md:p-3 bg-white text-black rounded-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-20 disabled:hover:scale-100 shadow-[0_0_15px_rgba(255,255,255,0.2)]"
               >
-                <Send className="w-5 h-5" />
+                <Send className="w-4 h-4 md:w-5 md:h-5" />
               </button>
             </div>
 

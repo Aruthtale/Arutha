@@ -21,7 +21,7 @@ export const Landing: React.FC<LandingProps> = ({ session, setPage }) => {
   return (
     <div className="min-h-screen bg-rpg-black">
       {/* Hero Section */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center p-6 text-center overflow-hidden pt-20">
+      <section className="relative min-h-[90vh] md:min-h-screen flex flex-col items-center justify-center p-4 md:p-6 text-center overflow-hidden pt-24">
         {/* Animated Background Elements */}
         <div className="absolute inset-0 pointer-events-none">
           <motion.div 
@@ -30,7 +30,7 @@ export const Landing: React.FC<LandingProps> = ({ session, setPage }) => {
               opacity: [0.1, 0.2, 0.1] 
             }}
             transition={{ duration: 10, repeat: Infinity }}
-            className="absolute top-1/4 left-1/4 w-[40vw] h-[40vw] bg-jiwa/20 blur-[120px] rounded-full"
+            className="absolute top-1/4 left-1/4 w-[60vw] md:w-[40vw] h-[60vw] md:h-[40vw] bg-jiwa/20 blur-[80px] md:blur-[120px] rounded-full"
           />
           <motion.div 
             animate={{ 
@@ -38,16 +38,16 @@ export const Landing: React.FC<LandingProps> = ({ session, setPage }) => {
               opacity: [0.1, 0.2, 0.1] 
             }}
             transition={{ duration: 12, repeat: Infinity }}
-            className="absolute bottom-1/4 right-1/4 w-[45vw] h-[45vw] bg-raga/20 blur-[150px] rounded-full"
+            className="absolute bottom-1/4 right-1/4 w-[65vw] md:w-[45vw] h-[65vw] md:h-[45vw] bg-raga/20 blur-[100px] md:blur-[150px] rounded-full"
           />
         </div>
 
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="w-20 h-20 mb-8 bg-gradient-to-tr from-jiwa to-ilmu rounded-[28px] rotate-12 flex items-center justify-center shadow-2xl shadow-jiwa/20 relative z-10"
+          className="w-16 h-16 md:w-20 md:h-20 mb-6 md:mb-8 bg-gradient-to-tr from-jiwa to-ilmu rounded-[24px] md:rounded-[28px] rotate-12 flex items-center justify-center shadow-2xl shadow-jiwa/20 relative z-10"
         >
-          <Zap className="w-10 h-10 text-white fill-white" />
+          <Zap className="w-8 h-8 md:w-10 md:h-10 text-white fill-white" />
         </motion.div>
         
         <motion.div
@@ -56,10 +56,10 @@ export const Landing: React.FC<LandingProps> = ({ session, setPage }) => {
           transition={{ delay: 0.1 }}
           className="relative z-10"
         >
-          <h1 className="text-7xl md:text-9xl font-black tracking-tighter mb-6 bg-gradient-to-b from-white via-white to-white/20 bg-clip-text text-transparent italic">
+          <h1 className="text-6xl md:text-9xl font-black tracking-tighter mb-4 md:mb-6 bg-gradient-to-b from-white via-white to-white/20 bg-clip-text text-transparent italic">
             ARUTHA
           </h1>
-          <p className="max-w-2xl mx-auto text-xl md:text-2xl text-neutral-400 font-light leading-relaxed mb-12">
+          <p className="max-w-xl mx-auto text-base md:text-2xl text-neutral-400 font-light leading-relaxed mb-8 md:mb-12 px-4 italic">
             "Satu-satunya permainan yang benar-benar berharga adalah <span className="text-white font-medium">hidupmu sendiri.</span>"
           </p>
         </motion.div>
@@ -68,15 +68,15 @@ export const Landing: React.FC<LandingProps> = ({ session, setPage }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="flex flex-col md:flex-row gap-4 relative z-10"
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10 w-full max-w-sm sm:max-w-none px-6 mx-auto"
         >
           <button
             onClick={() => setPage(session ? 'DASHBOARD' : 'REGISTER')}
-            className="px-12 py-5 bg-white text-black font-black rounded-full hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 group shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+            className="w-full sm:w-auto px-8 md:px-12 py-4 md:py-5 bg-white text-black font-black rounded-full hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 group shadow-[0_0_30px_rgba(255,255,255,0.2)] text-xs md:text-base"
           >
-            {session ? 'KE DASHBOARD' : 'MULAI PETUALANGAN'} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            {session ? 'KE DASHBOARD' : 'MULAI PETUALANGAN'} <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
           </button>
-          <button className="px-12 py-5 bg-rpg-card border border-rpg-border text-white font-bold rounded-full hover:bg-neutral-800 transition-all">
+          <button className="w-full sm:w-auto px-8 md:px-12 py-4 md:py-5 bg-rpg-card border border-rpg-border text-white font-bold rounded-full hover:bg-neutral-800 transition-all text-xs md:text-base flex items-center justify-center">
             LIHAT LEADERBOARD
           </button>
         </motion.div>
@@ -85,10 +85,10 @@ export const Landing: React.FC<LandingProps> = ({ session, setPage }) => {
         <motion.div 
           animate={{ y: [0, 10, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 text-neutral-600 flex flex-col items-center gap-2"
+          className="absolute bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 text-neutral-600 flex flex-col items-center gap-2"
         >
-          <span className="text-[10px] font-black tracking-[0.3em] uppercase">Scroll</span>
-          <div className="w-[1px] h-12 bg-gradient-to-b from-neutral-600 to-transparent" />
+          <span className="text-[8px] md:text-[10px] font-black tracking-[0.3em] uppercase">Scroll</span>
+          <div className="w-[1px] h-8 md:h-12 bg-gradient-to-b from-neutral-600 to-transparent" />
         </motion.div>
       </section>
 
@@ -135,8 +135,8 @@ export const Landing: React.FC<LandingProps> = ({ session, setPage }) => {
               viewport={{ once: true }}
               className="glass-panel p-10 relative z-10 border-white/10 shadow-2xl"
             >
-              <div className="w-full h-[300px] flex items-center justify-center">
-                <ResponsiveContainer width="100%" height={300}>
+              <div className="w-full h-[300px] relative block">
+                <ResponsiveContainer width="100%" height={300} minWidth={0} minHeight={100} debounce={50}>
                   <RadarChart cx="50%" cy="50%" outerRadius="80%" data={[
                     { subject: 'Jiwa', A: 80 },
                     { subject: 'Raga', A: 65 },
@@ -196,7 +196,7 @@ export const Landing: React.FC<LandingProps> = ({ session, setPage }) => {
         <div className="text-center py-20 px-6 glass-panel border-rpg-border/50 bg-white/5">
            <h2 className="text-4xl md:text-5xl font-bold mb-8 italic">"Jadikan realita sebagai taman bermainmu."</h2>
            <button 
-             onClick={() => setPage('ONBOARDING')}
+             onClick={() => setPage(session ? 'ONBOARDING' : 'REGISTER')}
              className="text-white font-black underline underline-offset-8 hover:text-jiwa transition-colors"
             >
              MULAI ANALISIS PROFIL SEKARANG

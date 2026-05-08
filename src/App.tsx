@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
@@ -31,6 +31,7 @@ export default function App() {
   const [lastEvolutionDate, setLastEvolutionDate] = useState<string | null>(null);
   const [dbUserId, setDbUserId] = useState<string | null>(null);
   const [refreshCount, setRefreshCount] = useState(0);
+  const refreshLockRef = useRef(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -88,8 +89,8 @@ export default function App() {
           .limit(1);
 
         if (createError) {
-          // Jika error-nya adalah duplicate (409), artinya data sudah ada, ambil lagi saja
-          if (createError.code === '23505' || createError.status === 409) {
+          // Jika error-nya adalah duplicate (23505), artinya data sudah ada, ambil lagi saja
+          if (createError.code === '23505') {
             const { data: retryUsers } = await supabase
               .from('arutha_user')
               .select('id, level, xp, activeQuests, lastQuestUpdate, refreshCount, lastRefreshDate')
@@ -111,10 +112,10 @@ export default function App() {
         setXp(userData.xp || 0);
 
         // Reset Refresh Count jika sudah berganti hari
-        const lastRefresh = new Date(userData.lastRefreshDate);
-        const now = new Date();
-        const isNewDay = lastRefresh.getDate() !== now.getDate();
-        setRefreshCount(isNewDay ? 0 : userData.refreshCount);
+        const lastRefreshDateStr = userData.lastRefreshDate || now;
+        const lastRefresh = new Date(lastRefreshDateStr);
+        const isNewDay = lastRefresh.getDate() !== new Date().getDate();
+        setRefreshCount(isNewDay ? 0 : (userData.refreshCount || 0));
 
         const { data: profiles } = await supabase
           .from('character_profile')
@@ -144,18 +145,27 @@ export default function App() {
           });
           setStats(loadedStats);
 
-          const lastUpdate = new Date(userData.lastQuestUpdate);
-          if (lastUpdate.getDate() !== now.getDate() || !userData.activeQuests) {
+          const lastUpdateStr = userData.lastQuestUpdate || new Date(0).toISOString();
+          const lastUpdate = new Date(lastUpdateStr);
+          const isQuestExpired = lastUpdate.getDate() !== new Date().getDate();
+
+          if (isQuestExpired || !userData.activeQuests || (userData.activeQuests as any[]).length === 0) {
             const aiQuests = await generateDailyQuests(loadedStats);
             setQuests(aiQuests);
+            setRefreshCount(0);
+            refreshLockRef.current = false; // Buka kunci untuk hari baru
             await supabase.from('arutha_user').update({ 
               activeQuests: aiQuests, 
-              lastQuestUpdate: now.toISOString(),
+              lastQuestUpdate: new Date().toISOString(),
               refreshCount: 0,
-              lastRefreshDate: now.toISOString()
+              lastRefreshDate: new Date().toISOString()
             }).eq('id', userData.id);
           } else {
             setQuests(userData.activeQuests as Quest[]);
+            // Jika sudah refresh hari ini, kunci agar tidak bisa refresh lagi
+            if ((userData.refreshCount || 0) >= 1) {
+              refreshLockRef.current = true;
+            }
           }
           setPage('DASHBOARD');
         } else {
@@ -262,23 +272,30 @@ export default function App() {
   };
 
   const refreshQuests = async () => {
-    if (isRefreshing || !dbUserId || refreshCount >= 1) return;
+    // Kunci gerbang instan — mencegah double-click & race condition
+    if (refreshLockRef.current || !dbUserId || refreshCount >= 1) return;
+    refreshLockRef.current = true;
     setIsRefreshing(true);
+    // Langsung set refreshCount agar UI ter-disable seketika
+    setRefreshCount(1);
     try {
       const aiQuests = await generateDailyQuests(stats);
-      const newRefreshCount = refreshCount + 1;
-      
       setQuests(aiQuests);
-      setRefreshCount(newRefreshCount);
       
       await supabase.from('arutha_user').update({ 
         activeQuests: aiQuests,
         lastQuestUpdate: new Date().toISOString(),
-        refreshCount: newRefreshCount,
+        refreshCount: 1,
         lastRefreshDate: new Date().toISOString()
       }).eq('id', dbUserId);
-    } catch (err) { console.error("Refresh error:", err); }
-    finally { setIsRefreshing(false); }
+    } catch (err) {
+      console.error("Refresh error:", err);
+      // Jika gagal, kembalikan state agar user bisa coba lagi
+      setRefreshCount(0);
+    } finally {
+      setIsRefreshing(false);
+      // Jangan buka kunci — refresh hanya boleh sekali per hari
+    }
   };
 
   const hideNavbar = page === 'ONBOARDING' || page === 'CHARACTER_REVEAL';
@@ -307,13 +324,15 @@ export default function App() {
           <CharacterReveal analysis={characterAnalysis} onContinue={() => setPage('DASHBOARD')} />
         )}
         {page === 'DASHBOARD' && (
-          <Dashboard 
-            name={name} level={level} xp={xp} stats={stats} quests={quests} analysis={characterAnalysis}
-            completeQuest={completeQuest} handleLogout={() => supabase.auth.signOut()} addXp={addXp}
-            onReOnboard={() => setPage('ONBOARDING')} onRefreshQuests={refreshQuests} isRefreshing={isRefreshing}
-            lastEvolutionDate={lastEvolutionDate} refreshCount={refreshCount}
-            setPage={setPage}
-          />
+          <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+            <Dashboard 
+              name={name} level={level} xp={xp} stats={stats} quests={quests} analysis={characterAnalysis}
+              completeQuest={completeQuest} handleLogout={() => supabase.auth.signOut()} addXp={addXp}
+              onReOnboard={() => setPage('ONBOARDING')} onRefreshQuests={refreshQuests} isRefreshing={isRefreshing}
+              lastEvolutionDate={lastEvolutionDate} refreshCount={refreshCount}
+              setPage={setPage}
+            />
+          </motion.div>
         )}
         {page === 'PROFILE' && characterAnalysis && (
           <Profile 
