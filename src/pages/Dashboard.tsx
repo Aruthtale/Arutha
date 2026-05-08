@@ -77,6 +77,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       const { data, error } = await supabase
         .from('dimension_reflections')
         .insert({
+          id: crypto.randomUUID(),
           user_id: userId,
           dimension: currentDimension,
           reflection_text: reflectionText.trim()
