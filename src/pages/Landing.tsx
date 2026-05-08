@@ -18,6 +18,11 @@ interface LandingProps {
 }
 
 export const Landing: React.FC<LandingProps> = ({ session, setPage }) => {
+  const [isMounted, setIsMounted] = React.useState(false);
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   return (
     <div className="min-h-screen bg-rpg-black">
       {/* Hero Section */}
@@ -135,26 +140,28 @@ export const Landing: React.FC<LandingProps> = ({ session, setPage }) => {
               viewport={{ once: true }}
               className="glass-panel p-10 relative z-10 border-white/10 shadow-2xl"
             >
-              <div className="w-full h-[300px] relative block">
-                <ResponsiveContainer width="100%" height={300} minWidth={0} minHeight={100} debounce={50}>
-                  <RadarChart cx="50%" cy="50%" outerRadius="80%" data={[
-                    { subject: 'Jiwa', A: 80 },
-                    { subject: 'Raga', A: 65 },
-                    { subject: 'Harta', A: 45 },
-                    { subject: 'Ilmu', A: 90 },
-                    { subject: 'Karma', A: 60 },
-                  ]}>
-                    <PolarGrid stroke="#333" />
-                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#888', fontSize: 12 }} />
-                    <Radar
-                      name="Typical Level 10 Player"
-                      dataKey="A"
-                      stroke="#A78BFA"
-                      fill="#A78BFA"
-                      fillOpacity={0.3}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
+              <div className="w-full relative block min-h-[300px]">
+                {isMounted && (
+                  <ResponsiveContainer width="100%" aspect={1} minWidth={0}>
+                    <RadarChart cx="50%" cy="50%" outerRadius="75%" data={[
+                      { subject: 'Jiwa', A: 80 },
+                      { subject: 'Raga', A: 65 },
+                      { subject: 'Harta', A: 45 },
+                      { subject: 'Ilmu', A: 90 },
+                      { subject: 'Karma', A: 60 },
+                    ]}>
+                      <PolarGrid stroke="#333" />
+                      <PolarAngleAxis dataKey="subject" tick={{ fill: '#888', fontSize: 12 }} />
+                      <Radar
+                        name="Typical Level 10 Player"
+                        dataKey="A"
+                        stroke="#A78BFA"
+                        fill="#A78BFA"
+                        fillOpacity={0.3}
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
               <div className="mt-8 pt-8 border-t border-rpg-border flex justify-between items-center">
                  <div className="text-xs font-mono text-neutral-500">XP PROGRESSION</div>

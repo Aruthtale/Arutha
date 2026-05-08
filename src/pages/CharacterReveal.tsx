@@ -11,12 +11,14 @@ interface CharacterRevealProps {
 }
 
 export const CharacterReveal: React.FC<CharacterRevealProps> = ({ analysis, onContinue }) => {
+  const [isMounted, setIsMounted] = useState(false);
   const [phase, setPhase] = useState(0);
   // Phase 0: Personality type reveal
   // Phase 1: Stats radar chart
   // Phase 2: Character summary + starter quest
 
   useEffect(() => {
+    setIsMounted(true);
     const timers = [
       setTimeout(() => setPhase(1), 2500),
       setTimeout(() => setPhase(2), 5000),
@@ -117,9 +119,10 @@ export const CharacterReveal: React.FC<CharacterRevealProps> = ({ analysis, onCo
               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 text-center mb-4">
                 Distribusi Stat Awal
               </h3>
-              <div className="w-full h-[250px] md:h-[300px] relative block">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={100} debounce={50}>
-                  <RadarChart cx="50%" cy="50%" outerRadius="75%" data={chartData}>
+              <div className="w-full relative block min-h-[250px]">
+                {isMounted && (
+                  <ResponsiveContainer width="100%" aspect={1} minWidth={0}>
+                    <RadarChart cx="50%" cy="50%" outerRadius="75%" data={chartData}>
                     <PolarGrid stroke="#333" />
                     <PolarAngleAxis 
                       dataKey="subject" 
@@ -136,6 +139,7 @@ export const CharacterReveal: React.FC<CharacterRevealProps> = ({ analysis, onCo
                     />
                   </RadarChart>
                 </ResponsiveContainer>
+                )}
               </div>
               
               {/* Stat Bars */}

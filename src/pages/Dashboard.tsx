@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LogOut, Sparkles, Star, LayoutDashboard, Users, Map, Brain, Dumbbell, Coins, BookOpen, TrendingUp, Clock, Target, ArrowRight, Shield, RefreshCw, Loader2
@@ -32,6 +32,9 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({ 
   name, level, xp, stats, quests, analysis, completeQuest, handleLogout, onReOnboard, onRefreshQuests, isRefreshing, lastEvolutionDate, refreshCount, setPage 
 }) => {
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
+
   const [view, setView] = useState<'DASHBOARD' | 'DIMENSION'>('DASHBOARD');
   const [currentDimension, setCurrentDimension] = useState<Dimension | null>(null);
   const [activeQuestInput, setActiveQuestInput] = useState<string | null>(null);
@@ -224,15 +227,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="space-y-8">
           <section className="glass-panel p-6 md:p-8 bg-gradient-to-b from-rpg-card to-rpg-black/60 flex flex-col items-center">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-6 md:mb-8 w-full text-center">Stat Distribution</h3>
-            <div className="w-full h-[280px] md:h-[320px] relative block">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={100} debounce={50}>
-                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
-                  <PolarGrid stroke="#333" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#888', fontSize: 10, fontWeight: 'bold' }} />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                  <Radar name="Player" dataKey="A" stroke="#A78BFA" fill="#A78BFA" fillOpacity={0.15} />
-                </RadarChart>
-              </ResponsiveContainer>
+            <div className="w-full relative block min-h-[280px]">
+              {isMounted && (
+                <ResponsiveContainer width="100%" aspect={1} minWidth={0}>
+                  <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
+                    <PolarGrid stroke="#333" />
+                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#888', fontSize: 10, fontWeight: 'bold' }} />
+                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                    <Radar name="Player" dataKey="A" stroke="#A78BFA" fill="#A78BFA" fillOpacity={0.15} />
+                  </RadarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </section>
 

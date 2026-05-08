@@ -62,49 +62,28 @@ export default function App() {
       const userEmail = session.user.email || `user_${session.user.id.slice(0, 8)}@arutha.local`;
       const now = new Date().toISOString();
 
-      // 1. Coba ambil data user
-      let { data: users, error: fetchError } = await supabase
+      // 1. Ambil data user atau buat baru jika belum ada (Upsert)
+      const { data: userDataList, error: upsertError } = await supabase
         .from('arutha_user')
+        .upsert({
+          id: crypto.randomUUID(), // Pastikan ID disediakan jika DB tidak memiliki default gen_random_uuid()
+          supabase_id: session.user.id,
+          email: userEmail,
+          username: userMetadata.username || displayName.toLowerCase().replace(/\s+/g, '_') + Math.floor(Math.random() * 1000),
+          updatedAt: now,
+        }, { 
+          onConflict: 'supabase_id',
+          ignoreDuplicates: false
+        })
         .select('id, level, xp, activeQuests, lastQuestUpdate, refreshCount, lastRefreshDate')
-        .eq('supabase_id', session.user.id)
         .limit(1);
 
-      let userData = users?.[0];
-
-      // 2. Jika tidak ada, coba buat baru
-      if (!userData) {
-        const { data: newUser, error: createError } = await supabase
-          .from('arutha_user')
-          .insert({
-            id: crypto.randomUUID(),
-            supabase_id: session.user.id,
-            email: userEmail,
-            username: userMetadata.username || displayName.toLowerCase().replace(/\s+/g, '_') + Math.floor(Math.random() * 1000),
-            level: 1,
-            xp: 0,
-            createdAt: now,
-            updatedAt: now,
-          })
-          .select('id, level, xp, activeQuests, lastQuestUpdate, refreshCount, lastRefreshDate')
-          .limit(1);
-
-        if (createError) {
-          // Jika error-nya adalah duplicate (23505), artinya data sudah ada, ambil lagi saja
-          if (createError.code === '23505') {
-            const { data: retryUsers } = await supabase
-              .from('arutha_user')
-              .select('id, level, xp, activeQuests, lastQuestUpdate, refreshCount, lastRefreshDate')
-              .eq('supabase_id', session.user.id)
-              .limit(1);
-            userData = retryUsers?.[0];
-          } else {
-            console.error("Create User Error:", createError.message);
-            throw createError;
-          }
-        } else {
-          userData = newUser?.[0];
-        }
+      if (upsertError) {
+        console.error("Upsert User Error:", upsertError.message);
+        throw upsertError;
       }
+
+      let userData = userDataList?.[0];
 
       if (userData) {
         setDbUserId(userData.id);
