@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Arutha</string>
+    <string name="title_activity_main">Arutha</string>
+    <string name="package_name">com.aruthtale.arutha</string>
+    <string name="custom_url_scheme">com.aruthtale.arutha</string>
+</resources>

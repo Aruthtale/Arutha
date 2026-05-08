@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { Capacitor } from '@capacitor/core';
 import { LogIn, UserPlus, Chrome, Mail, Lock, User as UserIcon, Calendar, VenusAndMars } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -20,7 +21,9 @@ export const Auth: React.FC<{ initialIsRegister?: boolean }> = ({ initialIsRegis
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: Capacitor.isNativePlatform() 
+            ? 'com.aruthtale.arutha://login-callback' 
+            : window.location.origin,
         },
       });
       if (error) throw error;

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { App as CapApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
@@ -64,7 +66,36 @@ export default function App() {
       if (errorDesc) alert(`Auth Error: ${errorDesc.replace(/\+/g, ' ')}`);
     }
 
-    return () => subscription.unsubscribe();
+    // Handle Deep Links (for Mobile Auth)
+    if (Capacitor.isNativePlatform()) {
+      CapApp.addListener('appUrlOpen', async (data: any) => {
+        const url = new URL(data.url);
+        // Supabase tokens are usually in the hash (e.g. #access_token=...)
+        const hash = url.hash.substring(1);
+        if (hash) {
+          const params = new URLSearchParams(hash);
+          const access_token = params.get('access_token');
+          const refresh_token = params.get('refresh_token');
+          if (access_token && refresh_token) {
+            const { data: { session }, error } = await supabase.auth.setSession({
+              access_token,
+              refresh_token
+            });
+            if (session) {
+              setSession(session);
+              initializeUserData(session);
+            }
+          }
+        }
+      });
+    }
+
+    return () => {
+      subscription.unsubscribe();
+      if (Capacitor.isNativePlatform()) {
+        CapApp.removeAllListeners();
+      }
+    };
   }, []);
 
   const initializeUserData = async (session: Session) => {

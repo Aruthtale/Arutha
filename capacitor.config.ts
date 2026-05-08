@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Arutha',
   webDir: 'dist',
   server: {
-    url: 'https://URL-VERCEL-KAMU.vercel.app',
+    url: 'https://arutha.vercel.app',
     cleartext: false
   },
   android: {
