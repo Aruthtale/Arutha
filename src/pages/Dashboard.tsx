@@ -4,6 +4,7 @@ import {
   LogOut, Sparkles, Star, LayoutDashboard, Users, Map, Brain, Dumbbell, Coins, BookOpen, TrendingUp, Clock, Target, ArrowRight, Shield, RefreshCw, Loader2
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { supabase } from '../lib/supabase';
 import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
 type Dimension = 'JIWA' | 'RAGA' | 'HARTA' | 'ILMU' | 'KARMA';
 
@@ -16,6 +17,7 @@ interface Quest {
 }
 
 interface DashboardProps {
+  userId: string;
   name: string; level: number; xp: number; stats: Stats; quests: Quest[]; analysis: any;
   completeQuest: (id: string, note: string) => Promise<{ success: boolean; feedback: string }>;
   handleLogout: () => void;
@@ -32,7 +34,7 @@ interface DashboardProps {
 const EMOJIS = ['😡', '😔', '😐', '😊', '🤩'];
 
 export const Dashboard: React.FC<DashboardProps> = ({ 
-  name, level, xp, stats, quests, analysis, completeQuest, handleLogout, onReOnboard, onRefreshQuests, onGenerateInitialQuests, isRefreshing, lastEvolutionDate, refreshCount, setPage 
+  userId, name, level, xp, stats, quests, analysis, completeQuest, handleLogout, onReOnboard, onRefreshQuests, onGenerateInitialQuests, isRefreshing, lastEvolutionDate, refreshCount, setPage 
 }) => {
   const [isMounted, setIsMounted] = useState(false);
   
@@ -64,6 +66,39 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [userNote, setUserNote] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationFeedback, setVerificationFeedback] = useState<{success: boolean, text: string} | null>(null);
+
+  const [reflectionText, setReflectionText] = useState('');
+  const [isSavingReflection, setIsSavingReflection] = useState(false);
+
+  const handleSaveReflection = async () => {
+    if (!reflectionText.trim() || !currentDimension || !userId) return;
+    setIsSavingReflection(true);
+    try {
+      const { data, error } = await supabase
+        .from('dimension_reflections')
+        .insert({
+          user_id: userId,
+          dimension: currentDimension,
+          reflection_text: reflectionText.trim()
+        })
+        .select();
+      
+      if (error) {
+        console.error('Supabase Error Details:', error);
+        throw error;
+      }
+      
+      console.log('Reflection saved successfully:', data);
+      setReflectionText('');
+      alert('Refleksi berhasil disimpan!');
+      // TODO: Refresh reflections list
+    } catch (err: any) {
+      console.error('Save reflection error full:', err);
+      alert(`Gagal menyimpan refleksi: ${err.message || 'Error tidak diketahui'}`);
+    } finally {
+      setIsSavingReflection(false);
+    }
+  };
 
   const getCooldownStatus = () => {
     if (!lastEvolutionDate) return { canEvolve: true, daysLeft: 0 };
@@ -142,7 +177,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-6 flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Grafik 7 Hari Terakhir</h3>
               <div className="h-48 w-full relative -ml-4">
                 {isMounted && (
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                     <LineChart data={mockStatHistory}>
                       <XAxis dataKey="day" stroke="#555" fontSize={10} tickMargin={10} axisLine={false} tickLine={false} />
                       <Tooltip contentStyle={{ backgroundColor: '#0A0A0A', border: '1px solid #333', borderRadius: '8px' }} itemStyle={{ color: '#fff' }} />
@@ -157,11 +192,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-6 flex items-center gap-2"><BookOpen className="w-4 h-4" /> Jurnal Refleksi</h3>
               <div className="space-y-4">
                 <textarea 
+                  value={reflectionText}
+                  onChange={(e) => setReflectionText(e.target.value)}
                   placeholder={`Apa yang kamu pelajari hari ini tentang ${currentDimension}? (Catatan ini akan tersimpan di Supabase)`}
                   className="w-full p-4 bg-rpg-black border border-rpg-border rounded-xl focus:border-white/30 outline-none text-sm resize-none"
                   rows={3}
                 />
-                <button className="w-full py-3 bg-white text-black font-black rounded-xl text-xs hover:scale-[1.02] transition-all" onClick={() => alert('Fitur simpan refleksi membutuhkan integrasi tabel Supabase.')}>Simpan Refleksi</button>
+                <button 
+                  className="w-full py-3 bg-white text-black font-black rounded-xl text-xs hover:scale-[1.02] transition-all disabled:opacity-50" 
+                  onClick={handleSaveReflection}
+                  disabled={isSavingReflection || !reflectionText.trim()}
+                >
+                  {isSavingReflection ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Simpan Refleksi'}
+                </button>
               </div>
             </section>
           </div>
@@ -326,7 +369,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-6 md:mb-8 w-full text-center">Stat Distribution</h3>
             <div className="w-full relative block min-h-[280px]">
               {isMounted && (
-                <ResponsiveContainer width="100%" aspect={1} minWidth={0}>
+                <ResponsiveContainer width="100%" aspect={1} minWidth={0} minHeight={0}>
                   <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
                     <PolarGrid stroke="#333" />
                     <PolarAngleAxis dataKey="subject" tick={{ fill: '#888', fontSize: 10, fontWeight: 'bold' }} />

@@ -70,12 +70,12 @@ export default function App() {
           supabase_id: session.user.id,
           email: userEmail,
           username: userMetadata.username || displayName.toLowerCase().replace(/\s+/g, '_') + Math.floor(Math.random() * 1000),
-          updatedAt: now,
+          updated_at: now,
         }, { 
           onConflict: 'supabase_id',
           ignoreDuplicates: false
         })
-        .select('id, level, xp, activeQuests, lastQuestUpdate, refreshCount, lastRefreshDate')
+        .select('id, level, xp, active_quests, last_quest_update, refresh_count, last_refresh_date')
         .limit(1);
 
       if (upsertError) {
@@ -91,22 +91,22 @@ export default function App() {
         setXp(userData.xp || 0);
 
         // Reset Refresh Count jika sudah berganti hari
-        const lastRefreshDateStr = userData.lastRefreshDate || now;
+        const lastRefreshDateStr = userData.last_refresh_date || now;
         const lastRefresh = new Date(lastRefreshDateStr);
         const isNewDay = lastRefresh.getDate() !== new Date().getDate();
-        setRefreshCount(isNewDay ? 0 : (userData.refreshCount || 0));
+        setRefreshCount(isNewDay ? 0 : (userData.refresh_count || 0));
 
         const { data: profiles } = await supabase
           .from('character_profile')
           .select('*')
-          .eq('userId', userData.id)
-          .order('createdAt', { ascending: false })
+          .eq('user_id', userData.id)
+          .order('created_at', { ascending: false })
           .limit(1);
         
         const profileData = profiles?.[0];
 
         if (profileData) {
-          setLastEvolutionDate(profileData.createdAt);
+          setLastEvolutionDate(profileData.created_at);
           const loadedStats = {
             JIWA: profileData.jiwa,
             RAGA: profileData.raga,
@@ -124,18 +124,18 @@ export default function App() {
           });
           setStats(loadedStats);
 
-          const lastUpdateStr = userData.lastQuestUpdate || new Date(0).toISOString();
+          const lastUpdateStr = userData.last_quest_update || new Date(0).toISOString();
           const lastUpdate = new Date(lastUpdateStr);
           const isQuestExpired = lastUpdate.getDate() !== new Date().getDate();
 
-          if (isQuestExpired || !userData.activeQuests || (userData.activeQuests as any[]).length === 0) {
+          if (isQuestExpired || !userData.active_quests || (userData.active_quests as any[]).length === 0) {
             setQuests([]);
             setRefreshCount(0);
             refreshLockRef.current = false;
             // Kita tidak generate sekarang, kita biarkan Dashboard yang urus setelah Mood Check-in
           } else {
-            setQuests(userData.activeQuests as Quest[]);
-            if ((userData.refreshCount || 0) >= 1) {
+            setQuests(userData.active_quests as Quest[]);
+            if ((userData.refresh_count || 0) >= 1) {
               refreshLockRef.current = true;
             }
           }
@@ -153,10 +153,10 @@ export default function App() {
     if (!dbUserId) return;
     try {
       const updateData: any = { level: newLevel, xp: newXp };
-      if (updatedQuests) updateData.activeQuests = updatedQuests;
+      if (updatedQuests) updateData.active_quests = updatedQuests;
       await supabase.from('arutha_user').update(updateData).eq('id', dbUserId);
       
-      const { data: profiles } = await supabase.from('character_profile').select('id').eq('userId', dbUserId).order('createdAt', { ascending: false }).limit(1);
+      const { data: profiles } = await supabase.from('character_profile').select('id').eq('user_id', dbUserId).order('created_at', { ascending: false }).limit(1);
       const latestProfile = profiles?.[0];
       if (latestProfile) {
         await supabase.from('character_profile').update({
@@ -183,7 +183,7 @@ export default function App() {
           .from('character_profile')
           .insert({
             id: crypto.randomUUID(),
-            userId: userData.id,
+            user_id: userData.id,
             personality_type: analysis.personality_type,
             personality_title: analysis.personality_title,
             personality_desc: analysis.personality_desc,
@@ -197,14 +197,14 @@ export default function App() {
           .select();
         
         const profile = profiles?.[0];
-        if (profile) setLastEvolutionDate(profile.createdAt);
+        if (profile) setLastEvolutionDate(profile.created_at);
         
         const aiQuests = await generateDailyQuests(analysis.stats);
         setQuests(aiQuests);
         
         await supabase
           .from('arutha_user')
-          .update({ activeQuests: aiQuests, lastQuestUpdate: new Date().toISOString() })
+          .update({ active_quests: aiQuests, last_quest_update: new Date().toISOString() })
           .eq('id', userData.id);
       }
     } catch (err) { 
@@ -251,10 +251,10 @@ export default function App() {
       setQuests(aiQuests);
       
       await supabase.from('arutha_user').update({ 
-        activeQuests: aiQuests,
-        lastQuestUpdate: new Date().toISOString(),
-        refreshCount: 0, // Still have 1 free refresh
-        lastRefreshDate: new Date().toISOString()
+        active_quests: aiQuests,
+        last_quest_update: new Date().toISOString(),
+        refresh_count: 0, // Still have 1 free refresh
+        last_refresh_date: new Date().toISOString()
       }).eq('id', dbUserId);
     } catch (err) {
       console.error("Generate initial quests error:", err);
@@ -275,10 +275,10 @@ export default function App() {
       setQuests(aiQuests);
       
       await supabase.from('arutha_user').update({ 
-        activeQuests: aiQuests,
-        lastQuestUpdate: new Date().toISOString(),
-        refreshCount: 1,
-        lastRefreshDate: new Date().toISOString()
+        active_quests: aiQuests,
+        last_quest_update: new Date().toISOString(),
+        refresh_count: 1,
+        last_refresh_date: new Date().toISOString()
       }).eq('id', dbUserId);
     } catch (err) {
       console.error("Refresh error:", err);
@@ -319,6 +319,7 @@ export default function App() {
         {page === 'DASHBOARD' && (
           <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
             <Dashboard 
+              userId={dbUserId || ''}
               name={name} level={level} xp={xp} stats={stats} quests={quests} analysis={characterAnalysis}
               completeQuest={completeQuest} handleLogout={() => supabase.auth.signOut()} addXp={addXp}
               onReOnboard={() => setPage('ONBOARDING')} onRefreshQuests={refreshQuests} isRefreshing={isRefreshing}

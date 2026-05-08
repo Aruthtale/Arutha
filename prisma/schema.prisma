@@ -1,76 +1,64 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 model User {
-  id              String   @id @default(cuid())
-  supabase_id     String?  @unique
-  email           String   @unique
+  id              String                @id @default(cuid())
+  supabase_id     String?               @unique
+  email           String                @unique
   password        String?
-  username        String   @unique
+  username        String                @unique
   usia            Int?
   gender          String?
-  level           Int      @default(1)
-  xp              Int      @default(0)
-  activeQuests    Json?    // Menyimpan quest harian aktif
-  lastQuestUpdate DateTime @default(now())
-  
-  // Fitur Anti-Curang
-  refreshCount    Int      @default(0)
-  lastRefreshDate DateTime @default(now())
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
+  level           Int                   @default(1)
+  xp              Int                   @default(0)
+  activeQuests    Json?                 @map("active_quests")
+  lastQuestUpdate DateTime              @default(now()) @map("last_quest_update")
+  refreshCount    Int                   @default(0) @map("refresh_count")
+  lastRefreshDate DateTime              @default(now()) @map("last_refresh_date")
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
   profiles        CharacterProfile[]
-  statHistory     StatHistory[]
-  questLogs       QuestLog[]
   reflections     DimensionReflection[]
+  questLogs       QuestLog[]
+  statHistory     StatHistory[]
 
-  @@map("arutha_user") // Nama tabel huruf kecil semua
+  @@map("arutha_user")
 }
 
 model CharacterProfile {
   id                String   @id @default(cuid())
-  userId            String
+  userId            String   @map("user_id")
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
   personality_type  String
   personality_title String
   personality_desc  String
   character_summary String
-  
   jiwa              Int
   raga              Int
   harta             Int
   ilmu              Int
   karma             Int
-  
-  createdAt         DateTime @default(now())
+  createdAt         DateTime @default(now()) @map("created_at")
 
   @@index([userId])
-  @@map("character_profile") // Nama tabel huruf kecil semua
+  @@map("character_profile")
 }
 
 model StatHistory {
   id        String   @id @default(cuid())
-  userId    String
+  userId    String   @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
   jiwa      Int      @default(0)
   raga      Int      @default(0)
   harta     Int      @default(0)
   ilmu      Int      @default(0)
   karma     Int      @default(0)
-  
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([userId])
   @@map("stat_history")
@@ -78,16 +66,14 @@ model StatHistory {
 
 model QuestLog {
   id          String   @id @default(cuid())
-  userId      String
+  userId      String   @map("user_id")
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
   title       String
   description String?
-  stat_type   String   // 'JIWA', 'RAGA', 'HARTA', 'ILMU', 'KARMA'
-  xp_gained   Int
-  user_note   String?  // Bukti penyelesaian quest
-  
-  completedAt DateTime @default(now())
+  stat_type   String
+  xp_gained   Int      @map("xp_gained")
+  user_note   String?  @map("user_note")
+  completedAt DateTime @default(now()) @map("completed_at")
 
   @@index([userId])
   @@map("quest_logs")
@@ -95,13 +81,11 @@ model QuestLog {
 
 model DimensionReflection {
   id              String   @id @default(cuid())
-  userId          String
+  userId          String   @map("user_id")
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  dimension       String   // 'JIWA', 'RAGA', 'HARTA', 'ILMU', 'KARMA'
+  dimension       String
   reflection_text String
-  
-  createdAt       DateTime @default(now())
+  createdAt       DateTime @default(now()) @map("created_at")
 
   @@index([userId])
   @@map("dimension_reflections")
