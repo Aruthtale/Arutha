@@ -161,10 +161,10 @@ export const Auth: React.FC<{ initialIsRegister?: boolean }> = ({ initialIsRegis
       <button
         onClick={handleGoogleLogin}
         disabled={loading}
-        className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-transparent text-white font-bold rounded-2xl border border-rpg-border hover:border-white hover:bg-white/5 transition-all active:scale-[0.98]"
+        className="w-full flex items-center justify-center gap-4 px-6 py-4 bg-white/10 text-white font-black rounded-2xl border border-white/20 hover:border-white hover:bg-white/20 transition-all active:scale-[0.98] shadow-lg shadow-black/20 group"
       >
-        <Chrome className="w-6 h-6" />
-        Continue with Google
+        <Chrome className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+        <span className="tracking-wide">CONTINUE WITH GOOGLE</span>
       </button>
 
       <p className="mt-8 text-center text-sm font-medium text-neutral-500">

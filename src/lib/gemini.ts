@@ -285,3 +285,56 @@ Output JSON format:
   console.error("Semua model Verifikasi gagal. Progres diterima otomatis.");
   return { success: true, feedback: "Sistem verifikasi sedang sibuk, progres diterima secara manual." };
 }
+
+export async function generateRecoveryQuests(fatigueDays: number): Promise<Quest[]> {
+  const aiClient = getClient();
+  const prompt = `Generate 3 extremely light, encouraging, and restorative "Recovery Quests" for a user who has been inactive for ${fatigueDays} days in their Life RPG (ARUTHA).
+  
+  The tone should be "welcome back", warm, and non-punishing. 
+  Each quest should be very easy to complete (e.g., "Drink a glass of water", "Take 3 deep breaths", "Write one thing you're grateful for").
+  
+  Assign each quest to one of these dimensions: JIWA, RAGA, HARTA, ILMU, KARMA.
+  
+  Return ONLY a JSON array of objects with this structure:
+  [
+    { "id": "rec-1", "title": "...", "desc": "...", "stat": "DIMENSION", "xp": 150 }
+  ]
+  Note: Set XP to 150 for each quest (this is 1.5x the normal XP to reward their return).`;
+
+  const tryGenerateRecovery = async (modelName: string) => {
+    const response = await aiClient.models.generateContent({
+      model: modelName,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    });
+    const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    let jsonStr = text.trim();
+    if (jsonStr.includes('```')) {
+      jsonStr = jsonStr.split('```')[1].replace(/^json/, '').trim();
+    }
+    const quests = JSON.parse(jsonStr);
+    return quests.map((q: any) => ({ ...q, completed: false }));
+  };
+
+  const modelsToTry = [
+    'gemini-3.1-flash-lite',
+    'gemini-3-flash-preview',
+    'gemini-3.1-pro-preview'
+  ];
+
+  for (const modelName of modelsToTry) {
+    try {
+      console.log(`Generating recovery quests menggunakan model: ${modelName}...`);
+      return await tryGenerateRecovery(modelName);
+    } catch (e: any) {
+      console.warn(`Recovery Gen ${modelName} gagal:`, e.message || e);
+      continue;
+    }
+  }
+
+  // Fallback
+  return [
+    { id: 'rec-1', title: 'Moment of Stillness', desc: 'Sit quietly for 2 minutes and just breathe.', stat: 'JIWA', xp: 150, completed: false },
+    { id: 'rec-2', title: 'Hydration Ritual', desc: 'Drink a full glass of water to refresh your body.', stat: 'RAGA', xp: 150, completed: false },
+    { id: 'rec-3', title: 'Gratitude Spark', desc: 'Write down one thing you are happy about today.', stat: 'KARMA', xp: 150, completed: false },
+  ];
+}

@@ -62,14 +62,25 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
                 </span>
               </div>
               <p className="text-neutral-400 font-medium italic text-base md:text-lg">"{analysis?.personality_title || "New Traveler"}"</p>
-              <div className="w-full md:w-64 mx-auto md:mx-0">
-                <div className="h-1.5 w-full bg-neutral-900 rounded-full overflow-hidden">
-                  <motion.div className="h-full bg-white" initial={{ width: 0 }} animate={{ width: `${(xp / (level * 1000)) * 100}%` }} />
+              <div className="w-full md:w-80 mx-auto md:mx-0 space-y-2">
+                <div className="flex justify-between items-end px-1">
+                  <span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Progress XP</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm font-black text-white">{xp}</span>
+                    <span className="text-[10px] font-bold text-neutral-500">/ {level * 1000}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between mt-1.5">
-                  <span className="text-[8px] font-mono text-neutral-500 tracking-tighter uppercase">PROGRESS XP</span>
-                  <span className="text-[8px] font-mono text-white font-bold">{xp} / {level * 1000}</span>
+                <div className="h-3 w-full bg-neutral-900 rounded-full overflow-hidden relative border border-white/5 shadow-inner">
+                  <motion.div 
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-jiwa via-ilmu to-jiwa bg-[length:200%_100%] animate-shimmer"
+                    initial={{ width: 0 }} 
+                    animate={{ width: `${(xp / (level * 1000)) * 100}%` }}
+                    transition={{ duration: 1.5, ease: "easeOut" }}
+                  />
                 </div>
+                <p className="text-[10px] font-bold text-neutral-600 text-right uppercase tracking-tighter">
+                  {Math.floor((xp / (level * 1000)) * 100)}% UNTIL NEXT LEVEL
+                </p>
               </div>
             </div>
           </div>

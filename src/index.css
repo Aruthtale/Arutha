@@ -38,3 +38,19 @@
 .neo-blur {
   @apply shadow-[0_0_20px_rgba(255,255,255,0.05)];
 }
+@layer utilities {
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  .animate-shimmer {
+    animation: shimmer 3s linear infinite;
+  }
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .animate-spin-slow {
+    animation: spin-slow 8s linear infinite;
+  }
+}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
-import { type CharacterAnalysis, analyzeCharacter, generateDailyQuests, verifyQuestCompletion, type Quest, type Stats, type Dimension } from './lib/gemini';
+import { type CharacterAnalysis, analyzeCharacter, generateDailyQuests, verifyQuestCompletion, type Quest, type Stats, type Dimension, generateRecoveryQuests } from './lib/gemini';
 import { Navbar } from './components/Navbar';
 import { Landing } from './pages/Landing';
 import { Login } from './pages/Login';
@@ -10,11 +10,15 @@ import { Register } from './pages/Register';
 import { Onboarding } from './pages/Onboarding';
 import { CharacterReveal } from './pages/CharacterReveal';
 import { Dashboard } from './pages/Dashboard';
+import { Settings } from './pages/Settings';
 import { Profile } from './pages/Profile';
+import { checkAndApplyDecay, resetFatigue, type DecayResult } from './lib/decaySystem';
 
 export default function App() {
-  const [page, setPage] = useState<'LANDING' | 'LOGIN' | 'REGISTER' | 'ONBOARDING' | 'CHARACTER_REVEAL' | 'DASHBOARD' | 'PROFILE'>('LANDING');
+  const [page, setPage] = useState<'LANDING' | 'LOGIN' | 'REGISTER' | 'ONBOARDING' | 'CHARACTER_REVEAL' | 'DASHBOARD' | 'SETTINGS' | 'PROFILE'>('LANDING');
   const [session, setSession] = useState<Session | null>(null);
+  const [dbUserId, setDbUserId] = useState<string | null>(null);
+  const [decayResult, setDecayResult] = useState<DecayResult | null>(null);
   const [name, setName] = useState('Player One');
   const [level, setLevel] = useState(1);
   const [xp, setXp] = useState(0);
@@ -27,10 +31,12 @@ export default function App() {
   });
   const [characterAnalysis, setCharacterAnalysis] = useState<CharacterAnalysis | null>(null);
   const [quests, setQuests] = useState<Quest[]>([]);
+  const [statHistory, setStatHistory] = useState<any[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastEvolutionDate, setLastEvolutionDate] = useState<string | null>(null);
-  const [dbUserId, setDbUserId] = useState<string | null>(null);
   const [refreshCount, setRefreshCount] = useState(0);
+  const [nameChangeCount, setNameChangeCount] = useState(0);
+  const [lastNameChange, setLastNameChange] = useState<string | null>(null);
   const refreshLockRef = useRef(false);
 
   useEffect(() => {
@@ -41,7 +47,7 @@ export default function App() {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       if (session) {
         initializeUserData(session);
@@ -49,6 +55,14 @@ export default function App() {
         setPage('LANDING');
       }
     });
+
+    // Detect Errors in URL (like expired OTP)
+    const hash = window.location.hash;
+    if (hash && hash.includes('error=')) {
+      const params = new URLSearchParams(hash.replace('#', ''));
+      const errorDesc = params.get('error_description');
+      if (errorDesc) alert(`Auth Error: ${errorDesc.replace(/\+/g, ' ')}`);
+    }
 
     return () => subscription.unsubscribe();
   }, []);
@@ -66,7 +80,7 @@ export default function App() {
       const { data: userDataList, error: upsertError } = await supabase
         .from('arutha_user')
         .upsert({
-          id: crypto.randomUUID(), // Pastikan ID disediakan jika DB tidak memiliki default gen_random_uuid()
+          id: crypto.randomUUID(),
           supabase_id: session.user.id,
           email: userEmail,
           username: userMetadata.username || displayName.toLowerCase().replace(/\s+/g, '_') + Math.floor(Math.random() * 1000),
@@ -75,7 +89,7 @@ export default function App() {
           onConflict: 'supabase_id',
           ignoreDuplicates: false
         })
-        .select('id, level, xp, active_quests, last_quest_update, refresh_count, last_refresh_date')
+        .select('id, level, xp, active_quests, last_quest_update, refresh_count, last_refresh_date, name_change_count, last_name_change')
         .limit(1);
 
       if (upsertError) {
@@ -90,11 +104,19 @@ export default function App() {
         setLevel(userData.level || 1);
         setXp(userData.xp || 0);
 
+        // 3. Jalankan Decay System
+        const decayResult = await checkAndApplyDecay(userData.id);
+        setDecayResult(decayResult);
+
+        setNameChangeCount(userData.name_change_count || 0);
+        setLastNameChange(userData.last_name_change || null);
+
         // Reset Refresh Count jika sudah berganti hari
         const lastRefreshDateStr = userData.last_refresh_date || now;
         const lastRefresh = new Date(lastRefreshDateStr);
         const isNewDay = lastRefresh.getDate() !== new Date().getDate();
         setRefreshCount(isNewDay ? 0 : (userData.refresh_count || 0));
+        if (isNewDay) refreshLockRef.current = false;
 
         const { data: profiles } = await supabase
           .from('character_profile')
@@ -129,23 +151,55 @@ export default function App() {
           const isQuestExpired = lastUpdate.getDate() !== new Date().getDate();
 
           if (isQuestExpired || !userData.active_quests || (userData.active_quests as any[]).length === 0) {
-            setQuests([]);
+            const aiQuests = await generateDailyQuests(loadedStats);
+            setQuests(aiQuests);
             setRefreshCount(0);
             refreshLockRef.current = false;
-            // Kita tidak generate sekarang, kita biarkan Dashboard yang urus setelah Mood Check-in
+            await supabase.from('arutha_user').update({ 
+              active_quests: aiQuests, 
+              last_quest_update: new Date().toISOString(),
+              refresh_count: 0,
+              last_refresh_date: new Date().toISOString()
+            }).eq('id', userData.id);
           } else {
             setQuests(userData.active_quests as Quest[]);
             if ((userData.refresh_count || 0) >= 1) {
               refreshLockRef.current = true;
             }
           }
-          setPage('DASHBOARD');
+          
+          const decay = await checkAndApplyDecay(userData.id);
+          setDecayResult(decay);
+
+          fetchStatHistory(userData.id);
+
+          setPage(prev => {
+            const entryPages = ['LANDING', 'LOGIN', 'REGISTER', 'ONBOARDING', 'CHARACTER_REVEAL'];
+            if (entryPages.includes(prev)) return 'DASHBOARD';
+            return prev;
+          });
         } else {
           setPage('ONBOARDING');
         }
       }
     } catch (err: any) {
       console.error("Init error detailed:", err.message || err);
+    }
+  };
+
+  const fetchStatHistory = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('stat_history')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(7);
+      
+      if (error) throw error;
+      if (data) setStatHistory(data.reverse());
+    } catch (err) {
+      console.error("Fetch history error:", err);
     }
   };
 
@@ -163,16 +217,36 @@ export default function App() {
           jiwa: newStats.JIWA, raga: newStats.RAGA, harta: newStats.HARTA, ilmu: newStats.ILMU, karma: newStats.KARMA,
         }).eq('id', latestProfile.id);
       }
+
+      const today = new Date().toISOString().split('T')[0];
+      const { data: existingLogs } = await supabase
+        .from('stat_history')
+        .select('id')
+        .eq('user_id', dbUserId)
+        .gte('created_at', today)
+        .limit(1);
+
+      if (existingLogs && existingLogs.length > 0) {
+        await supabase.from('stat_history').update({
+          jiwa: newStats.JIWA, raga: newStats.RAGA, harta: newStats.HARTA, ilmu: newStats.ILMU, karma: newStats.KARMA
+        }).eq('id', existingLogs[0].id);
+      } else {
+        await supabase.from('stat_history').insert({
+          user_id: dbUserId,
+          jiwa: newStats.JIWA, raga: newStats.RAGA, harta: newStats.HARTA, ilmu: newStats.ILMU, karma: newStats.KARMA
+        });
+        fetchStatHistory(dbUserId);
+      }
+
     } catch (err) { console.error("Sync error:", err); }
   };
 
   const handleOnboardingComplete = async (analysis: CharacterAnalysis) => {
     if (!session) return;
     try {
-      // Menggunakan cara manual untuk mencari user (menghindari error 406 dari .single())
-      const { data: users } = await supabase
+      let { data: users } = await supabase
         .from('arutha_user')
-        .select('id')
+        .select('id, level, xp, active_quests, last_quest_update, refresh_count, last_refresh_date')
         .eq('supabase_id', session.user.id)
         .limit(1);
 
@@ -215,6 +289,24 @@ export default function App() {
     setPage('CHARACTER_REVEAL');
   };
 
+
+  const handleTakeRecovery = async () => {
+    if (!dbUserId || !decayResult) return;
+    setIsRefreshing(true);
+    try {
+      const recQuests = [
+        { id: 'r1', title: 'Recovery Session', desc: 'Lakukan meditasi 10 menit untuk memulihkan energi.', stat: 'JIWA' as Dimension, xp: 200, completed: false }
+      ];
+      setQuests(recQuests);
+      await supabase.from('arutha_user').update({ active_quests: recQuests }).eq('id', dbUserId);
+    } catch (err) {
+      console.error("Take recovery error:", err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+
   const addXp = (amount: number, stat?: Dimension, updatedQuests?: Quest[]) => {
     let nextLevel = level;
     let nextXp = xp + amount;
@@ -228,6 +320,47 @@ export default function App() {
     syncProgress(nextLevel, nextXp, nextStats, updatedQuests);
   };
 
+  const handleUpdateName = async (newName: string) => {
+    if (!session || !dbUserId) return;
+    
+    // Check Cooldown Logic
+    if (nameChangeCount >= 3 && lastNameChange) {
+      const lastDate = new Date(lastNameChange);
+      const diffDays = (new Date().getTime() - lastDate.getTime()) / (1000 * 3600 * 24);
+      if (diffDays < 3) {
+        const remainingDays = Math.ceil(3 - diffDays);
+        throw new Error(`Limit tercapai. Tunggu ${remainingDays} hari lagi untuk mengganti nama.`);
+      }
+    }
+
+    try {
+      const newCount = nameChangeCount >= 3 ? 1 : nameChangeCount + 1;
+      const now = new Date().toISOString();
+
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { full_name: newName }
+      });
+      if (authError) throw authError;
+
+      const { error: dbError } = await supabase
+        .from('arutha_user')
+        .update({ 
+          username: newName.toLowerCase().replace(/\s+/g, '_'),
+          name_change_count: newCount,
+          last_name_change: now
+        })
+        .eq('id', dbUserId);
+      if (dbError) throw dbError;
+
+      setName(newName);
+      setNameChangeCount(newCount);
+      setLastNameChange(now);
+    } catch (err) {
+      console.error("Update name error:", err);
+      throw err;
+    }
+  };
+
   const completeQuest = async (id: string, note: string): Promise<{ success: boolean; feedback: string }> => {
     const quest = quests.find(q => q.id === id);
     if (quest && !quest.completed) {
@@ -237,6 +370,12 @@ export default function App() {
         const updatedQuests = quests.map(q => q.id === id ? { ...q, completed: true } : q);
         setQuests(updatedQuests);
         addXp(quest.xp, quest.stat, updatedQuests);
+        
+        // RESET FATIGUE
+        if (dbUserId) {
+          await resetFatigue(dbUserId);
+          setDecayResult(prev => prev ? { ...prev, status: 'ok', fatigueDays: 0 } : null);
+        }
       }
       return verification;
     }
@@ -291,7 +430,7 @@ export default function App() {
     }
   };
 
-  const hideNavbar = page === 'ONBOARDING' || page === 'CHARACTER_REVEAL';
+  const hideNavbar = page === 'ONBOARDING' || page === 'CHARACTER_REVEAL' || page === 'LOGIN' || page === 'REGISTER';
 
   return (
     <div className="min-h-screen bg-rpg-black text-white selection:bg-white selection:text-black">
@@ -321,10 +460,27 @@ export default function App() {
             <Dashboard 
               userId={dbUserId || ''}
               name={name} level={level} xp={xp} stats={stats} quests={quests} analysis={characterAnalysis}
+              statHistory={statHistory}
               completeQuest={completeQuest} handleLogout={() => supabase.auth.signOut()} addXp={addXp}
               onReOnboard={() => setPage('ONBOARDING')} onRefreshQuests={refreshQuests} isRefreshing={isRefreshing}
               lastEvolutionDate={lastEvolutionDate} refreshCount={refreshCount}
+              decayResult={decayResult}
+              onTakeRecovery={handleTakeRecovery}
               setPage={setPage} onGenerateInitialQuests={generateInitialQuests}
+            />
+          </motion.div>
+        )}
+        {page === 'SETTINGS' && session && (
+          <motion.div key="settings" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <Settings 
+              userId={dbUserId || ''}
+              initialName={name}
+              email={session.user.email || ''}
+              nameChangeCount={nameChangeCount}
+              lastNameChange={lastNameChange}
+              onUpdateName={handleUpdateName}
+              onLogout={() => supabase.auth.signOut()}
+              onBack={() => setPage('DASHBOARD')}
             />
           </motion.div>
         )}

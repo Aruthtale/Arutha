@@ -20,6 +20,10 @@ model User {
   lastQuestUpdate DateTime              @default(now()) @map("last_quest_update")
   refreshCount    Int                   @default(0) @map("refresh_count")
   lastRefreshDate DateTime              @default(now()) @map("last_refresh_date")
+  lastActiveDate  DateTime              @default(now()) @map("last_active_date")
+  fatigueDays     Int                   @default(0) @map("fatigue_days")
+  nameChangeCount Int                   @default(0) @map("name_change_count")
+  lastNameChange  DateTime?             @map("last_name_change")
   createdAt       DateTime              @default(now()) @map("created_at")
   updatedAt       DateTime              @updatedAt @map("updated_at")
   profiles        CharacterProfile[]
