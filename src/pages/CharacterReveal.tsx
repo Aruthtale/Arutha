@@ -119,9 +119,9 @@ export const CharacterReveal: React.FC<CharacterRevealProps> = ({ analysis, onCo
               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 text-center mb-4">
                 Distribusi Stat Awal
               </h3>
-              <div className="w-full relative block min-h-[250px]">
+              <div className="w-full relative block min-h-[250px] min-w-0">
                 {isMounted && (
-                  <ResponsiveContainer width="100%" aspect={1} minWidth={0}>
+                  <ResponsiveContainer width="100%" aspect={1} debounce={200}>
                     <RadarChart cx="50%" cy="50%" outerRadius="75%" data={chartData}>
                     <PolarGrid stroke="#333" />
                     <PolarAngleAxis 

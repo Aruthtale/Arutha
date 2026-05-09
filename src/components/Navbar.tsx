@@ -59,11 +59,17 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
         {/* Bottom Section: Rank & Icons */}
         {session && stats && (
           <div className="px-6 space-y-6">
-            <div className="glass-panel p-4 border border-white/5 bg-gradient-to-b from-white/5 to-transparent text-center">
-              <p className="text-[9px] font-black tracking-[0.2em] text-neutral-500 uppercase mb-2">Current Rank</p>
-              <h3 className="text-lg font-black tracking-widest text-neutral-200">
-                {currentRank}
+            <div className="glass-panel p-5 border border-white/10 bg-gradient-to-br from-jiwa/20 via-transparent to-ilmu/10 text-center relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-r from-jiwa/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+              <p className="text-[10px] font-black tracking-[0.3em] text-jiwa/70 uppercase mb-2">Ascension Phase</p>
+              <h3 className="text-xl font-black tracking-tighter text-white italic drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+                {currentRank === 'DISCIPLE' ? 'ASCENSION I' : currentRank}
               </h3>
+              <div className="mt-3 flex justify-center gap-1">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className={cn("w-1.5 h-1.5 rounded-full", i === 1 ? "bg-jiwa shadow-[0_0_8px_rgba(236,72,153,0.8)]" : "bg-white/10")} />
+                ))}
+              </div>
             </div>
             
             <div className="flex justify-center items-center gap-4">

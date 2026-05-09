@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import {
   LogOut, Sparkles, Star, LayoutDashboard, User, Users, Map, Brain, Dumbbell, Coins, BookOpen, TrendingUp, Clock, Target, ArrowRight, Shield, RefreshCw, Loader2, AlertCircle, Zap, Contact2, ShieldAlert
 } from 'lucide-react';
 import { cn, getDimensionRank, getDimensionColor, getRankGlow } from '../lib/utils';
@@ -8,6 +8,8 @@ import { supabase } from '../lib/supabase';
 import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
 import { Session } from '@supabase/supabase-js';
 import { type DecayResult } from '../lib/decaySystem';
+import { AIChatWidget } from '../components/AIChatWidget';
+import { isToday } from '../lib/dateUtils';
 
 type Dimension = 'JIWA' | 'RAGA' | 'HARTA' | 'ILMU' | 'KARMA';
 
@@ -43,8 +45,8 @@ interface DashboardProps {
 
 const EMOJIS = ['😡', '😔', '😐', '😊', '🤩'];
 
-export const Dashboard: React.FC<DashboardProps> = ({ 
-  session, userId, name, level, xp, stats, quests, analysis, streak, lastStreakDate, onClaimStreak, statHistory, completeQuest, handleLogout, onReOnboard, onRefreshQuests, onGenerateInitialQuests, isRefreshing, lastEvolutionDate, refreshCount, decayResult, onTakeRecovery, setPage 
+export const Dashboard: React.FC<DashboardProps> = ({
+  session, userId, name, level, xp, stats, quests, analysis, streak, lastStreakDate, onClaimStreak, statHistory, completeQuest, handleLogout, onReOnboard, onRefreshQuests, onGenerateInitialQuests, isRefreshing, lastEvolutionDate, refreshCount, decayResult, onTakeRecovery, setPage
 }) => {
   const [isMounted, setIsMounted] = useState(false);
   const [isChartVisible, setIsChartVisible] = useState(false);
@@ -64,7 +66,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   ], [stats]);
   const [userNote, setUserNote] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
-  const [verificationFeedback, setVerificationFeedback] = useState<{success: boolean, text: string} | null>(null);
+  const [verificationFeedback, setVerificationFeedback] = useState<{ success: boolean, text: string } | null>(null);
   const [showMoodModal, setShowMoodModal] = useState(false);
 
   useEffect(() => {
@@ -96,14 +98,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
-  const isClaimedToday = () => {
-    if (!lastStreakDate) return false;
-    const lastDate = new Date(lastStreakDate);
-    const today = new Date();
-    return lastDate.getDate() === today.getDate() &&
-           lastDate.getMonth() === today.getMonth() &&
-           lastDate.getFullYear() === today.getFullYear();
-  };
+  const isClaimedToday = () => isToday(lastStreakDate);
 
   const claimed = isClaimedToday();
 
@@ -122,15 +117,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
     if (!decayResult || decayResult.status === 'ok') return null;
     return (
       <AnimatePresence>
-        <motion.div 
-          initial={{ opacity: 0, x: 50, scale: 0.9 }} 
+        <motion.div
+          initial={{ opacity: 0, x: 50, scale: 0.9 }}
           animate={{ opacity: 1, x: 0, scale: 1 }}
           exit={{ opacity: 0, x: 50, scale: 0.9 }}
           className="fixed bottom-24 md:bottom-8 right-4 md:right-8 z-50 max-w-[340px] w-[calc(100vw-32px)] glass-panel p-6 border-orange-500/30 shadow-[0_20px_50px_rgba(0,0,0,0.5),0_0_20px_rgba(249,115,22,0.1)] overflow-hidden group"
         >
           {/* Background Glow */}
           <div className="absolute -top-10 -left-10 w-32 h-32 bg-orange-500/10 blur-[40px] rounded-full pointer-events-none" />
-          
+
           <div className="relative z-10 space-y-4">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center shrink-0 border border-orange-500/20">
@@ -145,8 +140,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             <div className="flex items-center gap-3 pt-2">
-              <button 
-                onClick={onTakeRecovery} 
+              <button
+                onClick={onTakeRecovery}
                 className="flex-1 py-3 bg-white text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-lg"
               >
                 Ambil Misi
@@ -161,7 +156,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="min-h-screen text-white pb-24 pt-32 md:pt-20">
       <DecayStatusBanner />
-      
+
       {/* SUB-HEADER BAR */}
       <div className="fixed top-16 md:top-0 left-0 md:left-[280px] right-0 z-40 bg-rpg-black/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-14 flex items-center gap-3 md:gap-4 overflow-x-auto hide-scrollbar">
@@ -170,7 +165,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span className="hidden sm:inline text-xs font-black text-neutral-200 tracking-widest uppercase">Pusat Misi</span>
           </div>
           <div className="hidden sm:block w-px h-6 bg-white/10" />
-          
+
           <div className="flex-1 flex items-center gap-2 md:gap-4 px-3 md:px-4 bg-white/5 rounded-2xl border border-white/5 h-10 group min-w-[120px]">
             <Star className="w-4 h-4 text-harta fill-harta/20 shrink-0" />
             <div className="flex-1 h-1.5 bg-rpg-black rounded-full overflow-hidden">
@@ -180,15 +175,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span className="text-[10px] font-black text-neutral-500 font-mono shrink-0">{xp} / {level * 1000}</span>
           </div>
 
-          <motion.button 
+          <motion.button
             whileHover={!claimed ? { scale: 1.05 } : {}}
             whileTap={!claimed ? { scale: 0.95 } : {}}
             onClick={() => !claimed && onClaimStreak()}
             disabled={claimed}
             className={cn(
               "flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 rounded-full border transition-all shrink-0",
-              claimed 
-                ? "bg-harta/10 border-harta/20 text-harta opacity-60" 
+              claimed
+                ? "bg-harta/10 border-harta/20 text-harta opacity-60"
                 : "bg-harta text-black border-harta shadow-[0_0_15px_rgba(255,193,7,0.3)] animate-pulse"
             )}
           >
@@ -202,31 +197,34 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
-        
+
         {/* LEFT COLUMN: ACTION CENTER */}
-        <div className="space-y-8">
+        <div className="space-y-8 min-w-0">
           {/* ORACLE SECTION */}
-          <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-rpg-card to-rpg-black border border-white/5 p-8 md:p-10 shadow-2xl">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-jiwa/10 blur-[100px] rounded-full -mr-20 -mt-20 opacity-30" />
-            <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center md:items-start">
-              <div className="w-20 h-20 md:w-24 md:h-24 bg-white/5 rounded-[28px] flex items-center justify-center border border-white/10 shrink-0 shadow-inner">
-                <Brain className="w-10 h-10 text-jiwa" />
-              </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-center md:justify-start gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-jiwa">Oracle's Word</span>
-                  <div className="w-1.5 h-1.5 rounded-full bg-jiwa animate-pulse" />
+          <section className="relative overflow-hidden rounded-[40px] bg-gradient-to-br from-rpg-card to-rpg-black border border-white/10 p-10 md:p-14 shadow-[0_30px_100px_rgba(0,0,0,0.5)] group">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-jiwa/10 blur-[120px] rounded-full -mr-32 -mt-32 opacity-50 group-hover:bg-jiwa/20 transition-colors duration-1000" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-ilmu/5 blur-[100px] rounded-full -ml-20 -mb-20 opacity-30" />
+            
+            <div className="relative z-10 flex flex-col gap-10 items-center md:items-start text-center md:text-left">
+              <div className="space-y-6 flex-1">
+                <div className="flex items-center justify-center md:justify-start gap-4">
+                  <div className="px-4 py-1.5 bg-jiwa/10 rounded-full border border-jiwa/20 flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-jiwa animate-ping" />
+                    <span className="text-[11px] font-black uppercase tracking-[0.4em] text-jiwa">Arutha's Prophecy</span>
+                  </div>
                 </div>
-                <h2 className="text-2xl md:text-4xl font-black italic text-neutral-200 leading-tight">
+                
+                <h2 className="text-3xl md:text-5xl font-black italic text-white leading-[1.1] tracking-tighter drop-shadow-2xl">
                   "Kekuatan sejati lahir saat kamu memilih untuk tetap bergerak meski arah belum terlihat."
                 </h2>
-                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
-                   <div className="flex items-center gap-2 px-3 py-1.5 bg-jiwa/10 rounded-xl border border-jiwa/20 text-[10px] font-black text-jiwa uppercase">
-                     <Zap className="w-3 h-3" /> Aura Fokus
-                   </div>
-                   <div className="flex items-center gap-2 px-3 py-1.5 bg-ilmu/10 rounded-xl border border-ilmu/20 text-[10px] font-black text-ilmu uppercase">
-                     <Sparkles className="w-3 h-3" /> Berkah Kebijaksanaan
-                   </div>
+                
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-4">
+                  <div className="flex items-center gap-2.5 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-all text-[10px] font-black text-neutral-300 uppercase tracking-widest cursor-default">
+                    <Zap className="w-4 h-4 text-harta" /> Aura Fokus Aktif
+                  </div>
+                  <div className="flex items-center gap-2.5 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-all text-[10px] font-black text-neutral-300 uppercase tracking-widest cursor-default">
+                    <Sparkles className="w-4 h-4 text-ilmu" /> Berkah Terjaga
+                  </div>
                 </div>
               </div>
             </div>
@@ -251,9 +249,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
               {quests.length > 0 ? (
                 quests.map((quest) => (
                   <motion.div key={quest.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} whileHover={{ y: -5 }}
-                    className={cn("glass-panel p-6 md:p-8 border-l-4 group transition-all flex flex-col", 
+                    className={cn("glass-panel p-6 md:p-8 border-l-4 group transition-all flex flex-col",
                       quest.completed ? "opacity-60 grayscale border-neutral-600" : "border-jiwa hover:border-white shadow-xl hover:shadow-jiwa/5")}>
-                    
+
                     <div className="flex justify-between items-start mb-5">
                       <span className="text-xs font-black uppercase tracking-widest text-neutral-400 bg-black/20 px-3 py-1.5 rounded-lg">{quest.stat}</span>
                       <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/5">
@@ -261,14 +259,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <span className="text-xs font-black text-neutral-200">+{quest.xp} XP</span>
                       </div>
                     </div>
-                    
+
                     <h4 className="text-2xl md:text-3xl font-black italic mb-4 group-hover:text-jiwa text-neutral-100 transition-colors leading-tight">
                       {quest.title}
                     </h4>
                     <p className="text-sm md:text-base text-neutral-400 mb-8 leading-relaxed flex-1 font-medium">
                       {quest.desc}
                     </p>
-                    
+
                     <div className="mt-auto">
                       {!quest.completed ? (
                         <button onClick={() => setActiveQuestInput(quest.id)} className="w-full py-3.5 bg-white text-black text-xs md:text-sm font-black uppercase tracking-widest rounded-xl hover:scale-[1.02] transition-all shadow-lg">
@@ -291,8 +289,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </section>
         </div>
 
-        {/* RIGHT COLUMN: CHARACTER STATS */}
-        <div className="space-y-8">
+        {/* RIGHT COLUMN: CHARACTER HUD */}
+        <div className="space-y-8 min-w-0">
           <section className={cn(
             "glass-panel p-8 bg-gradient-to-b from-rpg-card to-rpg-black/60 transition-all duration-1000",
             getRankGlow(avgStats)
@@ -304,21 +302,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <span className="text-[10px] font-black tracking-widest opacity-60 uppercase">Puncak: {highestDim}</span>
               </div>
             </div>
-            
-            <div className="w-full aspect-square max-w-[280px] mx-auto relative mb-4 h-[280px]">
+
+            <div className="w-full h-[280px] max-w-[280px] mx-auto relative mb-4">
               <div className="absolute inset-0 bg-current/5 blur-[40px] rounded-full pointer-events-none" style={{ color: dominantColor }} />
               {isChartVisible && (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" aspect={1} debounce={200}>
                   <RadarChart cx="50%" cy="50%" outerRadius="70%" data={chartData}>
                     <PolarGrid stroke="#333" />
                     <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                     <PolarAngleAxis dataKey="subject" tick={{ fill: '#888', fontSize: 10, fontWeight: '900' }} />
-                    <Radar 
-                      name="Player" 
-                      dataKey="A" 
-                      stroke={dominantColor} 
-                      fill={dominantColor} 
-                      fillOpacity={0.3} 
+                    <Radar
+                      name="Player"
+                      dataKey="A"
+                      stroke={dominantColor}
+                      fill={dominantColor}
+                      fillOpacity={0.3}
                       strokeWidth={3}
                       isAnimationActive={false}
                     />
@@ -346,8 +344,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <span className="text-sm italic text-neutral-300">{dim.val}%</span>
                   </div>
                   <div className="h-1.5 bg-white/5 rounded-full overflow-hidden shadow-inner">
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${dim.val}%` }} 
-                      className={cn("h-full relative", dim.bar)} 
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${dim.val}%` }}
+                      className={cn("h-full relative", dim.bar)}
                     >
                       <div className="absolute inset-0 bg-white/20 animate-pulse" />
                     </motion.div>
@@ -366,17 +364,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div className="p-2 bg-ilmu/10 text-ilmu rounded-lg"><TrendingUp className="w-4 h-4" /></div>
               <h3 className="text-xs font-black uppercase tracking-widest text-neutral-300">Progress History</h3>
             </div>
-            
-            <div className="w-full h-48">
-              {statHistory && statHistory.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
+
+            <div className="w-full min-h-[192px]">
+              {statHistory && statHistory.length > 0 && isChartVisible ? (
+                <ResponsiveContainer width="100%" aspect={2} debounce={200}>
                   <LineChart data={statHistory}>
-                    <XAxis 
-                      dataKey="created_at" 
-                      hide 
+                    <XAxis
+                      dataKey="created_at"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 8, fontWeight: 'bold' }}
+                      tickFormatter={(val) => new Date(val).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' })}
+                      minTickGap={30}
                     />
                     <YAxis hide domain={[0, 100]} />
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }}
                       itemStyle={{ fontWeight: 'bold' }}
                       labelFormatter={(label) => new Date(label).toLocaleDateString()}
@@ -395,17 +397,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
               )}
             </div>
             <div className="flex justify-center gap-3 mt-4">
-               {['jiwa', 'raga', 'harta', 'ilmu', 'karma'].map(dim => (
-                 <div key={dim} className="flex items-center gap-1.5">
-                   <div className={cn("w-1.5 h-1.5 rounded-full", 
-                     dim === 'jiwa' ? 'bg-jiwa' : 
-                     dim === 'raga' ? 'bg-raga' : 
-                     dim === 'harta' ? 'bg-harta' : 
-                     dim === 'ilmu' ? 'bg-ilmu' : 'bg-karma'
-                   )} />
-                   <span className="text-[8px] font-black text-neutral-500 uppercase">{dim}</span>
-                 </div>
-               ))}
+              {['jiwa', 'raga', 'harta', 'ilmu', 'karma'].map(dim => (
+                <div key={dim} className="flex items-center gap-1.5">
+                  <div className={cn("w-1.5 h-1.5 rounded-full",
+                    dim === 'jiwa' ? 'bg-jiwa' :
+                      dim === 'raga' ? 'bg-raga' :
+                        dim === 'harta' ? 'bg-harta' :
+                          dim === 'ilmu' ? 'bg-ilmu' : 'bg-karma'
+                  )} />
+                  <span className="text-[8px] font-black text-neutral-500 uppercase">{dim}</span>
+                </div>
+              ))}
             </div>
           </section>
 
@@ -456,6 +458,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         )}
       </AnimatePresence>
 
+      <AIChatWidget userId={userId} username={name} stats={stats} />
     </div>
   );
 };

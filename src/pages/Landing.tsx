@@ -186,7 +186,7 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
               
               <div className="absolute inset-0 p-8 md:p-16 flex items-center justify-center">
                 {isMounted && (
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" aspect={1} debounce={200}>
                     <RadarChart cx="50%" cy="50%" outerRadius="80%" data={[
                       { subject: 'JIWA', A: 85 }, { subject: 'RAGA', A: 70 }, { subject: 'HARTA', A: 50 }, { subject: 'ILMU', A: 95 }, { subject: 'KARMA', A: 65 },
                     ]}>

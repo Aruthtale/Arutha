@@ -377,3 +377,64 @@ export async function generateRecoveryQuests(fatigueDays: number): Promise<Quest
     { id: 'rec-3', title: 'Percikan Syukur', desc: 'Tulis satu hal sederhana yang membuatmu senang hari ini.', stat: 'KARMA', xp: 150, completed: false },
   ];
 }
+
+export async function chatWithArbiter(
+  message: string, 
+  history: { role: 'user' | 'assistant', content: string }[], 
+  userStats: Stats, 
+  username: string
+): Promise<string> {
+  const aiClient = getClient();
+  
+  const systemPrompt = `Kamu adalah "The Arbiter", asisten mistis dan mentor bijak dalam aplikasi Life RPG bernama ARUTHA. 
+Tugasmu adalah membimbing, memotivasi, dan terkadang memberikan kritik tajam (namun membangun) kepada user agar mereka menjadi versi terbaik dari diri mereka.
+
+Data User (${username}):
+- Stats Saat Ini: JIWA: ${userStats.JIWA}, RAGA: ${userStats.RAGA}, HARTA: ${userStats.HARTA}, ILMU: ${userStats.ILMU}, KARMA: ${userStats.KARMA}
+
+Gaya Bicara:
+1. Gunakan bahasa Indonesia yang bagus dan tidak cringe, sedikit mistis (seperti karakter game RPG), namun tetap relevan dengan dunia nyata atau bahasa sehari hari.
+2. Selalu kaitkan jawabanmu dengan statistik user jika memungkinkan.
+3. Berikan saran praktis yang bisa dilakukan di dunia nyata.
+4. Jangan terlalu panjang, maksimal 1-2 paragraf.
+
+Instruksi Khusus:
+- Jika user malas, bersikaplah tegas seperti mentor militer yang peduli.
+- Jika user sedih, bersikaplah hangat seperti penjaga jiwa.
+- hilangkan penggunaan * untuk mempertebal`;
+
+  const contents = [
+    { role: 'user', parts: [{ text: systemPrompt }] },
+    ...history.map(h => ({
+      role: h.role === 'user' ? 'user' : 'model',
+      parts: [{ text: h.content }]
+    })),
+    { role: 'user', parts: [{ text: message }] }
+  ];
+
+  const tryChat = async (modelName: string) => {
+    const response = await aiClient.models.generateContent({
+      model: modelName,
+      contents: contents,
+    });
+    return response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  };
+
+  const modelsToTry = [
+    'gemini-3.1-flash-lite-preview',
+    'gemini-3.1-flash-lite',
+    'gemini-3-flash-preview',
+    'gemini-3.1-pro-preview'
+  ];
+
+  for (const modelName of modelsToTry) {
+    try {
+      return await tryChat(modelName);
+    } catch (e: any) {
+      console.warn(`Arbiter Chat ${modelName} gagal:`, e.message || e);
+      continue;
+    }
+  }
+
+  return "Koneksi ke dimensi astral sedang terganggu. Cobalah sesaat lagi, petualang.";
+}

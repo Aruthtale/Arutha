@@ -4,6 +4,7 @@ import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from './lib/supabase';
+import { getLocalTimestamp, isToday, isNewDay, extractDate } from './lib/dateUtils';
 import { type CharacterAnalysis, generateDailyQuests, verifyQuestCompletion, generateRecoveryQuests, type Quest, type Stats, type Dimension } from './lib/gemini';
 import { Navbar } from './components/Navbar';
 import { Landing } from './pages/Landing';
@@ -117,31 +118,48 @@ export default function App() {
 
     try {
       const userEmail = session.user.email || `user_${session.user.id.slice(0, 8)}@arutha.local`;
-      const now = new Date().toISOString();
-      // Gunakan UPSERT dengan target 'email'
-      // Ini akan otomatis mengupdate jika email sudah ada (Data Healing)
-      // atau membuat baru jika belum ada.
-      const { data: upsertedList, error: upsertError } = await supabase
-        .from('arutha_user')
-        .upsert({
-          id: crypto.randomUUID(),
-          supabase_id: session.user.id,
-          email: userEmail,
-          username: displayName,
-          updated_at: now,
-        }, { 
-          onConflict: 'email',
-          ignoreDuplicates: false 
-        })
-        .select()
-        .limit(1);
+      const now = getLocalTimestamp();
 
-      if (upsertError) {
-        console.error("Upsert User Error:", upsertError.message);
-        throw upsertError;
+      // 1. Coba ambil user berdasarkan supabase_id (paling akurat)
+      let { data: userData, error: fetchError } = await supabase
+        .from('arutha_user')
+        .select('*')
+        .eq('supabase_id', session.user.id)
+        .single();
+
+      // 2. Jika tidak ada, coba cari berdasarkan email (data healing untuk user lama)
+      if (!userData) {
+        const { data: emailUser } = await supabase
+          .from('arutha_user')
+          .select('*')
+          .eq('email', userEmail)
+          .single();
+        
+        if (emailUser) {
+          userData = emailUser;
+          // Update supabase_id jika belum ada
+          await supabase.from('arutha_user').update({ supabase_id: session.user.id }).eq('id', emailUser.id);
+        }
       }
 
-      const userData = upsertedList?.[0];
+      // 3. Jika benar-benar tidak ada, baru buat baru
+      if (!userData) {
+        const { data: newList, error: insertError } = await supabase
+          .from('arutha_user')
+          .insert({
+            supabase_id: session.user.id,
+            email: userEmail,
+            username: displayName,
+            updated_at: now,
+            level: 1,
+            xp: 0,
+            streak: 0
+          })
+          .select();
+        
+        if (insertError) throw insertError;
+        userData = newList?.[0];
+      }
 
       if (userData) {
         setDbUserId(userData.id);
@@ -153,25 +171,26 @@ export default function App() {
         const decayResult = await checkAndApplyDecay(userData.id);
         setDecayResult(decayResult);
 
-        // logic Streak
+        // logic Streak — menggunakan waktu lokal device
         const lsd = userData.last_streak_date;
         const currentStreak = userData.streak || 0;
         setLastStreakDate(lsd ? String(lsd) : null);
 
         if (lsd) {
-          const lastDate = new Date(lsd);
-          const today = new Date();
-          
-          // Reset time to midnight for comparison
-          const lastDateMidnight = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
-          const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-          
-          const diffDays = Math.floor((todayMidnight.getTime() - lastDateMidnight.getTime()) / (1000 * 60 * 60 * 24));
-          
-          if (diffDays > 1) {
-            // Missed more than 1 day
-            setStreak(0);
-            await supabase.from('arutha_user').update({ streak: 0 }).eq('id', userData.id);
+          // Hitung selisih hari berdasarkan tanggal lokal (YYYY-MM-DD substring)
+          const lastDateStr = extractDate(lsd);
+          const todayStr = extractDate(getLocalTimestamp());
+          if (lastDateStr && todayStr && lastDateStr < todayStr) {
+            // Hitung selisih hari
+            const lastD = new Date(lastDateStr + 'T00:00:00');
+            const todayD = new Date(todayStr + 'T00:00:00');
+            const diffDays = Math.round((todayD.getTime() - lastD.getTime()) / (1000 * 60 * 60 * 24));
+            if (diffDays > 1) {
+              setStreak(0);
+              await supabase.from('arutha_user').update({ streak: 0 }).eq('supabase_id', session.user.id);
+            } else {
+              setStreak(currentStreak);
+            }
           } else {
             setStreak(currentStreak);
           }
@@ -183,11 +202,9 @@ export default function App() {
         setLastNameChange(userData.last_name_change ? String(userData.last_name_change) : null);
 
         // Reset Refresh Count jika sudah berganti hari
-        const lastRefreshDateStr = userData.last_refresh_date || now;
-        const lastRefresh = new Date(lastRefreshDateStr);
-        const isNewDay = lastRefresh.getDate() !== new Date().getDate();
-        setRefreshCount(isNewDay ? 0 : (userData.refresh_count || 0));
-        if (isNewDay) refreshLockRef.current = false;
+        const refreshNewDay = isNewDay(userData.last_refresh_date);
+        setRefreshCount(refreshNewDay ? 0 : (userData.refresh_count || 0));
+        if (refreshNewDay) refreshLockRef.current = false;
 
         setUserContext({ usia: userData.usia, gender: userData.gender, username: displayName });
 
@@ -203,7 +220,17 @@ export default function App() {
           .order('created_at', { ascending: false })
           .limit(1);
 
-        const profileData = profiles?.[0];
+        let profileData = profiles?.[0];
+
+        // --- DATA HEALING: Cari berdasarkan user_id, jika gagal baru email ---
+        if (!profileData && userData.email) {
+          const { data: altProfiles } = await supabase
+            .from('character_profile')
+            .select('*')
+            .eq('user_id', userData.id)
+            .limit(1);
+          profileData = altProfiles?.[0];
+        }
 
         if (profileData) {
           setLastEvolutionDate(profileData.created_at);
@@ -224,9 +251,7 @@ export default function App() {
           });
           setStats(loadedStats);
 
-          const lastUpdateStr = userData.last_quest_update || new Date(0).toISOString();
-          const lastUpdate = new Date(lastUpdateStr);
-          const isQuestExpired = lastUpdate.getDate() !== new Date().getDate();
+          const isQuestExpired = isNewDay(userData.last_quest_update);
 
           if (isQuestExpired || !userData.active_quests || (userData.active_quests as any[]).length === 0) {
             const aiQuests = await generateDailyQuests(loadedStats);
@@ -235,19 +260,16 @@ export default function App() {
             refreshLockRef.current = false;
             await supabase.from('arutha_user').update({
               active_quests: aiQuests,
-              last_quest_update: new Date().toISOString(),
+              last_quest_update: getLocalTimestamp(),
               refresh_count: 0,
-              last_refresh_date: new Date().toISOString()
-            }).eq('id', userData.id);
+              last_refresh_date: getLocalTimestamp()
+            }).eq('supabase_id', session.user.id);
           } else {
             setQuests(userData.active_quests as Quest[]);
             if ((userData.refresh_count || 0) >= 1) {
               refreshLockRef.current = true;
             }
           }
-
-          const decay = await checkAndApplyDecay(userData.id);
-          setDecayResult(decay);
 
           fetchStatHistory(userData.id);
 
@@ -284,11 +306,11 @@ export default function App() {
   };
 
   const syncProgress = async (newLevel: number, newXp: number, newStats: Stats, updatedQuests?: Quest[]) => {
-    if (!dbUserId) return;
+    if (!session || !dbUserId) return;
     try {
       const updateData: any = { level: newLevel, xp: newXp };
       if (updatedQuests) updateData.active_quests = updatedQuests;
-      await supabase.from('arutha_user').update(updateData).eq('id', dbUserId);
+      await supabase.from('arutha_user').update(updateData).eq('supabase_id', session.user.id);
 
       const { data: profiles } = await supabase.from('character_profile').select('id').eq('user_id', dbUserId).order('created_at', { ascending: false }).limit(1);
       const latestProfile = profiles?.[0];
@@ -298,12 +320,11 @@ export default function App() {
         }).eq('id', latestProfile.id);
       }
 
-      const today = new Date().toISOString().split('T')[0];
-      const { data: existingLogs } = await supabase
+      const { data: lastLogs } = await supabase
         .from('stat_history')
-        .select('id')
+        .select('id, created_at')
         .eq('user_id', dbUserId)
-        .gte('created_at', today)
+        .order('created_at', { ascending: false })
         .limit(1);
 
       const historyData = {
@@ -314,16 +335,20 @@ export default function App() {
         karma: Math.round(newStats.KARMA || 0)
       };
 
-      if (existingLogs && existingLogs.length > 0) {
-        await supabase.from('stat_history').update(historyData).eq('id', existingLogs[0].id);
+      const isTodayLog = lastLogs && lastLogs.length > 0 && 
+        isToday(lastLogs[0].created_at);
+
+      if (isTodayLog) {
+        await supabase.from('stat_history').update(historyData).eq('id', lastLogs[0].id);
       } else {
         await supabase.from('stat_history').insert({
           id: crypto.randomUUID(),
           user_id: dbUserId,
           ...historyData
         });
-        fetchStatHistory(dbUserId);
       }
+      // Selalu fetch ulang agar UI (grafik) langsung terupdate
+      fetchStatHistory(dbUserId);
 
     } catch (err: any) { 
       console.error("Sync error:", err.message || err); 
@@ -388,7 +413,7 @@ export default function App() {
 
         await supabase
           .from('arutha_user')
-          .update({ active_quests: aiQuests, last_quest_update: new Date().toISOString() })
+          .update({ active_quests: aiQuests, last_quest_update: getLocalTimestamp() })
           .eq('id', userData.id);
       }
     } catch (err) {
@@ -454,7 +479,7 @@ export default function App() {
       // Reset count to 1 if we were previously locked but the cooldown passed
       const isCurrentlyLocked = nameChangeCount >= 3;
       const newCount = isCurrentlyLocked ? 1 : nameChangeCount + 1;
-      const now = new Date().toISOString();
+      const now = getLocalTimestamp();
 
       // 2. Update Auth Metadata (Try but don't fail the whole process if it's just metadata)
       try {
@@ -517,10 +542,10 @@ export default function App() {
 
       await supabase.from('arutha_user').update({
         active_quests: aiQuests,
-        last_quest_update: new Date().toISOString(),
+        last_quest_update: getLocalTimestamp(),
         refresh_count: 0, // Still have 1 free refresh
-        last_refresh_date: new Date().toISOString()
-      }).eq('id', dbUserId);
+        last_refresh_date: getLocalTimestamp()
+      }).eq('supabase_id', session?.user.id);
     } catch (err) {
       console.error("Generate initial quests error:", err);
     } finally {
@@ -541,10 +566,10 @@ export default function App() {
 
       await supabase.from('arutha_user').update({
         active_quests: aiQuests,
-        last_quest_update: new Date().toISOString(),
+        last_quest_update: getLocalTimestamp(),
         refresh_count: 1,
-        last_refresh_date: new Date().toISOString()
-      }).eq('id', dbUserId);
+        last_refresh_date: getLocalTimestamp()
+      }).eq('supabase_id', session?.user.id);
     } catch (err) {
       console.error("Refresh error:", err);
       // Jika gagal, kembalikan state agar user bisa coba lagi
@@ -558,17 +583,17 @@ export default function App() {
 
   const handleClaimStreak = async () => {
     if (!dbUserId) return;
-    const now = new Date();
+    const nowLocal = getLocalTimestamp();
     const newStreak = streak + 1;
     
     setStreak(newStreak);
-    setLastStreakDate(now.toISOString());
+    setLastStreakDate(nowLocal);
     
     try {
       await supabase.from('arutha_user').update({
         streak: newStreak,
-        last_streak_date: now.toISOString()
-      }).eq('id', dbUserId);
+        last_streak_date: nowLocal
+      }).eq('supabase_id', session?.user.id);
       
       // Bonus XP for daily streak
       addXp(100);

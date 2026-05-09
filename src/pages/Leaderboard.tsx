@@ -133,8 +133,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, onBack,
                   onClick={() => setCategory(cat.id)}
                   className={cn(
                     "flex flex-col items-center justify-center p-4 rounded-2xl border transition-all gap-2",
-                    category === cat.id 
-                      ? "bg-white/10 border-white/20 shadow-xl" 
+                    category === cat.id
+                      ? "bg-white/10 border-white/20 shadow-xl"
                       : "bg-white/5 border-white/5 opacity-50 hover:opacity-100"
                   )}
                 >
@@ -221,7 +221,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, onBack,
                   {/* Mobile specific category stat */}
                   <div className="sm:hidden text-right">
                     {category !== 'OVERALL' ? (
-                       <span className={cn("text-lg font-black italic", categories.find(c => c.id === category)?.color)}>
+                      <span className={cn("text-lg font-black italic", categories.find(c => c.id === category)?.color)}>
                         {entry[category.toLowerCase() as keyof LeaderboardEntry]}%
                       </span>
                     ) : (
@@ -237,9 +237,9 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, onBack,
         {/* Footer Note */}
         {!isPreview ? (
           <div className="mt-12 p-8 border-2 border-dashed border-white/5 rounded-[32px] text-center opacity-40">
-             <p className="text-[10px] font-black tracking-widest uppercase leading-loose">
-               "Takhta ini hanya untuk mereka yang konsisten menaklukkan <br /> dimensi diri setiap hari."
-             </p>
+            <p className="text-[10px] font-black tracking-widest uppercase leading-loose">
+              "Takhta ini hanya untuk mereka yang konsisten menaklukkan <br /> dimensi diri setiap hari."
+            </p>
           </div>
         ) : (
           <div className="mt-10 flex flex-col items-center gap-6">
