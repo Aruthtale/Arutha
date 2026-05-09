@@ -95,21 +95,44 @@ Halaman Profile kini berfungsi sebagai **"Character Sheet"** premium yang menyim
 
 ---
 
-## VIII. UPDATE TERBARU (9 Mei 2026): REFINEMENT UX & EXPANSI ADMIN
+## VIII. UPDATE TERBARU (9 Mei 2026 - Pagi/Siang): REFINEMENT UX & EXPANSI ADMIN
 1. **Refinement Halaman Settings & Informasi Aplikasi:**
-   * **Two-Column Grid Layout**: Mendesain ulang struktur halaman Settings menjadi 2 kolom responsif. Kolom kiri untuk pengaturan akun, kolom kanan khusus untuk "Informasi Aplikasi" yang mencakup Panduan, Definisi 5 Dimensi, dan Fitur Utama.
-   * **Mobile Bottom Sheet Modal**: Untuk layar HP (mobile), informasi aplikasi dipadatkan menjadi sebuah tombol di atas *Danger Zone*. Saat ditekan, tombol ini memunculkan jendela laci dari bawah layar (*Bottom Sheet Modal*) agar tampilan tetap rapi tanpa harus melakukan *scroll* panjang.
+   * **Two-Column Grid Layout**: Mendesain ulang struktur halaman Settings menjadi 2 kolom responsif.
+   * **Mobile Bottom Sheet Modal**: Informasi aplikasi dipadatkan menjadi modal laci bawah untuk efisiensi ruang di layar mobile.
 
 2. **Peningkatan Admin Dashboard (Control Center):**
-   * **View Profile (AI Personality)**: Admin kini bisa melihat Profil Kepribadian AI (Tipe, Judul, Deskripsi, dan Statistik 5 Dimensi) dari masing-masing user langsung dari tabel dengan mengklik tombol "View" (ikon 👁️).
-   * **Demographic Data**: Tabel admin sekarang menampilkan Usia dan Gender dari user untuk analisis data pemain yang lebih baik.
-   * **Level Up Instan**: Menambahkan tombol "+LVL" untuk langsung meningkatkan level user secara paksa (berguna untuk testing/event).
-   * **Safe Cascade Delete**: Memperbaiki dan melengkapi fungsi Hapus Akun agar secara aman menghapus riwayat stat (`stat_history`) dan profil AI (`character_profile`) terlebih dahulu sebelum menghapus data pemain dari database.
-   * **Deteksi Row Level Security (RLS)**: Menambahkan deteksi dan notifikasi *Alert* otomatis jika proses Delete diblokir oleh sistem keamanan RLS Supabase.
+   * **View Profile (AI Personality)**: Fitur inspeksi mendalam untuk melihat statistik dan narasi AI setiap user.
+   * **Demographic Data**: Penambahan kolom Usia dan Gender pada tabel admin.
+   * **Level Up Instan**: Tombol "+LVL" untuk testing level-up secara cepat.
+   * **Safe Cascade Delete**: Implementasi penghapusan data bertingkat (history -> profile -> user) untuk menjaga integritas database.
 
 3. **Penyelesaian Bug Kritis UI/UX:**
-   * **Mobile Sub-Header Fix**: Merapikan komponen pendukung di Navbar dan Dashboard (menyembunyikan elemen non-esensial di layar kecil) menggunakan utility `.hide-scrollbar` agar layout tidak berantakan.
-   * **Radar Chart Stabilization**: Mengeliminasi peringatan membandel `width(-1)` dari library Recharts di Dashboard dengan menyematkan properti `debounce={50}`, `id`, dan dimensi absolut pada `ResponsiveContainer`.
+   * **Radar Chart Stabilization**: Resolusi total peringatan `width(-1)` menggunakan kontainer absolut dan debounce.
 
 ---
-**Status Terakhir (9 Mei 2026):** *Aplikasi telah melalui tahapan final polishing UX mobile dan perluasan fitur Admin Dashboard. Seluruh peringatan konsol (warnings) dan isu tata letak telah tertangani.*
+
+## IX. UPDATE TERBARU (9 Mei 2026 - Malam): CINEMATIC UX, SOCIAL PROOF & STABILISASI DATA
+
+### 1. Cinematic & Branded Experience
+*   **Cinematic SplashScreen**: Implementasi layar pembuka dengan animasi *glow* logo Arutha, partikel latar belakang, dan kutipan motivasi acak dari AI. Berfungsi sebagai *data-loading cover* yang mewah.
+*   **Global Frame Optimization**: 
+    *   **Safe Area Support**: Penanganan otomatis untuk *notch* (poni) kamera dan navigasi bar bawah pada Android.
+    *   **Noise Texture**: Penambahan tekstur butiran (*Grainy SVG*) secara inline untuk kedalaman visual tema gelap.
+    *   **Smooth Transitions**: Peningkatan durasi transisi antar halaman (500ms) untuk kesan yang lebih cair dan elegan.
+    *   **Haptic Visuals**: Efek *active scale* pada navigasi mobile untuk memberikan sensasi responsif seperti aplikasi native.
+
+### 2. Social Proof & Acquisition
+*   **Leaderboard Preview (Landing Page)**: Integrasi cuplikan "Top 3 Pahlawan" di Landing Page. Menampilkan status tertinggi pemain Arutha secara publik tanpa melanggar privasi penuh, guna memancing minat calon pemain baru.
+
+### 3. Stabilisasi & Keamanan Data
+*   **Fix Stat History 400 Error**: Penanganan error *Bad Request* pada Supabase dengan pembulatan integer (`Math.round`) dan implementasi manual `crypto.randomUUID()` untuk ID history.
+*   **Anti-Duplication Logic**: Memperbaiki bug duplikasi pahlawan dengan mengganti sistem `INSERT` murni menjadi logika pengecekan profil lama di `handleOnboardingComplete`. Sistem kini akan memperbarui profil yang ada jika ditemukan kesamaan `user_id`.
+*   **Strict Profile Validation**: Mewajibkan pengisian **Gender** (via dropdown pilihan) dan **Umur** di halaman pendaftaran. Tombol "Lanjutkan" akan terkunci hingga data ini lengkap.
+
+### 4. Performa Native Android (Local Build Mode)
+*   **Zero-Latency Loading**: Mengalihkan konfigurasi `capacitor.config.ts` dari mode URL Vercel ke mode **Local Web Dir** (`dist`). 
+*   **Black Background Fix**: Mengubah `backgroundColor` native Android dari putih ke hitam pekat (`#000000`) untuk menghilangkan kilatan putih saat aplikasi pertama kali dibuka.
+*   **Workflow Baru**: Diperkenalkannya alur `npm run build` -> `npx cap sync` untuk update kode, memberikan stabilitas akses 100% bahkan dalam kondisi jaringan tidak stabil.
+
+---
+**Status Terakhir (9 Mei 2026 - 20:30 WIB):** *Arutha telah bertransformasi dari sekadar website menjadi aplikasi mobile yang solid dengan pengalaman sinematik. Duplikasi data telah ditangani, dan performa startup Android telah dioptimalkan secara maksimal.*

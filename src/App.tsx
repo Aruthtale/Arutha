@@ -591,7 +591,7 @@ export default function App() {
     }
   };
 
-  const hideNavbar = page === 'ONBOARDING' || page === 'CHARACTER_REVEAL' || page === 'LOGIN' || page === 'REGISTER' || page === 'COMPLETE_PROFILE' || (page === 'LANDING' && !session);
+  const hideNavbar = page === 'ONBOARDING' || page === 'CHARACTER_REVEAL' || page === 'LOGIN' || page === 'REGISTER' || page === 'COMPLETE_PROFILE';
 
   return (
     <div className="min-h-screen bg-rpg-black text-white selection:bg-white selection:text-black overflow-x-hidden">
@@ -676,7 +676,7 @@ export default function App() {
           {page === 'LEADERBOARD' && (
             <Leaderboard 
               currentUserId={dbUserId || ''} 
-              onBack={() => setPage('DASHBOARD')} 
+              onBack={() => setPage(session ? 'DASHBOARD' : 'LANDING')} 
             />
           )}
           {page === 'ADMIN' && isAdmin(session?.user.email) && (

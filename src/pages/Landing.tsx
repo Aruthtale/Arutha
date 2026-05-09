@@ -224,7 +224,7 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
         <div ref={leaderboardRef} className="scroll-mt-32">
           <Leaderboard 
             isPreview={true} 
-            onJoin={() => setPage(session ? 'DASHBOARD' : 'REGISTER')} 
+            onJoin={() => setPage('LEADERBOARD')} 
           />
         </div>
 

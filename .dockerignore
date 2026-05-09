@@ -1,0 +1,9 @@
+node_modules
+dist
+.git
+.env
+android
+capacitor.config.ts
+*.md
+Dockerfile
+.gitignore
