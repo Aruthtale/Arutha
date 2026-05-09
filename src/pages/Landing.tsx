@@ -1,12 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Zap, 
-  ArrowRight, 
-  TrendingUp, 
-  Heart, 
-  Shield, 
-  Users 
+import {
+  Zap,
+  ArrowRight,
+  TrendingUp,
+  Heart,
+  Shield,
+  Users,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
@@ -40,208 +41,251 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
       setPage('ONBOARDING');
     }
   };
-
   return (
-    <div className="min-h-screen bg-rpg-black">
+    <div className="min-h-screen bg-rpg-black selection:bg-jiwa/30 font-sans">
+      <div className="noise-overlay" />
+      
       {/* Hero Section */}
-      <section className="relative min-h-[90vh] md:min-h-screen flex flex-col items-center justify-center p-4 md:p-6 text-center overflow-hidden pt-24">
-        {/* Animated Background Elements */}
-        <div className="absolute inset-0 pointer-events-none">
+      <section className="relative min-h-screen flex flex-col items-center justify-center p-6 text-center overflow-hidden">
+        
+        {/* THE SOUL ORB - Aesthetic Anchor */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <motion.div 
             animate={{ 
-              scale: [1, 1.2, 1],
-              opacity: [0.1, 0.2, 0.1] 
+              scale: [1, 1.1, 1],
+              rotate: [0, 90, 180, 270, 360],
             }}
-            transition={{ duration: 10, repeat: Infinity }}
-            className="absolute top-1/4 left-1/4 w-[60vw] md:w-[40vw] h-[60vw] md:h-[40vw] bg-jiwa/20 blur-[80px] md:blur-[120px] rounded-full"
-          />
-          <motion.div 
-            animate={{ 
-              scale: [1.2, 1, 1.2],
-              opacity: [0.1, 0.2, 0.1] 
-            }}
-            transition={{ duration: 12, repeat: Infinity }}
-            className="absolute bottom-1/4 right-1/4 w-[65vw] md:w-[45vw] h-[65vw] md:h-[45vw] bg-raga/20 blur-[100px] md:blur-[150px] rounded-full"
-          />
+            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+            className="relative w-[90vw] h-[90vw] max-w-[900px] max-h-[900px]"
+          >
+            {/* Core Glow */}
+            <div className="absolute inset-0 bg-jiwa/10 blur-[150px] rounded-full animate-pulse" />
+            {/* Rotating Particles */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-6 bg-ilmu rounded-full blur-sm shadow-[0_0_30px_#60A5FA]" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-4 bg-raga rounded-full blur-sm shadow-[0_0_20px_#4ADE80]" />
+          </motion.div>
         </div>
 
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="relative z-10 mb-6 md:mb-8"
+          className="relative z-10 mb-10"
         >
-          <img src="/Arutha.png" alt="Arutha Logo" className="w-24 h-24 md:w-32 md:h-32 object-cover rounded-3xl shadow-[0_0_40px_rgba(167,139,250,0.3)] border border-white/10" />
-        </motion.div>
-        
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="relative z-10"
-        >
-          <h1 className="text-6xl md:text-9xl font-black tracking-tighter mb-4 md:mb-6 bg-gradient-to-b from-white via-white to-white/20 bg-clip-text text-transparent italic">
-            ARUTHA
-          </h1>
-          <p className="max-w-xl mx-auto text-base md:text-2xl text-neutral-400 font-light leading-relaxed mb-8 md:mb-12 px-4 italic">
-            "Satu-satunya permainan yang benar-benar berharga adalah <span className="text-white font-medium">hidupmu sendiri.</span>"
-          </p>
+          <img 
+            src="/Arutha.png" 
+            alt="Arutha Logo" 
+            className="w-32 h-32 md:w-48 md:h-48 object-cover rounded-[2.5rem] shadow-[0_0_80px_rgba(167,139,250,0.2)] border border-white/10" 
+          />
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10 w-full max-w-sm sm:max-w-none px-6 mx-auto"
+          className="relative z-10 max-w-5xl mx-auto"
         >
-          <button
-            onClick={handleCtaClick}
-            className="w-full sm:w-auto px-8 md:px-12 py-4 md:py-5 bg-white text-black font-black rounded-full hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 group shadow-[0_0_30px_rgba(255,255,255,0.2)] text-xs md:text-base"
-          >
-            {(session && hasProfile) ? 'KE DASHBOARD' : 'MULAI PETUALANGAN'} <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
-          </button>
-          <button 
-            onClick={scrollToLeaderboard}
-            className="w-full sm:w-auto px-8 md:px-12 py-4 md:py-5 bg-rpg-card border border-rpg-border text-white font-bold rounded-full hover:bg-neutral-800 transition-all text-xs md:text-base flex items-center justify-center"
-          >
-            LIHAT LEADERBOARD
-          </button>
+          <h1 className="text-6xl sm:text-8xl md:text-[12rem] lg:text-[15rem] font-serif font-bold tracking-tighter leading-[0.75] mb-6 select-none uppercase">
+            Arutha
+          </h1>
+          <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-serif italic text-neutral-300 mb-10 tracking-tight">
+            Your Life, <span className="text-white underline decoration-jiwa/50 decoration-4 underline-offset-[8px] md:underline-offset-[12px]">Legendary.</span>
+          </h2>
+
+          <p className="max-w-2xl mx-auto text-xl sm:text-2xl md:text-3xl text-neutral-400 font-light leading-relaxed mb-12 md:mb-14 italic font-serif px-4">
+            "Satu-satunya permainan yang benar-benar berharga adalah <span className="text-white/90 font-medium border-b border-white/20">hidupmu sendiri.</span>"
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
+            <button
+              onClick={handleCtaClick}
+              className="w-full sm:w-auto px-16 py-6 bg-white text-black font-black rounded-full hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4 group shadow-[0_0_60px_rgba(255,255,255,0.15)]"
+            >
+              {(session && hasProfile) ? 'KE DASHBOARD' : 'MULAI PETUALANGAN'} 
+              <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+            </button>
+            <button 
+              onClick={scrollToLeaderboard}
+              className="group relative py-2"
+            >
+              <span className="text-sm font-black tracking-[0.4em] uppercase text-neutral-400 group-hover:text-white transition-colors">
+                Global Ranking
+              </span>
+              <div className="absolute -bottom-1 left-0 w-0 h-[1px] bg-white group-hover:w-full transition-all duration-300" />
+            </button>
+          </div>
         </motion.div>
+
+        {/* Floating Stat Hints */}
+        <div className="absolute bottom-20 left-10 hidden lg:block text-left opacity-40 hover:opacity-100 transition-opacity">
+          <div className="text-[10px] font-black text-jiwa uppercase tracking-widest mb-1 font-sans">Dimensi 01</div>
+          <div className="text-3xl font-serif italic text-white">Soul Alignment</div>
+        </div>
+        <div className="absolute top-40 right-20 hidden lg:block text-right opacity-40 hover:opacity-100 transition-opacity">
+          <div className="text-[10px] font-black text-harta uppercase tracking-widest mb-1 font-sans">Dimensi 03</div>
+          <div className="text-3xl font-serif italic text-white">Wealth Strategy</div>
+        </div>
 
         {/* Scroll Indicator */}
         <motion.div 
           animate={{ y: [0, 10, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
-          className="absolute bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 text-neutral-600 flex flex-col items-center gap-2"
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 text-neutral-700 flex flex-col items-center gap-3"
         >
-          <span className="text-[8px] md:text-[10px] font-black tracking-[0.3em] uppercase">Scroll</span>
-          <div className="w-[1px] h-8 md:h-12 bg-gradient-to-b from-neutral-600 to-transparent" />
+          <div className="w-[1px] h-16 bg-gradient-to-b from-neutral-800 to-transparent" />
         </motion.div>
       </section>
 
-      {/* Grid Preview Section */}
-      <section className="max-w-7xl mx-auto px-6 py-32 space-y-32">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+      {/* Asymmetric Info Section */}
+      <section className="max-w-7xl mx-auto px-6 py-40">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
+            initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="space-y-8"
+            className="lg:col-span-5 space-y-10"
           >
-            <div className="inline-block px-4 py-1.5 rounded-full bg-jiwa/10 border border-jiwa/20 text-jiwa text-xs font-black tracking-widest uppercase">
-              The 5 Dimensions
-            </div>
-            <h2 className="text-5xl md:text-6xl font-bold tracking-tight leading-[1.1]">
-              Visualisasi <br /> <span className="text-neutral-500">Potensi Dirimu.</span>
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-serif font-bold leading-none">
+              Melihat <br />
+              <span className="text-neutral-400 italic text-3xl sm:text-4xl md:text-5xl">Yang Tak Terlihat.</span>
             </h2>
-            <p className="text-lg text-neutral-400 leading-relaxed max-w-md">
+            <p className="text-xl md:text-2xl text-neutral-200 leading-relaxed font-medium font-sans">
               Kami membagi hidupmu menjadi 5 dimensi teknis. AI kami menganalisis pola harianmu dan memberikan quest yang relevan untuk menaikkan stat ini secara organik.
             </p>
-            <div className="space-y-4 pt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
-                { name: 'JIWA', color: 'text-jiwa', desc: 'Mentalitas & Ketenangan' },
-                { name: 'RAGA', color: 'text-raga', desc: 'Vitalitas & Kekuatan Fisik' },
-                { name: 'HARTA', color: 'text-harta', desc: 'Keuangan & Strategi Aset' },
-                { name: 'ILMU', color: 'text-ilmu', desc: 'Kecerdasan & Literasi' },
-                { name: 'KARMA', color: 'text-karma', desc: 'Sosial & Dampak Komunitas' },
+                { name: 'JIWA', color: 'text-jiwa', border: 'border-jiwa/20', bg: 'bg-jiwa/5', desc: 'Mental Clarity' },
+                { name: 'RAGA', color: 'text-raga', border: 'border-raga/20', bg: 'bg-raga/5', desc: 'Physical Power' },
+                { name: 'HARTA', color: 'text-harta', border: 'border-harta/20', bg: 'bg-harta/5', desc: 'Financial Logic' },
+                { name: 'ILMU', color: 'text-ilmu', border: 'border-ilmu/20', bg: 'bg-ilmu/5', desc: 'Knowledge' },
+                { name: 'KARMA', color: 'text-karma', border: 'border-karma/20', bg: 'bg-karma/5', desc: 'Social Impact' },
               ].map((d, i) => (
-                <div key={i} className="flex items-center gap-4 group cursor-default">
-                  <div className={cn("w-2 h-2 rounded-full", d.color.replace('text', 'bg'))} />
-                  <span className={cn("font-black tracking-tighter w-20 transition-all group-hover:pl-2", d.color)}>{d.name}</span>
-                  <span className="text-sm text-neutral-600">— {d.desc}</span>
-                </div>
+                <motion.div 
+                  key={i} 
+                  whileHover={{ y: -5, scale: 1.02 }}
+                  className={cn("p-6 rounded-2xl border backdrop-blur-md transition-all group relative overflow-hidden", d.border, d.bg)}
+                >
+                  <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-100 transition-opacity">
+                     <Sparkles className={cn("w-4 h-4", d.color)} />
+                  </div>
+                  <div className={cn("text-xs font-black tracking-[0.3em] mb-2 font-sans", d.color)}>{d.name}</div>
+                  <div className="text-white text-lg font-serif italic">{d.desc}</div>
+                </motion.div>
               ))}
             </div>
           </motion.div>
 
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-tr from-jiwa/20 to-ilmu/20 blur-[100px] rounded-full opacity-50" />
+          <div className="lg:col-span-7 relative">
             <motion.div
-              initial={{ scale: 0.8, opacity: 0, rotate: -5 }}
-              whileInView={{ scale: 1, opacity: 1, rotate: 0 }}
-              viewport={{ once: true }}
-              className="glass-panel p-10 relative z-10 border-white/10 shadow-2xl"
+              initial={{ scale: 0.9, opacity: 0 }}
+              whileInView={{ scale: 1, opacity: 1 }}
+              className="relative aspect-square glass-panel border-white/5 overflow-hidden group rounded-[3rem]"
             >
-              <div className="w-full relative block min-h-[300px]">
+              <div className="absolute inset-0 bg-gradient-to-br from-jiwa/5 via-transparent to-ilmu/5" />
+              
+              {/* HUD Accents */}
+              <div className="absolute top-8 left-8 border-l border-t border-white/20 w-8 h-8" />
+              <div className="absolute bottom-8 right-8 border-r border-b border-white/20 w-8 h-8" />
+              
+              <div className="absolute inset-0 p-8 md:p-16 flex items-center justify-center">
                 {isMounted && (
-                  <ResponsiveContainer width="100%" height={320}>
-                    <RadarChart cx="50%" cy="50%" outerRadius="75%" data={[
-                      { subject: 'Jiwa', A: 80 },
-                      { subject: 'Raga', A: 65 },
-                      { subject: 'Harta', A: 45 },
-                      { subject: 'Ilmu', A: 90 },
-                      { subject: 'Karma', A: 60 },
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={[
+                      { subject: 'JIWA', A: 85 }, { subject: 'RAGA', A: 70 }, { subject: 'HARTA', A: 50 }, { subject: 'ILMU', A: 95 }, { subject: 'KARMA', A: 65 },
                     ]}>
-                      <PolarGrid stroke="#333" />
-                      <PolarAngleAxis dataKey="subject" tick={{ fill: '#888', fontSize: 12 }} />
-                      <Radar
-                        name="Typical Level 10 Player"
-                        dataKey="A"
-                        stroke="#A78BFA"
-                        fill="#A78BFA"
-                        fillOpacity={0.3}
-                      />
+                      <PolarGrid stroke="#333" strokeDasharray="3 3" />
+                      <PolarAngleAxis dataKey="subject" tick={{ fill: '#666', fontSize: 10, fontWeight: '900', letterSpacing: '0.2em' }} />
+                      <Radar name="Status" dataKey="A" stroke="#fff" fill="#fff" fillOpacity={0.1} strokeWidth={2} />
                     </RadarChart>
                   </ResponsiveContainer>
                 )}
               </div>
-              <div className="mt-8 pt-8 border-t border-rpg-border flex justify-between items-center">
-                 <div className="text-xs font-mono text-neutral-500">XP PROGRESSION</div>
-                 <div className="flex gap-1">
-                   {[...Array(5)].map((_, i) => (
-                     <div key={i} className={cn("w-8 h-1 rounded-full", i < 3 ? "bg-white" : "bg-rpg-border")} />
-                   ))}
-                 </div>
+
+              {/* Phase Badge */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-5">
+                <h3 className="text-9xl font-serif font-black uppercase tracking-tighter">RPG</h3>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              className="absolute -bottom-4 -right-4 md:-bottom-8 md:-right-8 bg-neutral-900 border border-white/10 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-2xl backdrop-blur-2xl z-20"
+            >
+              <div className="flex items-center gap-3 md:gap-4 mb-2 md:mb-4">
+                <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-jiwa animate-ping" />
+                <span className="text-[8px] md:text-[10px] font-black text-neutral-500 tracking-[0.4em] uppercase">System Status</span>
+              </div>
+              <div className="text-[8px] md:text-[10px] font-black text-neutral-400 mb-1 uppercase tracking-widest">Current Phase</div>
+              <div className="text-2xl md:text-4xl font-serif font-bold italic text-white flex items-center gap-2 md:gap-3">
+                Ascension <span className="text-jiwa">I</span>
               </div>
             </motion.div>
           </div>
         </div>
+      </section>
 
-        {/* Feature Bento */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 glass-panel p-10 flex flex-col justify-end min-h-[300px] bg-gradient-to-br from-rpg-card to-raga/5 border-white/5">
-             <TrendingUp className="w-12 h-12 text-raga mb-6" />
-             <h3 className="text-3xl font-bold mb-4">Daily Quest AI</h3>
-             <p className="text-neutral-400 max-w-md">Quest harian yang di-generate berdasarkan mood dan kondisi finansialmu hari ini. Bukan sekadar to-do list, tapi path menuju level up.</p>
-          </div>
-          <div className="glass-panel p-10 flex flex-col justify-end bg-gradient-to-br from-rpg-card to-jiwa/5 border-white/5">
-             <Heart className="w-12 h-12 text-jiwa mb-6" />
-             <h3 className="text-2xl font-bold mb-4">Mind Check</h3>
-             <p className="text-neutral-400 text-sm italic">"Kami peduli pada apa yang tidak terlihat di character sheet."</p>
-          </div>
-          <div className="glass-panel p-10 flex flex-col justify-end bg-gradient-to-br from-rpg-card to-harta/5 border-white/5">
-             <Shield className="w-12 h-12 text-harta mb-6" />
-             <h3 className="text-2xl font-bold mb-4">Anti-Pay-to-Win</h3>
-             <p className="text-neutral-400 text-sm">Harta diukur dari kemampuan mengelola, bukan seberapa banyak yang kamu miliki.</p>
-          </div>
-          <div className="md:col-span-2 glass-panel p-10 flex flex-col justify-end bg-gradient-to-br from-rpg-card to-ilmu/5 border-white/5">
-             <Users className="w-12 h-12 text-ilmu mb-6" />
-             <h3 className="text-3xl font-bold mb-4">Guild System</h3>
-             <p className="text-neutral-400 max-w-md">Bergabung dengan "Guild" di kotamu. Selesaikan quest party bareng teman-teman nyata untuk bonus stat KARMA.</p>
-          </div>
+      {/* Feature Section - Asymmetric Bento */}
+      <section className="max-w-7xl mx-auto px-6 py-40 space-y-32">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-20">
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-serif font-bold leading-none">
+            Senjata Untuk <br />
+            <span className="text-neutral-400 italic text-3xl sm:text-4xl md:text-5xl">Pemenang Hidup.</span>
+          </h2>
+          <p className="max-w-md text-base md:text-lg text-neutral-300 font-medium leading-relaxed font-sans">
+            Setiap fitur dirancang untuk membangun kebiasaan yang tidak hanya membuatmu produktif, tapi juga berkuasa atas takdirmu.
+          </p>
         </div>
 
-        {/* Leaderboard Preview */}
-        <div ref={leaderboardRef} className="scroll-mt-32">
-          <Leaderboard 
-            isPreview={true} 
-            onJoin={() => setPage('LEADERBOARD')} 
-          />
+        <div className="grid grid-cols-1 md:grid-cols-12 grid-rows-2 gap-6 min-h-[800px]">
+          <motion.div whileHover={{ y: -10 }} className="md:col-span-8 md:row-span-1 glass-panel p-12 bg-gradient-to-br from-white/5 to-transparent flex flex-col justify-between">
+            <TrendingUp className="w-12 h-12 text-raga" />
+            <div>
+              <h3 className="text-4xl font-serif font-bold mb-4 text-white">Daily Quest AI</h3>
+              <p className="text-neutral-200 max-w-md text-xl font-sans font-medium">Misi harian yang di-generate berdasarkan profil psikologismu. Bukan sekadar to-do list, tapi jalan menuju evolusi.</p>
+            </div>
+          </motion.div>
+          <motion.div whileHover={{ y: -10 }} className="md:col-span-4 md:row-span-1 glass-panel p-12 bg-jiwa/5 border-jiwa/10 flex flex-col justify-end">
+            <Heart className="w-10 h-10 text-jiwa mb-8" />
+            <h3 className="text-2xl font-bold mb-2 uppercase tracking-tighter font-sans text-white">Mind Check</h3>
+            <p className="text-neutral-300 text-base font-sans font-medium">Kami memonitor kesehatan mentalmu di balik setiap pencapaian materi.</p>
+          </motion.div>
+          <motion.div whileHover={{ y: -10 }} className="md:col-span-4 md:row-span-1 glass-panel p-12 bg-harta/5 border-harta/10 flex flex-col justify-end">
+            <Shield className="w-10 h-10 text-harta mb-8" />
+            <h3 className="text-2xl font-bold mb-2 uppercase tracking-tighter font-sans">Anti-P2W</h3>
+            <p className="text-neutral-500 text-sm font-sans">Kemajuan diukur dari disiplin, bukan saldo bank.</p>
+          </motion.div>
+          <motion.div whileHover={{ y: -10 }} className="md:col-span-8 md:row-span-1 glass-panel p-12 bg-gradient-to-tr from-ilmu/10 to-transparent flex flex-col justify-between">
+            <div className="flex justify-between items-start">
+              <Users className="w-12 h-12 text-ilmu" />
+              <div className="px-4 py-1 bg-ilmu/20 text-ilmu rounded-full text-[10px] font-black uppercase font-sans">Coming Soon</div>
+            </div>
+            <div>
+              <h3 className="text-4xl font-serif font-bold mb-4">Guild System</h3>
+              <p className="text-neutral-400 max-w-md text-lg font-sans">Selesaikan quest party bersama teman-teman nyata di kotamu untuk bonus stat KARMA.</p>
+            </div>
+          </motion.div>
         </div>
 
-        {/* Testimonial / Vision */}
-        <div className="text-center py-20 px-6 glass-panel border-rpg-border/50 bg-white/5">
-           <h2 className="text-4xl md:text-5xl font-bold mb-8 italic">"Jadikan realita sebagai taman bermainmu."</h2>
-           <button 
-             onClick={handleCtaClick}
-             className="text-neutral-200 font-black underline underline-offset-8 hover:text-jiwa transition-colors"
-            >
-             {(session && hasProfile) ? 'KE DASHBOARD SEKARANG' : 'MULAI ANALISIS PROFIL SEKARANG'}
+        {/* Global Leaderboard Preview */}
+        <div ref={leaderboardRef} className="scroll-mt-40">
+          <div className="text-center mb-20 space-y-4">
+             <div className="text-[10px] font-black text-jiwa tracking-[0.5em] uppercase font-sans">The Pantheon</div>
+             <h2 className="text-6xl font-serif font-bold italic">Top Players</h2>
+          </div>
+          <Leaderboard isPreview={true} onJoin={() => setPage('LEADERBOARD')} />
+        </div>
+
+        <div className="relative py-40 flex flex-col items-center">
+           <div className="absolute inset-0 bg-jiwa/5 blur-[150px] rounded-full" />
+           <h2 className="text-5xl md:text-8xl font-serif font-bold mb-12 text-center leading-none z-10">
+             Tulis Ulang <br />
+             <span className="italic text-neutral-500">Takdirmu.</span>
+           </h2>
+           <button onClick={handleCtaClick} className="relative z-10 px-16 py-6 bg-white text-black font-black rounded-full hover:scale-110 active:scale-95 transition-all shadow-2xl font-sans">
+             MULAILAH SEKARANG
            </button>
         </div>
       </section>
 
-      <footer className="py-20 border-t border-rpg-border text-center text-neutral-600">
-        <p className="text-xs font-mono tracking-widest uppercase">© 2026 Aruthtale</p>
+      <footer className="py-20 border-t border-white/5 text-center">
+        <p className="text-[10px] font-black tracking-[0.5em] text-neutral-700 uppercase font-sans">© 2026 Aruthtale Studios</p>
       </footer>
     </div>
   );
