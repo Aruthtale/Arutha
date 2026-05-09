@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Mail as MailIcon, ArrowLeft, Megaphone } from 'lucide-react';
+import { Mail as MailIcon, ArrowLeft, Megaphone, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { useStore } from '../store/useStore';
@@ -11,16 +11,46 @@ export const Mail = ({ userId, onBack }: { userId: string, onBack: () => void })
   const { setUnreadMailCount, setLastMailSeenAt } = useStore();
 
   useEffect(() => {
+    cleanupOldMails();
     fetchMails();
   }, []);
 
+  // Auto-delete mail yang sudah lebih dari 3 hari
+  const cleanupOldMails = async () => {
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    
+    await supabase
+      .from('arutha_mail')
+      .delete()
+      .lt('created_at', threeDaysAgo.toISOString());
+  };
+
   const fetchMails = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+
+    // Ambil tanggal registrasi user untuk filter
+    const { data: userData } = await supabase
+      .from('arutha_user')
+      .select('created_at')
+      .eq('id', userId)
+      .single();
+
+    const userCreatedAt = userData?.created_at;
+
+    // Query mail: hanya yang dikirim SETELAH user mendaftar
+    let query = supabase
       .from('arutha_mail')
       .select('*')
       .or(`user_id.is.null,user_id.eq.${userId}`)
       .order('created_at', { ascending: false });
+    
+    // Filter: akun baru tidak bisa lihat mail lama
+    if (userCreatedAt) {
+      query = query.gte('created_at', userCreatedAt);
+    }
+
+    const { data, error } = await query;
 
     if (data && !error) {
       setMails(data);
@@ -37,15 +67,25 @@ export const Mail = ({ userId, onBack }: { userId: string, onBack: () => void })
         setMails(prev => prev.map(m => m.user_id ? { ...m, is_read: true } : m));
       }
 
-      // Simpan timestamp "terakhir buka Kotak Surat" untuk pesan global
+      // Simpan timestamp "terakhir buka Kotak Surat"
       const now = new Date().toISOString();
       localStorage.setItem(`arutha_mail_seen_${userId}`, now);
       setLastMailSeenAt(now);
-
-      // Semua sudah dilihat → badge jadi 0
       setUnreadMailCount(0);
     }
     setLoading(false);
+  };
+
+  // Hitung sisa waktu sebelum mail expired
+  const getTimeLeft = (createdAt: string) => {
+    const expiry = new Date(createdAt);
+    expiry.setDate(expiry.getDate() + 3);
+    const now = new Date();
+    const diffMs = expiry.getTime() - now.getTime();
+    if (diffMs <= 0) return 'Kedaluwarsa';
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    if (hours >= 24) return `${Math.floor(hours / 24)} hari lagi`;
+    return `${hours} jam lagi`;
   };
 
   return (
@@ -109,6 +149,10 @@ export const Mail = ({ userId, onBack }: { userId: string, onBack: () => void })
                         </span>
                       </div>
                       <p className="text-neutral-300 leading-relaxed">{mail.message}</p>
+                      <div className="flex items-center gap-1.5 mt-3 text-neutral-600 text-[10px] font-bold uppercase tracking-widest">
+                        <Clock className="w-3 h-3" />
+                        <span>Kedaluwarsa {getTimeLeft(mail.created_at)}</span>
+                      </div>
                     </div>
                   </div>
                 </motion.div>

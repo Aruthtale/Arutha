@@ -34,32 +34,43 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
   useEffect(() => {
     if (!dbUserId) return;
     const fetchUnread = async () => {
-      // 1. Pesan personal yang belum dibaca
+      // Ambil tanggal registrasi user
+      const { data: userData } = await supabase
+        .from('arutha_user')
+        .select('created_at')
+        .eq('id', dbUserId)
+        .single();
+      const userCreatedAt = userData?.created_at;
+
+      // Batas: 3 hari yang lalu
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      const cutoff = threeDaysAgo.toISOString();
+
+      // Gunakan tanggal registrasi ATAU 3 hari lalu (yang mana lebih baru)
+      const minDate = userCreatedAt && userCreatedAt > cutoff ? userCreatedAt : cutoff;
+
+      // 1. Pesan personal yang belum dibaca (dan masih dalam 3 hari)
       const { count: personalCount } = await supabase
         .from('arutha_mail')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', dbUserId)
-        .eq('is_read', false);
+        .eq('is_read', false)
+        .gte('created_at', minDate);
       
       // 2. Pesan global yang lebih baru dari terakhir user buka Kotak Surat
       const seenAt = useStore.getState().lastMailSeenAt || localStorage.getItem(`arutha_mail_seen_${dbUserId}`);
       let globalUnread = 0;
       
-      if (seenAt) {
-        const { count } = await supabase
-          .from('arutha_mail')
-          .select('id', { count: 'exact', head: true })
-          .is('user_id', null)
-          .gt('created_at', seenAt);
-        globalUnread = count || 0;
-      } else {
-        // Belum pernah buka mail → hitung semua global
-        const { count } = await supabase
-          .from('arutha_mail')
-          .select('id', { count: 'exact', head: true })
-          .is('user_id', null);
-        globalUnread = count || 0;
-      }
+      // Ambil global mail yang lebih baru dari seenAt DAN minDate
+      const globalCutoff = seenAt && seenAt > minDate ? seenAt : minDate;
+      
+      const { count } = await supabase
+        .from('arutha_mail')
+        .select('id', { count: 'exact', head: true })
+        .is('user_id', null)
+        .gt('created_at', globalCutoff);
+      globalUnread = count || 0;
 
       const total = (personalCount || 0) + globalUnread;
       
