@@ -13,13 +13,16 @@ export const CompleteGoogleProfile: React.FC<CompleteGoogleProfileProps> = ({ us
   const [formData, setFormData] = useState({
     username: initialUsername,
     usia: '',
-    gender: 'Male'
+    gender: ''
   });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.usia) return;
+    if (!formData.usia || !formData.gender) {
+      alert("Mohon lengkapi Umur dan Gender Anda.");
+      return;
+    }
     setLoading(true);
 
     try {
@@ -85,26 +88,28 @@ export const CompleteGoogleProfile: React.FC<CompleteGoogleProfileProps> = ({ us
             </div>
             <div className="relative group">
               <VenusAndMars className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-jiwa transition-colors" />
-              <select
-                className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 focus:border-jiwa rounded-2xl outline-none transition-all text-white appearance-none"
-                value={formData.gender}
-                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-              >
-                <option value="Male" className="bg-rpg-card">Laki-laki</option>
-                <option value="Female" className="bg-rpg-card">Perempuan</option>
-                <option value="Other" className="bg-rpg-card">Lainnya</option>
-              </select>
+                <select
+                  required
+                  className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 focus:border-jiwa rounded-2xl outline-none transition-all text-white appearance-none"
+                  value={formData.gender}
+                  onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                >
+                  <option value="" disabled className="bg-rpg-card">Pilih Gender</option>
+                  <option value="Male" className="bg-rpg-card">Laki-laki</option>
+                  <option value="Female" className="bg-rpg-card">Perempuan</option>
+                  <option value="Other" className="bg-rpg-card">Lainnya</option>
+                </select>
+              </div>
             </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading || !formData.usia}
-            className="w-full py-4 mt-4 bg-jiwa text-white font-black rounded-2xl hover:bg-jiwa/80 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-jiwa/20"
-          >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-            {loading ? 'MENYIMPAN...' : 'LANJUTKAN'}
-          </button>
+  
+            <button
+              type="submit"
+              disabled={loading || !formData.usia || !formData.gender}
+              className="w-full py-4 mt-4 bg-jiwa text-white font-black rounded-2xl hover:bg-jiwa/80 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-jiwa/20"
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+              {loading ? 'MENYIMPAN...' : 'LANJUTKAN'}
+            </button>
         </form>
       </motion.div>
     </div>
