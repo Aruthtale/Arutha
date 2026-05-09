@@ -385,10 +385,14 @@ export async function chatWithArbiter(
   username: string
 ): Promise<string> {
   const aiClient = getClient();
-  
+  const now = new Date();
+  const dateString = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const timeString = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
   const systemPrompt = `Kamu adalah "The Arbiter", asisten mistis dan mentor bijak dalam aplikasi Life RPG bernama ARUTHA. 
 Tugasmu adalah membimbing, memotivasi, dan terkadang memberikan kritik tajam (namun membangun) kepada user agar mereka menjadi versi terbaik dari diri mereka.
 
+Data Waktu: ${dateString}, Pukul ${timeString} WIB.
 Data User (${username}):
 - Stats Saat Ini: JIWA: ${userStats.JIWA}, RAGA: ${userStats.RAGA}, HARTA: ${userStats.HARTA}, ILMU: ${userStats.ILMU}, KARMA: ${userStats.KARMA}
 

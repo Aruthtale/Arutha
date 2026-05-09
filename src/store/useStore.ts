@@ -3,7 +3,7 @@ import { Session } from '@supabase/supabase-js';
 import { type Stats, type Quest, type CharacterAnalysis } from '../lib/gemini';
 import { type DecayResult } from '../lib/decaySystem';
 
-export type Page = 'LANDING' | 'LOGIN' | 'REGISTER' | 'COMPLETE_PROFILE' | 'ONBOARDING' | 'CHARACTER_REVEAL' | 'DASHBOARD' | 'SETTINGS' | 'PROFILE' | 'ADMIN' | 'LEADERBOARD';
+export type Page = 'LANDING' | 'LOGIN' | 'REGISTER' | 'COMPLETE_PROFILE' | 'ONBOARDING' | 'CHARACTER_REVEAL' | 'DASHBOARD' | 'SETTINGS' | 'PROFILE' | 'ADMIN' | 'LEADERBOARD' | 'CODEX' | 'MAIL';
 
 interface AppState {
   // Navigation
@@ -57,6 +57,14 @@ interface AppState {
   setDecayResult: (result: DecayResult | null | ((prev: DecayResult | null) => DecayResult | null)) => void;
   setShowLevelUp: (show: boolean | ((prev: boolean) => boolean)) => void;
   setIsDataReady: (ready: boolean | ((prev: boolean) => boolean)) => void;
+
+  // Mail
+  unreadMailCount: number;
+  setUnreadMailCount: (count: number | ((prev: number) => number)) => void;
+  mailToast: string | null;
+  setMailToast: (msg: string | null) => void;
+  lastMailSeenAt: string | null;
+  setLastMailSeenAt: (ts: string) => void;
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -117,4 +125,12 @@ export const useStore = create<AppState>((set) => ({
   setDecayResult: (decayResult) => set((state) => ({ decayResult: typeof decayResult === 'function' ? decayResult(state.decayResult) : decayResult })),
   setShowLevelUp: (showLevelUp) => set((state) => ({ showLevelUp: typeof showLevelUp === 'function' ? showLevelUp(state.showLevelUp) : showLevelUp })),
   setIsDataReady: (isDataReady) => set((state) => ({ isDataReady: typeof isDataReady === 'function' ? isDataReady(state.isDataReady) : isDataReady })),
+
+  // Mail
+  unreadMailCount: 0,
+  setUnreadMailCount: (count) => set((state) => ({ unreadMailCount: typeof count === 'function' ? count(state.unreadMailCount) : count })),
+  mailToast: null,
+  setMailToast: (msg) => set({ mailToast: msg }),
+  lastMailSeenAt: null,
+  setLastMailSeenAt: (ts) => set({ lastMailSeenAt: ts }),
 }));

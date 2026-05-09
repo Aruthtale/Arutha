@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   Users, ShieldCheck, RefreshCw, Star, Trash2, ArrowLeft, Search, 
-  ExternalLink, TrendingUp, AlertTriangle, ArrowUpCircle, Eye, X, Brain
+  ExternalLink, TrendingUp, AlertTriangle, ArrowUpCircle, Eye, X, Brain,
+  Megaphone, Gift, RotateCcw, Send, Mail as MailIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
@@ -31,10 +32,24 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   
+  // Broadcast State
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+
   // Modal State
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'confirm' | 'prompt' | 'alert';
+    action: (val?: string) => void;
+    variant: 'danger' | 'warning' | 'success' | 'info';
+    placeholder?: string;
+    inputType?: 'text' | 'number';
+  } | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -56,34 +71,76 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
     const { error } = await supabase
       .from('arutha_user')
       .update({ last_name_change: null, name_change_count: 0 })
-      .eq('supabase_id', userId); // Use supabase_id for safer policy match
+      .eq('supabase_id', userId);
     
     if (!error) {
-      setUsers(users.map(u => u.id === userId ? { ...u, last_name_change: null, name_change_count: 0 } : u));
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, last_name_change: null, name_change_count: 0 } : u));
     }
     setActionLoading(null);
   };
 
-  const handleAddXp = async (userId: string, currentXp: number, currentLevel: number) => {
-    setActionLoading(userId + '-xp');
-    const bonusXp = 500;
-    let nextXp = currentXp + bonusXp;
-    let nextLevel = currentLevel;
+  const handleGiveReward = (userId: string, currentXp: number, currentLevel: number) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Berikan Reward XP',
+      message: 'Masukkan jumlah XP yang ingin diberikan kepada pemain ini:',
+      type: 'prompt',
+      variant: 'success',
+      placeholder: 'Contoh: 500',
+      inputType: 'number',
+      action: async (val?: string) => {
+        const bonusXp = parseInt(val || '0');
+        if (isNaN(bonusXp) || bonusXp <= 0) return;
 
-    if (nextXp >= currentLevel * 1000) {
-      nextXp -= (currentLevel * 1000);
-      nextLevel += 1;
-    }
+        setActionLoading(userId + '-reward');
+        let nextXp = currentXp + bonusXp;
+        let nextLevel = currentLevel;
 
-    const { error } = await supabase
-      .from('arutha_user')
-      .update({ xp: nextXp, level: nextLevel })
-      .eq('supabase_id', userId); // Use supabase_id for safer policy match
-    
-    if (!error) {
-      setUsers(users.map(u => u.id === userId ? { ...u, xp: nextXp, level: nextLevel } : u));
-    }
-    setActionLoading(null);
+        while (nextXp >= nextLevel * 1000) {
+          nextXp -= (nextLevel * 1000);
+          nextLevel += 1;
+        }
+
+        const { error } = await supabase
+          .from('arutha_user')
+          .update({ xp: nextXp, level: nextLevel })
+          .eq('supabase_id', userId);
+        
+        if (!error) {
+          setUsers(prev => prev.map(u => u.supabase_id === userId ? { ...u, xp: nextXp, level: nextLevel } : u));
+          setConfirmModal({
+            isOpen: true, title: 'Berhasil', message: `Berhasil memberikan ${bonusXp} XP!`, type: 'alert', variant: 'success', action: () => {}
+          });
+        } else {
+          setConfirmModal({
+            isOpen: true, title: 'Gagal', message: error.message, type: 'alert', variant: 'danger', action: () => {}
+          });
+        }
+        setActionLoading(null);
+      }
+    });
+  };
+
+  const handleResetLevel = (userId: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Reset Level & XP',
+      message: 'Yakin ingin mereset level dan XP user ini ke 1? Semua bakat akan terkunci kembali karena kehilangan level.',
+      type: 'confirm',
+      variant: 'danger',
+      action: async () => {
+        setActionLoading(userId + '-reset-lvl');
+        const { error } = await supabase
+          .from('arutha_user')
+          .update({ level: 1, xp: 0 })
+          .eq('supabase_id', userId);
+        
+        if (!error) {
+          setUsers(prev => prev.map(u => u.supabase_id === userId ? { ...u, level: 1, xp: 0 } : u));
+        }
+        setActionLoading(null);
+      }
+    });
   };
 
   const handleLevelUp = async (userId: string, currentLevel: number) => {
@@ -94,30 +151,40 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
       .eq('supabase_id', userId);
     
     if (!error) {
-      setUsers(users.map(u => u.supabase_id === userId ? { ...u, level: currentLevel + 1 } : u));
+      setUsers(prev => prev.map(u => u.supabase_id === userId ? { ...u, level: currentLevel + 1 } : u));
     }
     setActionLoading(null);
   };
 
-  const handleDeleteUser = async (userId: string, supabaseId: string) => {
-    if (!window.confirm("Yakin ingin menghapus data user ini secara permanen dari Arutha? (Catatan: Ini tidak akan menghapus akun Google mereka)")) return;
-    setActionLoading(userId + '-delete');
-    
-    // Attempt to delete cascade
-    await supabase.from('character_profile').delete().eq('user_id', userId);
-    await supabase.from('stat_history').delete().eq('user_id', userId);
-    
-    // Add .select() so we can check if it actually deleted a row
-    const { data, error } = await supabase.from('arutha_user').delete().eq('supabase_id', supabaseId).select();
-    
-    if (error) {
-      alert("Gagal menghapus user: " + error.message);
-    } else if (!data || data.length === 0) {
-      alert("Gagal: RLS (Row Level Security) Supabase memblokir tindakan ini. Akun Anda tidak memiliki izin (bukan Service Role / Admin) untuk menghapus data user lain.");
-    } else {
-      setUsers(users.filter(u => u.id !== userId));
-    }
-    setActionLoading(null);
+  const handleDeleteUser = (userId: string, supabaseId: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Hapus User Permanen',
+      message: 'Yakin ingin menghapus data user ini secara permanen dari Arutha? (Catatan: Ini tidak akan menghapus akun Google mereka)',
+      type: 'confirm',
+      variant: 'danger',
+      action: async () => {
+        setActionLoading(userId + '-delete');
+        
+        await supabase.from('character_profile').delete().eq('user_id', userId);
+        await supabase.from('stat_history').delete().eq('user_id', userId);
+        
+        const { data, error } = await supabase.from('arutha_user').delete().eq('supabase_id', supabaseId).select();
+        
+        if (error) {
+          setConfirmModal({
+            isOpen: true, title: 'Error', message: "Gagal menghapus user: " + error.message, type: 'alert', variant: 'danger', action: () => {}
+          });
+        } else if (!data || data.length === 0) {
+          setConfirmModal({
+            isOpen: true, title: 'Akses Ditolak', message: "Gagal: RLS (Row Level Security) Supabase memblokir tindakan ini. Anda bukan Service Role.", type: 'alert', variant: 'danger', action: () => {}
+          });
+        } else {
+          setUsers(prev => prev.filter(u => u.id !== userId));
+        }
+        setActionLoading(null);
+      }
+    });
   };
 
   const handleViewProfile = async (user: UserData) => {
@@ -135,6 +202,75 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
       setUserProfile(data[0]);
     }
     setLoadingProfile(false);
+  };
+
+  const handleSendMail = (userId: string, username: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: `Kirim Pesan ke ${username}`,
+      message: `Tulis pesan khusus/rahasia untuk ${username}:`,
+      type: 'prompt',
+      variant: 'info',
+      placeholder: 'Tulis pesan...',
+      inputType: 'text',
+      action: async (val?: string) => {
+        if (!val?.trim()) return;
+        setActionLoading(userId + '-mail');
+        const { error } = await supabase
+          .from('arutha_mail')
+          .insert([{ user_id: userId, message: val, is_read: false }]);
+          
+        if (error) {
+          setConfirmModal({
+            isOpen: true, title: 'Gagal', message: error.message, type: 'alert', variant: 'danger', action: () => {}
+          });
+        } else {
+          setConfirmModal({
+            isOpen: true, title: 'Terkirim', message: `Pesan berhasil dikirim ke ${username}!`, type: 'alert', variant: 'success', action: () => {}
+          });
+        }
+        setActionLoading(null);
+      }
+    });
+  };
+
+  const handleBroadcast = () => {
+    if (!broadcastMessage.trim()) return;
+    setConfirmModal({
+      isOpen: true,
+      title: 'Pengumuman Global',
+      message: 'Kirim pengumuman ini ke seluruh pengguna sekarang?',
+      type: 'confirm',
+      variant: 'warning',
+      action: async () => {
+        setIsBroadcasting(true);
+        const { error } = await supabase
+          .from('arutha_mail')
+          .insert([{ user_id: null, message: broadcastMessage, is_read: false }]);
+          
+        if (error) {
+          setConfirmModal({
+            isOpen: true,
+            title: 'Gagal',
+            message: "Gagal mengirim pengumuman. Pastikan tabel 'arutha_mail' (id, user_id, message, is_read, created_at) sudah dibuat di Supabase. Error: " + error.message,
+            type: 'alert',
+            variant: 'danger',
+            action: () => {}
+          });
+        } else {
+          setConfirmModal({
+            isOpen: true,
+            title: 'Berhasil',
+            message: 'Pengumuman berhasil dikirim ke Kotak Surat seluruh pengguna!',
+            type: 'alert',
+            variant: 'success',
+            action: () => {}
+          });
+          setBroadcastMessage('');
+        }
+        setIsBroadcasting(false);
+      }
+    });
   };
 
   const filteredUsers = users.filter(u => 
@@ -177,6 +313,31 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
             </button>
           </div>
         </header>
+
+        {/* Global Broadcast */}
+        <div className="bg-gradient-to-r from-jiwa/10 to-transparent border border-jiwa/20 p-6 rounded-[24px] space-y-4">
+          <div className="flex items-center gap-2 text-jiwa">
+            <Megaphone className="w-5 h-5" />
+            <h2 className="text-lg font-black italic tracking-tight">Kirim Pengumuman Global</h2>
+          </div>
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4">
+            <input 
+              type="text" 
+              placeholder="Tulis pesan pengumuman untuk Kotak Surat seluruh pemain..."
+              className="flex-1 px-4 py-3 bg-rpg-black/50 border border-white/5 rounded-xl outline-none focus:border-jiwa/30 transition-all text-sm"
+              value={broadcastMessage}
+              onChange={e => setBroadcastMessage(e.target.value)}
+            />
+            <button 
+              onClick={handleBroadcast}
+              disabled={isBroadcasting || !broadcastMessage.trim()}
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-jiwa text-black font-black italic uppercase rounded-xl hover:bg-jiwa/90 transition-all disabled:opacity-50 whitespace-nowrap"
+            >
+              <Send className={cn("w-4 h-4", isBroadcasting && "animate-pulse")} />
+              <span>Kirim ke Kotak Surat</span>
+            </button>
+          </div>
+        </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -257,23 +418,35 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                         )}
                       </td>
                       <td className="px-6 py-5 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex flex-wrap items-center justify-end gap-2">
                           <AdminButton 
                             icon={<Eye className="w-3.5 h-3.5" />} 
                             label="View" 
                             onClick={() => handleViewProfile(user)}
-                            variant="warning"
+                            variant="info"
+                          />
+                          <AdminButton 
+                            icon={<MailIcon className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-mail' && "animate-spin")} />} 
+                            label="Mail" 
+                            onClick={() => handleSendMail(user.id, user.username || user.email)}
+                            variant="info"
+                          />
+                          <AdminButton 
+                            icon={<Gift className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-reward' && "animate-spin")} />} 
+                            label="+XP" 
+                            onClick={() => handleGiveReward(user.supabase_id, user.xp, user.level)}
+                            variant="success"
+                          />
+                          <AdminButton 
+                            icon={<RotateCcw className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-reset-lvl' && "animate-spin")} />} 
+                            label="Reset" 
+                            onClick={() => handleResetLevel(user.supabase_id)}
+                            variant="danger"
                           />
                           <AdminButton 
                             icon={<ArrowUpCircle className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-lvl' && "animate-spin")} />} 
                             label="+LVL" 
                             onClick={() => handleLevelUp(user.supabase_id, user.level)}
-                            variant="info"
-                          />
-                          <AdminButton 
-                            icon={<RefreshCw className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-reset' && "animate-spin")} />} 
-                            label="Reset" 
-                            onClick={() => handleResetCooldown(user.supabase_id)}
                             variant="warning"
                           />
                           <AdminButton 
@@ -367,6 +540,89 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                     <p className="text-xs text-neutral-600 mt-2">User has not completed the personality test.</p>
                   </div>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Action/Confirm Modal */}
+      <AnimatePresence>
+        {confirmModal && confirmModal.isOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+              className="w-full max-w-sm bg-rpg-card border border-white/10 rounded-3xl p-6 shadow-2xl flex flex-col gap-4"
+            >
+              <div className="flex items-center gap-3">
+                {confirmModal.variant === 'danger' && <AlertTriangle className="w-6 h-6 text-red-500" />}
+                {confirmModal.variant === 'success' && <Gift className="w-6 h-6 text-green-500" />}
+                {confirmModal.variant === 'warning' && <Megaphone className="w-6 h-6 text-amber-500" />}
+                {confirmModal.variant === 'info' && <ShieldCheck className="w-6 h-6 text-blue-500" />}
+                <h3 className="font-black text-lg text-white">{confirmModal.title}</h3>
+              </div>
+              <p className="text-sm text-neutral-400 leading-relaxed">{confirmModal.message}</p>
+              
+              {confirmModal.type === 'prompt' && (
+                confirmModal.inputType === 'text' ? (
+                  <textarea
+                    id="modal-prompt-input"
+                    placeholder={confirmModal.placeholder}
+                    rows={3}
+                    className="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-xl text-white outline-none focus:border-jiwa/50 mt-2 resize-none"
+                    autoFocus
+                  />
+                ) : (
+                  <input
+                    type="number"
+                    id="modal-prompt-input"
+                    placeholder={confirmModal.placeholder}
+                    className="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-xl text-white outline-none focus:border-jiwa/50 mt-2 font-mono"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const val = (document.getElementById('modal-prompt-input') as HTMLInputElement).value;
+                        setConfirmModal(null);
+                        if (val) confirmModal.action(val);
+                      }
+                    }}
+                  />
+                )
+              )}
+
+              <div className="flex justify-end gap-3 mt-4">
+                {confirmModal.type !== 'alert' && (
+                  <button 
+                    onClick={() => setConfirmModal(null)}
+                    className="px-4 py-2 text-xs font-bold text-neutral-400 hover:text-white transition-colors uppercase tracking-wider"
+                  >
+                    Batal
+                  </button>
+                )}
+                <button 
+                  onClick={() => {
+                    let val;
+                    if (confirmModal.type === 'prompt') {
+                      val = (document.getElementById('modal-prompt-input') as HTMLInputElement)?.value;
+                    }
+                    setConfirmModal(null);
+                    if (confirmModal.type !== 'prompt' || val) {
+                      confirmModal.action(val);
+                    }
+                  }}
+                  className={cn(
+                    "px-6 py-2 text-xs font-black rounded-xl text-black uppercase tracking-wider transition-all",
+                    confirmModal.variant === 'danger' ? "bg-red-500 hover:bg-red-400" :
+                    confirmModal.variant === 'success' ? "bg-green-500 hover:bg-green-400" :
+                    confirmModal.variant === 'warning' ? "bg-amber-500 hover:bg-amber-400" :
+                    "bg-blue-500 hover:bg-blue-400"
+                  )}
+                >
+                  {confirmModal.type === 'alert' ? 'OK' : 'Konfirmasi'}
+                </button>
               </div>
             </motion.div>
           </motion.div>

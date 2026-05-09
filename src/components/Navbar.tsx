@@ -1,8 +1,11 @@
-import React from 'react';
-import { LayoutGrid, User, Map, ShieldAlert, Contact2, Mail, Trophy } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { LayoutGrid, User, Map, ShieldAlert, Contact2, Mail, Trophy, Book, Settings } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
 import { cn, getDimensionRank } from '../lib/utils';
 import { isAdmin } from '../lib/config';
+import { supabase } from '../lib/supabase';
+import { useStore } from '../store/useStore';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface NavbarProps {
   session: Session | null;
@@ -15,6 +18,64 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, currentPage, stats }) => {
   const avgStats = stats ? Object.values(stats).reduce((a, b) => a + b, 0) / 5 : 0;
   const currentRank = getDimensionRank(avgStats);
+  const { dbUserId, unreadMailCount, setUnreadMailCount, mailToast, setMailToast, lastMailSeenAt } = useStore();
+  const prevCountRef = useRef(-1);
+  const isFirstPoll = useRef(true);
+
+  // Load lastMailSeenAt from localStorage on init
+  useEffect(() => {
+    if (!dbUserId) return;
+    const saved = localStorage.getItem(`arutha_mail_seen_${dbUserId}`);
+    if (saved && !lastMailSeenAt) {
+      useStore.getState().setLastMailSeenAt(saved);
+    }
+  }, [dbUserId]);
+
+  useEffect(() => {
+    if (!dbUserId) return;
+    const fetchUnread = async () => {
+      // 1. Pesan personal yang belum dibaca
+      const { count: personalCount } = await supabase
+        .from('arutha_mail')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', dbUserId)
+        .eq('is_read', false);
+      
+      // 2. Pesan global yang lebih baru dari terakhir user buka Kotak Surat
+      const seenAt = useStore.getState().lastMailSeenAt || localStorage.getItem(`arutha_mail_seen_${dbUserId}`);
+      let globalUnread = 0;
+      
+      if (seenAt) {
+        const { count } = await supabase
+          .from('arutha_mail')
+          .select('id', { count: 'exact', head: true })
+          .is('user_id', null)
+          .gt('created_at', seenAt);
+        globalUnread = count || 0;
+      } else {
+        // Belum pernah buka mail → hitung semua global
+        const { count } = await supabase
+          .from('arutha_mail')
+          .select('id', { count: 'exact', head: true })
+          .is('user_id', null);
+        globalUnread = count || 0;
+      }
+
+      const total = (personalCount || 0) + globalUnread;
+      
+      // Detect NEW mail → show toast (skip on first load)
+      if (!isFirstPoll.current && total > prevCountRef.current && prevCountRef.current >= 0) {
+        setMailToast('📬 Kamu mendapat surat baru!');
+        setTimeout(() => setMailToast(null), 4000);
+      }
+      isFirstPoll.current = false;
+      prevCountRef.current = total;
+      setUnreadMailCount(total);
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 15000);
+    return () => clearInterval(interval);
+  }, [dbUserId, lastMailSeenAt]);
 
   return (
     <>
@@ -46,8 +107,8 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
             <div className="flex flex-col gap-2 w-full">
               <SidebarPill active={currentPage === 'DASHBOARD'} onClick={() => onNavigate('DASHBOARD')} icon={<LayoutGrid className="w-4 h-4" />} label="Home" />
               <SidebarPill active={currentPage === 'LEADERBOARD'} onClick={() => onNavigate('LEADERBOARD')} icon={<Trophy className="w-4 h-4 text-harta" />} label="Hall of Fame" />
+              <SidebarPill active={currentPage === 'CODEX'} onClick={() => onNavigate('CODEX')} icon={<Book className="w-4 h-4 text-jiwa" />} label="Codex" />
               <SidebarPill active={currentPage === 'PROFILE'} onClick={() => onNavigate('PROFILE')} icon={<Contact2 className="w-4 h-4" />} label="Profile" />
-              <SidebarPill active={false} onClick={() => {}} icon={<Map className="w-4 h-4" />} label="Quests" />
               <SidebarPill active={currentPage === 'SETTINGS'} onClick={() => onNavigate('SETTINGS')} icon={<User className="w-4 h-4" />} label="Settings" />
               {isAdmin(session.user.email) && (
                 <SidebarPill active={currentPage === 'ADMIN'} onClick={() => onNavigate('ADMIN')} icon={<ShieldAlert className="w-4 h-4 text-jiwa" />} label="Admin" />
@@ -72,10 +133,20 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
               </div>
             </div>
             
-            <div className="flex justify-center items-center gap-4">
-              <button className="p-2 text-neutral-500 hover:text-neutral-200 transition-colors relative group">
+            <div className="flex justify-center items-center gap-4 mt-6">
+              <button 
+                onClick={() => onNavigate('MAIL')} 
+                className={cn(
+                  "p-3 rounded-2xl transition-all relative group flex items-center justify-center",
+                  currentPage === 'MAIL' ? "bg-white/10 text-jiwa shadow-inner" : "text-neutral-500 hover:text-neutral-200 hover:bg-white/5"
+                )}
+              >
                 <Mail className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-jiwa rounded-full animate-pulse" />
+                {unreadMailCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[20px] h-5 flex items-center justify-center bg-jiwa text-black text-[10px] font-black rounded-full px-1 shadow-[0_0_10px_rgba(236,72,153,0.6)] animate-bounce">
+                    {unreadMailCount}
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -83,26 +154,55 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
       </nav>
 
       {/* Top Navbar - Mobile Only */}
-      <nav className="md:hidden fixed top-0 left-0 right-0 z-50 bg-rpg-black/80 backdrop-blur-2xl border-b border-white/5 pt-[env(safe-area-inset-top)]">
-        <div className="px-6 h-16 flex items-center justify-between">
+      <nav className="md:hidden fixed top-0 left-0 right-0 z-50 bg-rpg-black/60 backdrop-blur-3xl border-b border-white/5 pt-[env(safe-area-inset-top)]">
+        <div className="px-6 h-20 flex items-center justify-between">
           <button 
             onClick={() => onNavigate('LANDING')} 
-            className="flex items-center gap-3 active:scale-95 transition-transform"
+            className="flex items-center gap-4 active:scale-95 transition-transform"
           >
-            <img src="/Arutha.png" alt="Arutha Logo" className="w-9 h-9 rounded-xl object-cover shadow-lg" />
+            <div className="relative">
+              <img src="/Arutha.png" alt="Arutha Logo" className="w-10 h-10 rounded-xl object-cover shadow-lg border border-white/10" />
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-jiwa/20 to-transparent pointer-events-none" />
+            </div>
             <div className="flex flex-col items-start leading-tight text-left">
-              <span className="text-lg font-black tracking-tighter text-white italic">ARUTHA</span>
+              <span className="text-xl font-black tracking-tighter text-white italic">ARUTHA</span>
               {session && (
-                <span className="text-[9px] font-black text-jiwa uppercase tracking-[0.2em] line-clamp-1 max-w-[120px]">
+                <span className="text-[9px] font-black text-jiwa uppercase tracking-[0.2em] line-clamp-1 max-w-[120px] opacity-80">
                   {userName}
                 </span>
               )}
             </div>
           </button>
-          {!session && (
+          {session ? (
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => onNavigate('MAIL')}
+                className={cn(
+                  "w-10 h-10 rounded-xl transition-all active:scale-90 flex items-center justify-center shadow-lg relative",
+                  currentPage === 'MAIL' ? "bg-jiwa text-black shadow-jiwa/20" : "text-neutral-400 bg-white/5 border border-white/10 hover:bg-white/10"
+                )}
+              >
+                <Mail className="w-4 h-4" />
+                {unreadMailCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 flex items-center justify-center bg-jiwa text-black text-[9px] font-black rounded-full px-0.5 shadow-[0_0_8px_rgba(236,72,153,0.6)]">
+                    {unreadMailCount}
+                  </span>
+                )}
+              </button>
+              <button 
+                onClick={() => onNavigate('SETTINGS')}
+                className={cn(
+                  "w-10 h-10 rounded-xl transition-all active:scale-90 flex items-center justify-center shadow-lg",
+                  currentPage === 'SETTINGS' ? "bg-jiwa text-black shadow-jiwa/20" : "text-neutral-400 bg-white/5 border border-white/10 hover:bg-white/10"
+                )}
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
             <div className="flex gap-3">
-              <button onClick={() => onNavigate('LOGIN')} className="text-xs font-bold text-neutral-400 px-2">Login</button>
-              <button onClick={() => onNavigate('REGISTER')} className="px-5 py-2 text-xs font-black bg-white text-black rounded-full shadow-xl">Register</button>
+              <button onClick={() => onNavigate('LOGIN')} className="text-xs font-bold text-neutral-400 px-3 py-2">Login</button>
+              <button onClick={() => onNavigate('REGISTER')} className="px-6 py-2.5 text-xs font-black bg-white text-black rounded-full shadow-2xl hover:scale-105 transition-transform">Register</button>
             </div>
           )}
         </div>
@@ -114,14 +214,32 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
           <div className="flex items-center justify-around py-2">
             <MobileNavPill active={currentPage === 'DASHBOARD'} onClick={() => onNavigate('DASHBOARD')} icon={<LayoutGrid />} label="Home" />
             <MobileNavPill active={currentPage === 'LEADERBOARD'} onClick={() => onNavigate('LEADERBOARD')} icon={<Trophy className="text-harta" />} label="Hall" />
+            <MobileNavPill active={currentPage === 'CODEX'} onClick={() => onNavigate('CODEX')} icon={<Book className="text-jiwa" />} label="Codex" />
             <MobileNavPill active={currentPage === 'PROFILE'} onClick={() => onNavigate('PROFILE')} icon={<Contact2 />} label="Profile" />
-            <MobileNavPill active={currentPage === 'SETTINGS'} onClick={() => onNavigate('SETTINGS')} icon={<User />} label="Settings" />
             {isAdmin(session.user.email) && (
               <MobileNavPill active={currentPage === 'ADMIN'} onClick={() => onNavigate('ADMIN')} icon={<ShieldAlert className="text-jiwa" />} label="Admin" />
             )}
           </div>
         </nav>
       )}
+
+      {/* Floating Mail Toast Notification */}
+      <AnimatePresence>
+        {mailToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -60, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -40, scale: 0.9 }}
+            className="fixed top-24 md:top-6 left-1/2 -translate-x-1/2 z-[200] cursor-pointer"
+            onClick={() => { setMailToast(null); onNavigate('MAIL'); }}
+          >
+            <div className="px-6 py-4 bg-gradient-to-r from-jiwa/90 to-jiwa/70 backdrop-blur-xl text-black font-black italic rounded-2xl shadow-[0_10px_40px_rgba(236,72,153,0.4)] flex items-center gap-3 border border-white/20">
+              <Mail className="w-5 h-5" />
+              <span className="text-sm tracking-wide">{mailToast}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

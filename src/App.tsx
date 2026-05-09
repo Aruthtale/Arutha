@@ -19,6 +19,7 @@ import { Settings } from './pages/Settings';
 import { Profile } from './pages/Profile';
 import { Admin } from './pages/Admin';
 import { CompleteGoogleProfile } from './pages/CompleteGoogleProfile';
+import { Codex } from './pages/Codex';
 import { checkAndApplyDecay, resetFatigue, type DecayResult } from './lib/decaySystem';
 import { cn } from './lib/utils';
 import { Star } from 'lucide-react';
@@ -26,6 +27,7 @@ import { isAdmin } from './lib/config';
 import { Leaderboard } from './pages/Leaderboard';
 import { SplashScreen } from './components/SplashScreen';
 import { useStore } from './store/useStore';
+import { Mail } from './pages/Mail';
 
 export default function App() {
   const {
@@ -301,7 +303,7 @@ export default function App() {
           fetchStatHistory(userData.id);
 
           setPage(prev => {
-            const entryPages = ['LANDING', 'LOGIN', 'REGISTER', 'ONBOARDING', 'CHARACTER_REVEAL'];
+            const entryPages = ['LANDING', 'LOGIN', 'REGISTER', 'ONBOARDING', 'CHARACTER_REVEAL', 'CODEX'];
             if (entryPages.includes(prev)) return 'DASHBOARD';
             return prev;
           });
@@ -770,6 +772,14 @@ export default function App() {
           )}
           {page === 'ADMIN' && isAdmin(session?.user.email) && (
             <Admin onBack={() => setPage('DASHBOARD')} />
+          )}
+          {page === 'CODEX' && (
+            <Codex onBack={() => setPage('DASHBOARD')} />
+          )}
+          {page === 'MAIL' && (
+            <motion.div key="mail" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <Mail userId={dbUserId || ''} onBack={() => setPage('DASHBOARD')} />
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
