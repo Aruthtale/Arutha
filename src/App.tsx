@@ -503,7 +503,7 @@ export default function App() {
     }
   };
 
-  const hideNavbar = page === 'ONBOARDING' || page === 'CHARACTER_REVEAL' || page === 'LOGIN' || page === 'REGISTER' || page === 'COMPLETE_PROFILE';
+  const hideNavbar = page === 'ONBOARDING' || page === 'CHARACTER_REVEAL' || page === 'LOGIN' || page === 'REGISTER' || page === 'COMPLETE_PROFILE' || (page === 'LANDING' && !session);
 
   return (
     <div className="min-h-screen bg-rpg-black text-white selection:bg-white selection:text-black">
