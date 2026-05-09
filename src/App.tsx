@@ -136,7 +136,7 @@ export default function App() {
         .from('arutha_user')
         .select('*')
         .eq('supabase_id', session.user.id)
-        .single();
+        .maybeSingle();
 
       // 2. Jika tidak ada, coba cari berdasarkan email (data healing untuk user lama)
       if (!userData) {
@@ -144,7 +144,7 @@ export default function App() {
           .from('arutha_user')
           .select('*')
           .eq('email', userEmail)
-          .single();
+          .maybeSingle();
         
         if (emailUser) {
           userData = emailUser;
