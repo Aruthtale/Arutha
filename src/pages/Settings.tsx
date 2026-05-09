@@ -72,13 +72,25 @@ export const Settings: React.FC<SettingsProps> = ({
     if (deleteConfirmText !== email) return;
     setIsDeleting(true);
     try {
-      // Logic hapus data di DB lewat RPC atau manual jika diperlukan
-      // Untuk demo, kita langsung delete user via supabase (memerlukan service role atau lewat API kita)
-      // Disini kita trigger logout dulu sebagai simulasi atau panggil API penghapusan
-      alert("Permintaan penghapusan akun dikirim. Seluruh data Anda akan dihapus.");
+      // Hapus semua data terkait user dari setiap tabel
+      const uid = (await supabase.auth.getUser()).data.user?.id;
+      if (!uid) throw new Error('User tidak ditemukan');
+
+      // 1. Hapus data dependen terlebih dahulu
+      await supabase.from('chat_logs').delete().eq('user_id', userId);
+      await supabase.from('stat_history').delete().eq('user_id', userId);
+      await supabase.from('character_profile').delete().eq('user_id', userId);
+      await supabase.from('arutha_mail').delete().eq('user_id', userId);
+
+      // 2. Hapus profil utama
+      const { error } = await supabase.from('arutha_user').delete().eq('supabase_id', uid);
+      if (error) throw error;
+
+      // 3. Sign out
+      await supabase.auth.signOut();
       onLogout();
-    } catch (error) {
-      alert("Gagal menghapus akun.");
+    } catch (error: any) {
+      alert("Gagal menghapus akun: " + (error.message || 'Unknown error'));
     } finally {
       setIsDeleting(false);
     }
