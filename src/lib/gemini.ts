@@ -126,10 +126,11 @@ Output JSON format:
   "personality_type": "MBTI_TYPE",
   "personality_title": "Title in English",
   "personality_desc": "1-2 sentences in Indonesian",
-  "stats": { "JIWA": 20-90, "RAGA": 20-90, "HARTA": 20-90, "ILMU": 20-90, "KARMA": 20-90 },
+  "stats": { "JIWA": 10-50, "RAGA": 10-50, "HARTA": 10-50, "ILMU": 10-50, "KARMA": 10-50 },
   "character_summary": "2-3 sentences narration in Indonesian",
   "starter_quest": { "title": "Quest Title", "desc": "Quest Desc", "stat": "LOWEST_STAT" }
-}`;
+}
+PENTING: Nilai stats awal TIDAK BOLEH melebihi 50 agar pemain memiliki ruang untuk berkembang.`;
 
   const tryGenerate = async (modelName: string) => {
     const response = await aiClient.models.generateContent({
@@ -141,7 +142,16 @@ Output JSON format:
     if (jsonStr.includes('```')) {
       jsonStr = jsonStr.split('```')[1].replace(/^json/, '').trim();
     }
-    return JSON.parse(jsonStr);
+    const result = JSON.parse(jsonStr);
+    
+    // Hard-cap stats at 50
+    if (result.stats) {
+      Object.keys(result.stats).forEach(key => {
+        const k = key as keyof Stats;
+        result.stats[k] = Math.min(50, result.stats[k]);
+      });
+    }
+    return result;
   };
 
   const modelsToTry = [
@@ -168,7 +178,7 @@ Output JSON format:
     personality_type: 'INFJ',
     personality_title: 'The Advocate',
     personality_desc: 'Jiwa yang visioner dan penuh empati.',
-    stats: { JIWA: 70, RAGA: 50, HARTA: 40, ILMU: 80, KARMA: 60 },
+    stats: { JIWA: 45, RAGA: 30, HARTA: 25, ILMU: 48, KARMA: 35 },
     character_summary: 'Analisis tertunda karena server AI Google sedang penuh, namun jiwamu tetap bersinar sebagai Advocate.',
     starter_quest: { title: 'Langkah Awal', desc: 'Lakukan meditasi 5 menit.', stat: 'JIWA' }
   };

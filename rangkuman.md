@@ -1,92 +1,97 @@
-# DOKUMENTASI & RANGKUMAN TEKNIS KOMPREHENSIF ARUTHA
+# DOKUMENTASI & RANGKUMAN FINAL PENGEMBANGAN ARUTHA
 
-Selamat datang di dokumentasi lengkap proyek **ARUTHA**. Laporan ini disusun untuk memberikan gambaran menyeluruh tentang arsitektur, fitur-fitur RPG, riwayat penanganan bug, dan status sistem saat ini.
+Dokumen ini adalah catatan sejarah lengkap mengenai pengembangan aplikasi **ARUTHA**, mencakup arsitektur, sistem RPG, integrasi Android, penanganan bug kritis, hingga protokol keamanan data.
 
 ---
 
-## I. ARSITEKTUR & TEKNOLOGI UTAMA
-Aplikasi ini dibangun dengan tumpukan teknologi modern untuk memastikan performa dan skalabilitas:
-*   **Frontend**: React (Vite) dengan TypeScript untuk keamanan tipe data.
-*   **Styling**: Tailwind CSS untuk antarmuka yang responsif dan estetis (RPG Theme).
-*   **Backend & Database**: Supabase (PostgreSQL) dengan Prisma sebagai ORM untuk manajemen skema.
-*   **Kecerdasan Buatan**: Google Gemini API (Model: Flash 1.5 & Pro 1.5) sebagai "Game Master".
+## I. ARSITEKTUR TEKNOLOGI & INFRASTRUKTUR
+*   **Frontend Core**: React (Vite) dengan TypeScript.
+*   **Mobile Framework**: Capacitor 8.0 (Android Native Wrapper).
+*   **Hosting & Deployment**: Vercel (Web Content) & Supabase (Backend/DB).
+*   **AI Engine**: Google Gemini API (Game Master & Verifikator Quest).
+*   **Design System**: Tailwind CSS dengan tema premium Dark RPG & Framer Motion untuk animasi dinamis.
 
 ---
 
 ## II. FITUR-FITUR RPG & MEKANIK UTAMA
 
-### 1. Sistem Inisialisasi Karakter (Onboarding)
-*   **Analisis Psikologis**: User menjawab serangkaian pertanyaan situasional. AI Gemini menganalisis jawaban tersebut untuk menentukan tipe kepribadian (Personality Type) dan statistik awal.
-*   **Penentuan Statistik**: 5 dimensi utama yaitu **JIWA, RAGA, HARTA, ILMU, dan KARMA**. Nilai awal (20-90) ditentukan berdasarkan hasil analisis AI terhadap jawaban user.
-*   **Penyimpanan Profil**: Data profil disimpan di tabel `character_profile` yang terhubung dengan tabel user utama melalui `user_id`.
+### 1. Inisialisasi Karakter (Onboarding)
+*   Tes psikologi berbasis narasi AI untuk menentukan 5 statistik dasar (**JIWA, RAGA, HARTA, ILMU, KARMA**).
+*   Penentuan **Personality Type** dan **Personality Title** yang unik untuk setiap pemain.
 
-### 2. Sistem Quest Harian & Mood Check-in
-*   **Personalisasi Quest**: Quest dihasilkan setiap hari berdasarkan statistik terendah user untuk mendorong keseimbangan karakter.
-*   **Mood Context**: Sebelum memulai hari, user melakukan *check-in* mood menggunakan emoji. AI akan menyesuaikan gaya bahasa dan tingkat kesulitan quest berdasarkan mood tersebut (misal: jika sedang sedih, quest dibuat lebih ringan dan menghibur).
-*   **Mekanisme Refresh**: User memiliki jatah 1x refresh per hari jika quest yang diberikan kurang sesuai.
-*   **Verifikasi AI**: Saat user menyelesaikan quest, mereka harus memberikan catatan (note). AI akan memverifikasi apakah catatan tersebut relevan dengan tugas yang diberikan sebelum memberikan reward XP.
+### 2. Sistem Quest & Mood Check-in
+*   **Daily Quests**: Quest yang dihasilkan secara personal setiap hari berdasarkan statistik terendah.
+*   **Mood Integration**: Penyesuaian gaya bahasa dan kesulitan quest berdasarkan mood harian pemain.
+*   **AI Verification**: Sistem verifikasi bukti quest menggunakan AI untuk menjaga kejujuran progres pemain.
 
-### 3. Sistem Ketidakaktifan (Decay System)
-*   **Pengecekan Inaktivitas**: Setiap kali user login, sistem menghitung selisih hari sejak aktivitas terakhir (`last_active_date`).
-*   **Penalti Stat**: Jika user tidak aktif lebih dari 3 hari, statistik akan berkurang secara otomatis (penalti stat sebesar 2-5 poin per dimensi).
-*   **Status Fatigue**: Pemain yang terlalu memaksakan diri atau terkena efek decay akan masuk ke status *Fatigue*, yang ditandai dengan banner peringatan di Dashboard.
-*   **Recovery Session**: Jika terkena dampak decay, user dapat mengambil quest pemulihan khusus untuk mengembalikan statistik mereka ke kondisi normal.
+### 3. Sistem Ketidakaktifan & Pemulihan (Decay & Fatigue)
+*   Penalti statistik otomatis jika pemain tidak aktif selama lebih dari 3 hari.
+*   Fitur **Recovery Quest** untuk memulihkan statistik setelah masa ketidakaktifan.
 
-### 4. Mekanik Evolusi
-*   **Leveling System**: XP diperoleh dari penyelesaian quest. Setiap 1000 XP, user akan naik level.
-*   **Cooldown Evolusi**: User dapat melakukan "Evolusi" (onboarding ulang untuk memperbarui profil) setiap 7 hari sekali. Sistem akan menghitung mundur sisa hari jika belum mencapai waktu evolusi.
+### 4. Sistem Ganti Nama & Kuota Perubahan (Update Terbaru)
+*   **Sistem Kuota 3x**: Pemain memiliki 3 kesempatan ganti nama.
+*   **Cooldown 3 Hari**: Setelah perubahan ke-3, fitur akan terkunci selama 3 hari sebelum kuota di-reset kembali ke 1.
+*   **Smooth UI**: Badge status menampilkan "X SISA PERUBAHAN" dengan animasi transisi Framer Motion yang halus.
 
----
-
-## III. RIWAYAT BUG & PENANGANAN TEKNIS (DEBUGGING LOG)
-
-Laporan ini mencatat bug-bug kritis yang berhasil diselesaikan selama proses pengembangan:
-
-### 1. Error 400 - Bad Request (Supabase Selection)
-*   **Masalah**: Query `select` meminta kolom `name_change_count` dan `last_name_change` yang ternyata belum dibuat di database Supabase (meskipun sudah ada di skema Prisma).
-*   **Solusi**: Menghapus referensi kolom tersebut dari query inisialisasi di `App.tsx` dan `Settings.tsx` sampai migrasi database selesai dilakukan.
-
-### 2. Error 406 - Not Acceptable (PGRST116)
-*   **Masalah**: Penggunaan fungsi `.single()` pada query Supabase menyebabkan aplikasi crash jika hasil pencarian kosong (terutama untuk user baru).
-*   **Solusi**: Mengganti `.single()` dengan pencarian biasa menggunakan `.limit(1)` dan mengambil indeks ke-0, serta menambahkan logika penanganan data `null`.
-
-### 3. Error 500 - Internal Server Error (Vite/Duplicate)
-*   **Masalah**: Terjadi duplikasi deklarasi fungsi `handleUpdateName` dan `generateInitialQuests` di dalam `App.tsx` akibat penggabungan kode yang kurang sempurna.
-*   **Solusi**: Melakukan audit kode secara menyeluruh dan menghapus versi fungsi yang redundan, serta mempertahankan versi yang paling mutakhir.
-
-### 4. Race Condition - Refresh Quest Spam
-*   **Masalah**: User bisa menekan tombol refresh quest berkali-kali dalam waktu singkat, menyebabkan limit harian terlampaui atau data di database menjadi kacau.
-*   **Solusi**: Implementasi `refreshLockRef` menggunakan `useRef` sebagai *mutex lock*. Tombol akan terkunci seketika setelah ditekan dan hanya akan terbuka kembali setelah proses server selesai.
-
-### 5. Constraint Violation - Null ID
-*   **Masalah**: Proses `upsert` data user gagal karena kolom `id` di database Supabase tidak terisi otomatis (melanggar batasan *not-null*).
-*   **Solusi**: Menambahkan pembuatan ID manual di sisi klien menggunakan `crypto.randomUUID()` pada setiap proses pembuatan data user baru.
+### 5. Admin Sanctum (Control Center)
+*   **Eksklusivitas**: Khusus untuk email admin (`aruthtale@gmail.com`).
+*   **User Management**: Dashboard lengkap untuk melihat seluruh database pemain.
+*   **Admin Tools**: Fitur instan untuk **Reset Cooldown** dan **Pemberian Bonus XP (+500)** langsung dari aplikasi.
 
 ---
 
-## IV. STATUS HALAMAN & NAVIGASI (SITEMAP)
+## III. INTEGRASI ANDROID & MOBILE AUTH (DEEP LINKING)
 
-1.  **Landing Page**: Gerbang utama, menampilkan branding Arutha dan tombol akses masuk.
-2.  **Auth (Login/Register)**: Terintegrasi dengan email/password dan **Google Social Login**.
-3.  **Onboarding**: Pengalaman naratif tes kepribadian berbasis AI.
-4.  **Character Reveal**: Halaman transisi yang menampilkan hasil analisis kepribadian dan statistik awal.
-5.  **Dashboard**: 
-    *   Tampilan Radar Chart (Statistik).
-    *   List Quest Harian.
-    *   Banner Status (Decay/Fatigue).
-    *   Akses ke Mood Check-in.
-6.  **Profile**: Resume progres karakter, pencapaian level, dan ringkasan kepribadian.
-7.  **Settings**:
-    *   Perubahan Nama (dengan proteksi cooldown 3 hari).
-    *   Manajemen Akun & Logout.
-    *   Pengaturan Preferensi (Notifikasi & Suara).
+### 1. Konfigurasi Native Android
+*   Custom URL Scheme: `com.aruthtale.arutha`.
+*   Sinkronisasi *live* dari Vercel melalui `server.url` di Capacitor.
+
+### 2. Solusi Google Login & Auth Resilience
+*   **Deep Link Integration**: Redirect login dari browser kembali ke aplikasi Android secara otomatis.
+*   **Session Refresh**: Sistem secara otomatis me-refresh sesi sebelum melakukan update data sensitif untuk mencegah error `AuthSessionMissing`.
+*   **Fail-safe DB Update**: Jika sinkronisasi metadata Auth gagal, aplikasi tetap memprioritaskan pembaruan ke database utama agar nama pemain tetap tersimpan.
 
 ---
 
-## V. CATATAN PENGEMBANGAN MASA DEPAN
-*   **RLS (Row Level Security)**: Mengaktifkan kebijakan keamanan di Supabase untuk memastikan setiap user hanya bisa mengakses datanya sendiri.
-*   **Database Migration**: Menjalankan SQL untuk menambahkan kolom `name_change_count` dan `last_name_change` agar fitur ganti nama menjadi lebih canggih.
-*   **Sistem Guild/Party**: Fitur sosial untuk menyelesaikan quest bersama teman.
+## IV. PERBAIKAN UI/UX & OPTIMASI VISUAL
+
+### 1. Responsivitas & Layout
+*   **Navbar Overlap Fix**: Penyesuaian *padding-top* (`pt-32`) pada seluruh halaman agar tidak tertutup Navbar tetap.
+*   **Settings Mobile**: Penyesuaian layout input dan tombol agar bertumpuk secara vertikal (stack) pada layar HP yang sempit.
+*   **Admin Responsiveness**: Tabel user yang dapat di-scroll horizontal dan grid statistik yang adaptif.
+
+### 2. Chart Optimization (Recharts Fix)
+*   **Delayed Rendering**: Bagan Radar hanya akan muncul setelah 500ms untuk memastikan kontainer sudah memiliki ukuran stabil.
+*   **Fixed Dimension**: Penggunaan tinggi tetap (320px) dan *aspect ratio* untuk menghilangkan peringatan "width(-1)" di konsol browser.
 
 ---
-**Status Terakhir (8 Mei 2026):** *Sistem dinyatakan STABLE. Semua error kritis telah diatasi. Aplikasi siap untuk pengujian user lebih lanjut.*
+
+## V. OPTIMASI DASHBOARD (RICH DASHBOARD)
+Aplikasi kini memiliki Dashboard yang dirancang sebagai **"Pusat Operasional"** pemain dengan elemen RPG yang imersif:
+*   **Oracle's Word**: Pesan wawasan harian dari AI Gemini yang dinamis.
+*   **Active Status (Buffs/Debuffs)**: Indikator visual seperti "Aura Fokus" dan "Berkah Kebijaksanaan" untuk memperkuat kesan RPG.
+*   **Daily Streak**: Sistem pelacakan konsistensi harian (Streak) untuk memotivasi pemain.
+*   **Refined Quest List**: Tata letak misi harian yang lebih fokus dan interaktif dengan verifikasi AI yang terintegrasi.
+*   **Dimension Radar & Status**: Gambaran cepat statistik karakter di sisi samping untuk memudahkan pemantauan progres.
+
+---
+
+## VI. OPTIMASI PROFILE (CHARACTER SHEET)
+Halaman Profile kini berfungsi sebagai **"Character Sheet"** premium yang menyimpan seluruh riwayat pertumbuhan pemain:
+*   **Hero Avatar & Title**: Visualisasi identitas pemain dengan Level dan Gelar Kepribadian yang menonjol.
+*   **RPG Attributes Grid**: Statistik JIWA, RAGA, HARTA, ILMU, dan KARMA dipetakan ke atribut klasik (Spirit, Vitality, Fortune, Wisdom, Empathy).
+*   **Chronicle of Identity**: Narasi mendalam dari AI Gemini yang merangkum esensi karakter pemain.
+*   **Hall of Fame**: Sistem pencapaian (Achievements) yang didesain sebagai lencana kebanggaan pemain.
+*   **Legacy Pulse**: Rekam jejak aktivitas terakhir untuk melihat konsistensi dalam jangka panjang.
+
+---
+
+## VII. STATUS SISTEM SAAT INI
+1.  **Dashboard**: Radar Chart & Quest List (Status: Optimized & No Warnings).
+2.  **Quest Log**: Manajemen tugas (Status: Integrated).
+3.  **Profile**: Analisis Karakter AI (Status: Ready).
+4.  **Settings**: Manajemen Akun & Nama (Status: Quota System Active).
+5.  **Admin Sanctum**: Control Center Admin (Status: Active for aruthtale@gmail.com).
+
+---
+**Status Terakhir (8 Mei 2026):** *Aplikasi dalam kondisi FINAL & STABLE. Seluruh bug kritikal dan permintaan fitur tambahan telah diimplementasikan sepenuhnya.*

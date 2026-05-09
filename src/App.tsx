@@ -14,10 +14,11 @@ import { CharacterReveal } from './pages/CharacterReveal';
 import { Dashboard } from './pages/Dashboard';
 import { Settings } from './pages/Settings';
 import { Profile } from './pages/Profile';
+import { Admin } from './pages/Admin';
 import { checkAndApplyDecay, resetFatigue, type DecayResult } from './lib/decaySystem';
 
 export default function App() {
-  const [page, setPage] = useState<'LANDING' | 'LOGIN' | 'REGISTER' | 'ONBOARDING' | 'CHARACTER_REVEAL' | 'DASHBOARD' | 'SETTINGS' | 'PROFILE'>('LANDING');
+  const [page, setPage] = useState<'LANDING' | 'LOGIN' | 'REGISTER' | 'ONBOARDING' | 'CHARACTER_REVEAL' | 'DASHBOARD' | 'SETTINGS' | 'PROFILE' | 'ADMIN'>('LANDING');
   const [session, setSession] = useState<Session | null>(null);
   const [dbUserId, setDbUserId] = useState<string | null>(null);
   const [decayResult, setDecayResult] = useState<DecayResult | null>(null);
@@ -37,6 +38,7 @@ export default function App() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastEvolutionDate, setLastEvolutionDate] = useState<string | null>(null);
   const [refreshCount, setRefreshCount] = useState(0);
+  const [streak, setStreak] = useState(0);
   const [nameChangeCount, setNameChangeCount] = useState(0);
   const [lastNameChange, setLastNameChange] = useState<string | null>(null);
   const refreshLockRef = useRef(false);
@@ -120,7 +122,7 @@ export default function App() {
           onConflict: 'supabase_id',
           ignoreDuplicates: false
         })
-        .select('id, level, xp, active_quests, last_quest_update, refresh_count, last_refresh_date, name_change_count, last_name_change')
+        .select('id, level, xp, active_quests, last_quest_update, refresh_count, last_refresh_date, name_change_count, last_name_change, streak')
         .limit(1);
 
       if (upsertError) {
@@ -139,8 +141,9 @@ export default function App() {
         const decayResult = await checkAndApplyDecay(userData.id);
         setDecayResult(decayResult);
 
+        setStreak(userData.streak || 0);
         setNameChangeCount(userData.name_change_count || 0);
-        setLastNameChange(userData.last_name_change || null);
+        setLastNameChange(userData.last_name_change ? String(userData.last_name_change) : null);
 
         // Reset Refresh Count jika sudah berganti hari
         const lastRefreshDateStr = userData.last_refresh_date || now;
@@ -355,34 +358,51 @@ export default function App() {
     if (!session || !dbUserId) return;
     
     // Check Cooldown Logic
+    // Check Cooldown Logic (Locked only after 3 changes)
     if (nameChangeCount >= 3 && lastNameChange) {
       const lastDate = new Date(lastNameChange);
       const diffDays = (new Date().getTime() - lastDate.getTime()) / (1000 * 3600 * 24);
       if (diffDays < 3) {
         const remainingDays = Math.ceil(3 - diffDays);
-        throw new Error(`Limit tercapai. Tunggu ${remainingDays} hari lagi untuk mengganti nama.`);
+        throw new Error(`Limit tercapai. Tunggu ${remainingDays} hari lagi untuk reset kuota.`);
       }
     }
 
     try {
-      const newCount = nameChangeCount >= 3 ? 1 : nameChangeCount + 1;
+      // 1. Force refresh session to ensure tokens are fresh
+      const { data: { session: currentSession }, error: refreshError } = await supabase.auth.refreshSession();
+      
+      if (refreshError || !currentSession) {
+        throw new Error("Sesi login tidak valid. Silakan coba Logout dan Login kembali.");
+      }
+
+      // Reset count to 1 if we were previously locked but the cooldown passed
+      const isCurrentlyLocked = nameChangeCount >= 3;
+      const newCount = isCurrentlyLocked ? 1 : nameChangeCount + 1;
       const now = new Date().toISOString();
 
-      const { error: authError } = await supabase.auth.updateUser({
-        data: { full_name: newName }
-      });
-      if (authError) throw authError;
+      // 2. Update Auth Metadata (Try but don't fail the whole process if it's just metadata)
+      try {
+        await supabase.auth.updateUser({
+          data: { full_name: newName }
+        });
+      } catch (authErr) {
+        console.warn("Auth metadata update failed, proceeding with DB update:", authErr);
+      }
 
+      // 3. Update Database (Critical)
       const { error: dbError } = await supabase
         .from('arutha_user')
         .update({ 
-          username: newName.toLowerCase().replace(/\s+/g, '_'),
+          username: newName,
           name_change_count: newCount,
           last_name_change: now
         })
-        .eq('id', dbUserId);
+        .eq('supabase_id', currentSession.user.id);
+      
       if (dbError) throw dbError;
 
+      // 4. Update Local State
       setName(newName);
       setNameChangeCount(newCount);
       setLastNameChange(now);
@@ -471,13 +491,13 @@ export default function App() {
       </div>
 
       {!hideNavbar && (
-        <Navbar session={session} onNavigate={(p) => setPage(p as any)} currentPage={page} />
+        <Navbar session={session} userName={name} onNavigate={(p) => setPage(p as any)} currentPage={page} />
       )}
 
       <AnimatePresence mode="wait">
         {page === 'LANDING' && (
           <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-            <Landing session={session} setPage={setPage} />
+            <Landing session={session} hasProfile={!!characterAnalysis} setPage={setPage} />
           </motion.div>
         )}
         {page === 'LOGIN' && <Login onBack={() => setPage('LANDING')} />}
@@ -489,8 +509,10 @@ export default function App() {
         {page === 'DASHBOARD' && (
           <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
             <Dashboard 
+              session={session}
               userId={dbUserId || ''}
               name={name} level={level} xp={xp} stats={stats} quests={quests} analysis={characterAnalysis}
+              streak={streak}
               statHistory={statHistory}
               completeQuest={completeQuest} handleLogout={() => supabase.auth.signOut()} addXp={addXp}
               onReOnboard={() => setPage('ONBOARDING')} onRefreshQuests={refreshQuests} isRefreshing={isRefreshing}
@@ -520,6 +542,9 @@ export default function App() {
             name={name} level={level} xp={xp} stats={stats} analysis={characterAnalysis}
             onBack={() => setPage('DASHBOARD')}
           />
+        )}
+        {page === 'ADMIN' && session?.user.email === 'aruthtale@gmail.com' && (
+          <Admin onBack={() => setPage('DASHBOARD')} />
         )}
       </AnimatePresence>
     </div>

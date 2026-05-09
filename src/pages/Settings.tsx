@@ -24,12 +24,25 @@ export const Settings: React.FC<SettingsProps> = ({
   const [isUpdatingName, setIsUpdatingName] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
+  // Sync with prop if it changes externally
+  React.useEffect(() => {
+    setName(initialName);
+  }, [initialName]);
+
   // Cooldown calculation
   const getCooldown = () => {
     if (nameChangeCount < 3 || !lastNameChange) return 0;
     const lastDate = new Date(lastNameChange);
-    const diffDays = (new Date().getTime() - lastDate.getTime()) / (1000 * 3600 * 24);
-    return diffDays < 3 ? Math.ceil(3 - diffDays) : 0;
+    if (isNaN(lastDate.getTime())) return 0;
+    
+    const now = new Date();
+    const diffMs = now.getTime() - lastDate.getTime();
+    const diffDays = diffMs / (1000 * 3600 * 24);
+    
+    if (diffDays < 3) {
+      return Math.ceil(3 - diffDays);
+    }
+    return 0;
   };
   const cooldownDays = getCooldown();
   const isLocked = cooldownDays > 0;
@@ -71,7 +84,7 @@ export const Settings: React.FC<SettingsProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-rpg-black text-white pb-20 pt-28 px-4 md:px-6">
+    <div className="min-h-screen bg-rpg-black text-white pb-32 pt-32 px-4 md:px-6">
       <div className="max-w-2xl mx-auto space-y-8">
         
         {/* Header */}
@@ -110,12 +123,20 @@ export const Settings: React.FC<SettingsProps> = ({
             <div className="space-y-3">
               <div className="flex justify-between items-end px-1">
                 <label className="text-xs font-bold text-neutral-400 uppercase">Display Name</label>
-                <span className={cn("text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md", 
-                  isLocked ? "text-red-500 bg-red-500/10" : "text-jiwa bg-jiwa/10")}>
-                  {isLocked ? `COOLDOWN: ${cooldownDays} HARI` : `${3 - nameChangeCount} SISA PERUBAHAN`}
-                </span>
+                <AnimatePresence mode="wait">
+                  <motion.span 
+                    key={isLocked ? 'locked' : 'available'}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className={cn("text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md", 
+                      isLocked ? "text-red-500 bg-red-500/10" : "text-jiwa bg-jiwa/10")}
+                  >
+                    {isLocked ? `COOLDOWN: ${cooldownDays} HARI` : `${Math.max(0, 3 - nameChangeCount)} SISA PERUBAHAN`}
+                  </motion.span>
+                </AnimatePresence>
               </div>
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <input 
                   type="text" value={name} onChange={e => setName(e.target.value)}
                   disabled={isLocked}
@@ -125,16 +146,23 @@ export const Settings: React.FC<SettingsProps> = ({
                 <button 
                   onClick={handleUpdateProfile}
                   disabled={isUpdatingName || name === initialName || isLocked}
-                  className="px-6 py-3 bg-white text-black font-black text-sm rounded-xl hover:scale-105 disabled:opacity-50 transition-all shrink-0"
+                  className="px-6 py-3 bg-white text-black font-black text-sm rounded-xl hover:scale-105 disabled:opacity-50 transition-all shrink-0 sm:w-auto w-full"
                 >
                   {isUpdatingName ? <Loader2 className="w-5 h-5 animate-spin" /> : 'SAVE'}
                 </button>
               </div>
-              {isLocked && (
-                <p className="text-[10px] text-red-400/60 font-medium ml-1">
-                  Anda telah mencapai limit perubahan nama. Mohon tunggu masa cooldown berakhir.
-                </p>
-              )}
+              <AnimatePresence>
+                {isLocked && (
+                  <motion.p 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="text-[10px] text-red-400/60 font-medium ml-1"
+                  >
+                    Fitur ganti nama sedang dikunci. Anda dapat mengganti nama kembali dalam <span className="font-black text-red-500">{cooldownDays} hari</span>.
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-neutral-400 uppercase ml-1">Email Address</label>

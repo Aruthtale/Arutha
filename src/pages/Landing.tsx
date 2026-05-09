@@ -14,14 +14,26 @@ import { Session } from '@supabase/supabase-js';
 
 interface LandingProps {
   session: Session | null;
+  hasProfile: boolean;
   setPage: (page: any) => void;
 }
 
-export const Landing: React.FC<LandingProps> = ({ session, setPage }) => {
+export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }) => {
   const [isMounted, setIsMounted] = React.useState(false);
   React.useEffect(() => {
-    setIsMounted(true);
+    const timer = setTimeout(() => setIsMounted(true), 500);
+    return () => clearTimeout(timer);
   }, []);
+
+  const handleCtaClick = () => {
+    if (!session) {
+      setPage('REGISTER');
+    } else if (hasProfile) {
+      setPage('DASHBOARD');
+    } else {
+      setPage('ONBOARDING');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-rpg-black">
@@ -50,9 +62,9 @@ export const Landing: React.FC<LandingProps> = ({ session, setPage }) => {
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="w-16 h-16 md:w-20 md:h-20 mb-6 md:mb-8 bg-gradient-to-tr from-jiwa to-ilmu rounded-[24px] md:rounded-[28px] rotate-12 flex items-center justify-center shadow-2xl shadow-jiwa/20 relative z-10"
+          className="relative z-10 mb-6 md:mb-8"
         >
-          <Zap className="w-8 h-8 md:w-10 md:h-10 text-white fill-white" />
+          <img src="/Arutha.png" alt="Arutha Logo" className="w-24 h-24 md:w-32 md:h-32 object-cover rounded-3xl shadow-[0_0_40px_rgba(167,139,250,0.3)] border border-white/10" />
         </motion.div>
         
         <motion.div
@@ -76,10 +88,10 @@ export const Landing: React.FC<LandingProps> = ({ session, setPage }) => {
           className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10 w-full max-w-sm sm:max-w-none px-6 mx-auto"
         >
           <button
-            onClick={() => setPage(session ? 'DASHBOARD' : 'REGISTER')}
+            onClick={handleCtaClick}
             className="w-full sm:w-auto px-8 md:px-12 py-4 md:py-5 bg-white text-black font-black rounded-full hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 group shadow-[0_0_30px_rgba(255,255,255,0.2)] text-xs md:text-base"
           >
-            {session ? 'KE DASHBOARD' : 'MULAI PETUALANGAN'} <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
+            {(session && hasProfile) ? 'KE DASHBOARD' : 'MULAI PETUALANGAN'} <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
           </button>
           <button className="w-full sm:w-auto px-8 md:px-12 py-4 md:py-5 bg-rpg-card border border-rpg-border text-white font-bold rounded-full hover:bg-neutral-800 transition-all text-xs md:text-base flex items-center justify-center">
             LIHAT LEADERBOARD
@@ -142,7 +154,7 @@ export const Landing: React.FC<LandingProps> = ({ session, setPage }) => {
             >
               <div className="w-full relative block min-h-[300px]">
                 {isMounted && (
-                  <ResponsiveContainer width="100%" aspect={1} minWidth={0}>
+                  <ResponsiveContainer width="100%" height={320}>
                     <RadarChart cx="50%" cy="50%" outerRadius="75%" data={[
                       { subject: 'Jiwa', A: 80 },
                       { subject: 'Raga', A: 65 },
@@ -203,10 +215,10 @@ export const Landing: React.FC<LandingProps> = ({ session, setPage }) => {
         <div className="text-center py-20 px-6 glass-panel border-rpg-border/50 bg-white/5">
            <h2 className="text-4xl md:text-5xl font-bold mb-8 italic">"Jadikan realita sebagai taman bermainmu."</h2>
            <button 
-             onClick={() => setPage(session ? 'ONBOARDING' : 'REGISTER')}
-             className="text-white font-black underline underline-offset-8 hover:text-jiwa transition-colors"
+             onClick={handleCtaClick}
+             className="text-neutral-200 font-black underline underline-offset-8 hover:text-jiwa transition-colors"
             >
-             MULAI ANALISIS PROFIL SEKARANG
+             {(session && hasProfile) ? 'KE DASHBOARD SEKARANG' : 'MULAI ANALISIS PROFIL SEKARANG'}
            </button>
         </div>
       </section>

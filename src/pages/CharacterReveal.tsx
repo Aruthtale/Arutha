@@ -81,7 +81,7 @@ export const CharacterReveal: React.FC<CharacterRevealProps> = ({ analysis, onCo
                 initial={{ opacity: 0, scale: 0.3 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.5, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                className="text-5xl md:text-8xl font-black tracking-tighter bg-gradient-to-b from-white via-white to-white/30 bg-clip-text text-transparent italic"
+                className="text-5xl md:text-8xl font-black tracking-tighter bg-gradient-to-b from-neutral-100 via-neutral-100 to-neutral-500/30 bg-clip-text text-transparent italic"
               >
                 {analysis.personality_type}
               </motion.h1>
@@ -173,7 +173,7 @@ export const CharacterReveal: React.FC<CharacterRevealProps> = ({ analysis, onCo
             >
               {/* Character Summary */}
               <div className="glass-panel p-6 md:p-8 border-l-4 border-l-jiwa">
-                <p className="text-base md:text-xl leading-relaxed text-neutral-300 italic">
+                <p className="text-base md:text-xl leading-relaxed text-neutral-400 italic">
                   "{analysis.character_summary}"
                 </p>
               </div>
@@ -196,7 +196,7 @@ export const CharacterReveal: React.FC<CharacterRevealProps> = ({ analysis, onCo
                   <Zap className="w-3 h-3 md:w-4 md:h-4 text-harta" />
                   <span className="text-[8px] md:text-[10px] font-black tracking-[0.2em] text-neutral-500 uppercase">Quest Pertamamu</span>
                 </div>
-                <h4 className="text-base md:text-lg font-bold mb-1">{analysis.starter_quest.title}</h4>
+                <h4 className="text-base md:text-lg font-bold mb-1 text-neutral-200">{analysis.starter_quest.title}</h4>
                 <p className="text-xs md:text-sm text-neutral-400">{analysis.starter_quest.desc}</p>
               </motion.div>
 

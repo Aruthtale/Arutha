@@ -102,7 +102,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           <div className="mx-auto w-16 h-16 bg-white/5 rounded-full flex items-center justify-center border border-white/10 mb-6">
             <Sparkles className="w-8 h-8 text-jiwa" />
           </div>
-          <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">
+          <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight text-neutral-100">
             Kenali Dirimu Lebih Dalam
           </h1>
           <div className="space-y-4 text-neutral-400 text-sm md:text-base leading-relaxed">
@@ -112,7 +112,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             <p>
               Kami akan mengajukan 7 pertanyaan acak yang dirancang khusus oleh AI untuk mengukur potensimu dalam 5 Dimensi Kehidupan: <strong className="text-jiwa">Jiwa</strong>, <strong className="text-raga">Raga</strong>, <strong className="text-harta">Harta</strong>, <strong className="text-ilmu">Ilmu</strong>, dan <strong className="text-karma">Karma</strong>.
             </p>
-            <p className="text-white font-medium">
+            <p className="text-neutral-200 font-medium">
               Jawablah sejujur mungkin. Tidak ada jawaban benar atau salah.
             </p>
           </div>
@@ -158,7 +158,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           />
           
           <div className="text-center space-y-3">
-            <h2 className="text-2xl md:text-3xl font-black tracking-tight">
+            <h2 className="text-2xl md:text-3xl font-black tracking-tight text-neutral-100">
               Menganalisis Karaktermu...
             </h2>
             <p className="text-neutral-500 text-sm max-w-sm">
