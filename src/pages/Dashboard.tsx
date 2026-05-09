@@ -10,6 +10,7 @@ import { Session } from '@supabase/supabase-js';
 import { type DecayResult } from '../lib/decaySystem';
 import { AIChatWidget } from '../components/AIChatWidget';
 import { isToday } from '../lib/dateUtils';
+import { TALENTS } from '../lib/talents';
 
 type Dimension = 'JIWA' | 'RAGA' | 'HARTA' | 'ILMU' | 'KARMA';
 
@@ -41,12 +42,13 @@ interface DashboardProps {
   decayResult: DecayResult | null;
   onTakeRecovery: () => void;
   setPage: (page: any) => void;
+  talents: string[];
 }
 
 const EMOJIS = ['😡', '😔', '😐', '😊', '🤩'];
 
 export const Dashboard: React.FC<DashboardProps> = ({
-  session, userId, name, level, xp, stats, quests, analysis, streak, lastStreakDate, onClaimStreak, statHistory, completeQuest, handleLogout, onReOnboard, onRefreshQuests, onGenerateInitialQuests, isRefreshing, lastEvolutionDate, refreshCount, decayResult, onTakeRecovery, setPage
+  session, userId, name, level, xp, stats, quests, analysis, streak, lastStreakDate, onClaimStreak, statHistory, completeQuest, handleLogout, onReOnboard, onRefreshQuests, onGenerateInitialQuests, isRefreshing, lastEvolutionDate, refreshCount, decayResult, onTakeRecovery, setPage, talents
 }) => {
   const [isMounted, setIsMounted] = useState(false);
   const [isChartVisible, setIsChartVisible] = useState(false);
@@ -281,8 +283,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   </motion.div>
                 ))
               ) : (
-                <div className="col-span-full glass-panel p-16 text-center border-dashed border-white/10 opacity-40">
-                  <p className="text-base italic font-medium">Memanggil misi baru dari semesta...</p>
+                <div className="col-span-full glass-panel p-16 text-center border-dashed border-white/10 flex flex-col items-center gap-6">
+                  <div className="w-16 h-16 rounded-full bg-jiwa/10 flex items-center justify-center animate-pulse">
+                    <Sparkles className="w-8 h-8 text-jiwa" />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xl font-black italic text-white">Dimensi Kosong</p>
+                    <p className="text-sm text-neutral-500 max-w-xs mx-auto">Pilih mood kamu hari ini untuk memanggil misi baru dari semesta.</p>
+                  </div>
+                  <button 
+                    onClick={() => setShowMoodModal(true)}
+                    className="px-8 py-3 bg-white text-black rounded-xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-white/5"
+                  >
+                    Mulai Hari Ini
+                  </button>
                 </div>
               )}
             </div>
@@ -354,6 +368,35 @@ export const Dashboard: React.FC<DashboardProps> = ({
               ))}
             </div>
           </section>
+          
+          {/* ACTIVE TALENTS */}
+          {talents.length > 0 && (
+            <section className="glass-panel p-8 bg-rpg-card border-white/5">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-jiwa/10 text-jiwa rounded-lg"><Sparkles className="w-4 h-4" /></div>
+                <h3 className="text-xs font-black uppercase tracking-widest text-neutral-300">Bakat Aktif ({talents.length})</h3>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {talents.map(id => {
+                  const t = TALENTS.find(talent => talent.id === id);
+                  if (!t) return null;
+                  return (
+                    <div key={id} className={cn(
+                      "px-4 py-2 rounded-xl text-[10px] font-black border flex items-center gap-2",
+                      t.rarity === 'Legendary' ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' :
+                      t.rarity === 'Epic' ? 'bg-purple-500/10 border-purple-500/20 text-purple-500' :
+                      t.rarity === 'Rare' ? 'bg-blue-500/10 border-blue-500/20 text-blue-500' :
+                      t.rarity === 'Uncommon' ? 'bg-green-500/10 border-green-500/20 text-green-500' :
+                      'bg-white/5 border-white/10 text-neutral-400'
+                    )}>
+                      {t.rarity === 'Legendary' && <Star className="w-3 h-3 fill-amber-500" />}
+                      {t.name}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
           {/* PROGRESS HISTORY */}
           <section className="glass-panel p-8 bg-rpg-card border-white/5 overflow-hidden relative">
@@ -453,6 +496,46 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : 'KIRIM BUKTI'}
                 </button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* MOOD MODAL */}
+      <AnimatePresence>
+        {showMoodModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+              className="glass-panel p-10 max-w-xl w-full text-center space-y-8 border-jiwa/30">
+              <div className="space-y-2">
+                <div className="inline-block p-3 bg-jiwa/10 rounded-2xl mb-4">
+                  <Sparkles className="w-8 h-8 text-jiwa" />
+                </div>
+                <h3 className="text-3xl md:text-4xl font-black italic text-white tracking-tighter">BAGAIMANA MOOD KAMU?</h3>
+                <p className="text-xs text-neutral-400 uppercase tracking-[0.2em]">Arutha akan menyesuaikan tantangan dengan energimu</p>
+              </div>
+
+              <div className="flex justify-center gap-4 md:gap-6">
+                {EMOJIS.map((emoji, i) => (
+                  <motion.button
+                    key={i}
+                    whileHover={{ scale: 1.2, y: -10 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => {
+                      setShowMoodModal(false);
+                      onGenerateInitialQuests?.(['Sangat Buruk', 'Buruk', 'Biasa Saja', 'Baik', 'Sangat Bersemangat'][i]);
+                    }}
+                    className="text-4xl md:text-5xl filter grayscale hover:grayscale-0 transition-all p-2"
+                  >
+                    {emoji}
+                  </motion.button>
+                ))}
+              </div>
+
+              <p className="text-[10px] text-neutral-500 italic max-w-sm mx-auto">
+                "Kondisi mentalmu adalah kompas dalam perjalanan ini. Jujurlah pada dirimu sendiri."
+              </p>
             </motion.div>
           </motion.div>
         )}

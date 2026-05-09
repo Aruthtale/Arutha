@@ -21,6 +21,7 @@ interface AppState {
   userContext: { usia?: number; gender?: string; username?: string };
   nameChangeCount: number;
   lastNameChange: string | null;
+  talents: string[];
   
   setSession: (session: Session | null | ((prev: Session | null) => Session | null)) => void;
   setDbUserId: (id: string | null | ((prev: string | null) => string | null)) => void;
@@ -32,6 +33,7 @@ interface AppState {
   setUserContext: (context: { usia?: number; gender?: string; username?: string } | ((prev: { usia?: number; gender?: string; username?: string }) => { usia?: number; gender?: string; username?: string })) => void;
   setNameChangeCount: (count: number | ((prev: number) => number)) => void;
   setLastNameChange: (date: string | null | ((prev: string | null) => string | null)) => void;
+  setTalents: (talents: string[] | ((prev: string[]) => string[])) => void;
 
   // Game Data
   stats: Stats;
@@ -73,6 +75,7 @@ export const useStore = create<AppState>((set) => ({
   userContext: {},
   nameChangeCount: 0,
   lastNameChange: null,
+  talents: [],
 
   setSession: (session) => set((state) => ({ session: typeof session === 'function' ? session(state.session) : session })),
   setDbUserId: (dbUserId) => set((state) => ({ dbUserId: typeof dbUserId === 'function' ? dbUserId(state.dbUserId) : dbUserId })),
@@ -84,6 +87,7 @@ export const useStore = create<AppState>((set) => ({
   setUserContext: (userContext) => set((state) => ({ userContext: typeof userContext === 'function' ? userContext(state.userContext) : userContext })),
   setNameChangeCount: (nameChangeCount) => set((state) => ({ nameChangeCount: typeof nameChangeCount === 'function' ? nameChangeCount(state.nameChangeCount) : nameChangeCount })),
   setLastNameChange: (lastNameChange) => set((state) => ({ lastNameChange: typeof lastNameChange === 'function' ? lastNameChange(state.lastNameChange) : lastNameChange })),
+  setTalents: (talents) => set((state) => ({ talents: typeof talents === 'function' ? talents(state.talents) : talents })),
 
   // Game Data
   stats: {

@@ -4,7 +4,9 @@ import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from './lib/supabase';
-import { getLocalTimestamp, isToday, isNewDay, extractDate } from './lib/dateUtils';
+import { getLocalTimestamp, getTodayDate, isToday, isNewDay, extractDate } from './lib/dateUtils';
+import { TalentSelector } from './components/TalentSelector';
+import { TALENTS, type Talent } from './lib/talents';
 import { type CharacterAnalysis, generateDailyQuests, verifyQuestCompletion, generateRecoveryQuests, type Quest, type Stats, type Dimension } from './lib/gemini';
 import { Navbar } from './components/Navbar';
 import { Landing } from './pages/Landing';
@@ -47,10 +49,14 @@ export default function App() {
     showLevelUp, setShowLevelUp,
     nameChangeCount, setNameChangeCount,
     lastNameChange, setLastNameChange,
-    userContext, setUserContext
+    userContext, setUserContext,
+    talents, setTalents
   } = useStore();
 
+  const [levelUpStage, setLevelUpStage] = React.useState<1 | 2>(1);
+
   const refreshLockRef = useRef(false);
+  const initLockRef = useRef(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -64,9 +70,9 @@ export default function App() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
-      if (session) {
+      if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'USER_UPDATED')) {
         initializeUserData(session);
-      } else {
+      } else if (!session) {
         setPage('LANDING');
       }
     });
@@ -112,6 +118,9 @@ export default function App() {
   }, []);
 
   const initializeUserData = async (session: Session) => {
+    if (initLockRef.current) return;
+    initLockRef.current = true;
+    
     const userMetadata = session.user.user_metadata;
     const displayName = userMetadata.full_name || userMetadata.username || session.user.email?.split('@')[0] || 'Player One';
     setName(displayName);
@@ -200,6 +209,7 @@ export default function App() {
 
         setNameChangeCount(userData.name_change_count || 0);
         setLastNameChange(userData.last_name_change ? String(userData.last_name_change) : null);
+        setTalents(userData.talents || []);
 
         // Reset Refresh Count jika sudah berganti hari
         const refreshNewDay = isNewDay(userData.last_refresh_date);
@@ -252,8 +262,15 @@ export default function App() {
           setStats(loadedStats);
 
           const isQuestExpired = isNewDay(userData.last_quest_update);
+          const hasNoQuests = !userData.active_quests || (userData.active_quests as any[]).length === 0;
 
-          if (isQuestExpired || !userData.active_quests || (userData.active_quests as any[]).length === 0) {
+          if (isQuestExpired || hasNoQuests) {
+            console.log("[Quest] Expired or Empty. Regenerating...", { 
+              isQuestExpired, 
+              hasNoQuests, 
+              lastUpdate: userData.last_quest_update,
+              today: getTodayDate()
+            });
             const aiQuests = await generateDailyQuests(loadedStats);
             setQuests(aiQuests);
             setRefreshCount(0);
@@ -265,7 +282,17 @@ export default function App() {
               last_refresh_date: getLocalTimestamp()
             }).eq('supabase_id', session.user.id);
           } else {
-            setQuests(userData.active_quests as Quest[]);
+            const dbQuests = userData.active_quests as Quest[];
+            // Only update if current quests are empty to avoid overwriting during session refreshes
+            setQuests(prev => {
+              if (prev.length > 0) {
+                console.log("[Quest] Already have quests, skipping DB overwrite to prevent race conditions.");
+                return prev;
+              }
+              console.log("[Quest] Loading quests from DB.");
+              return dbQuests;
+            });
+            
             if ((userData.refresh_count || 0) >= 1) {
               refreshLockRef.current = true;
             }
@@ -286,6 +313,7 @@ export default function App() {
       console.error("Init error detailed:", err.message || err);
     } finally {
       setIsDataReady(true);
+      initLockRef.current = false;
     }
   };
 
@@ -441,15 +469,52 @@ export default function App() {
 
 
   const addXp = (amount: number, stat?: Dimension, updatedQuests?: Quest[]) => {
+    // 1. Ambil Bakat Aktif
+    const activeTalents = TALENTS.filter(t => talents.includes(t.id));
+    
+    // 2. Hitung Bonus XP
+    let bonusMultiplier = 1;
+    const now = new Date();
+    const hour = now.getHours();
+
+    activeTalents.forEach(t => {
+      if (t.xpBoost) {
+        let applies = false;
+        if (t.xpBoost.condition === 'ALWAYS') applies = true;
+        else if (t.xpBoost.condition === 'MORNING' && hour < 9) applies = true;
+        else if (t.xpBoost.condition === 'NIGHT' && hour >= 21) applies = true;
+        else if (t.xpBoost.condition === 'STREAK_3' && streak >= 3) applies = true;
+        else if (t.xpBoost.condition === 'STREAK_7' && streak >= 7) applies = true;
+
+        if (applies) bonusMultiplier += t.xpBoost.value;
+      }
+    });
+
+    const finalXpAmount = Math.round(amount * bonusMultiplier);
+    
     let nextLevel = level;
-    let nextXp = xp + amount;
+    let nextXp = xp + finalXpAmount;
     let nextStats = { ...stats };
+
+    // 3. Hitung Kenaikan Level
     if (nextXp >= level * 1000) {
       nextXp = nextXp - (level * 1000);
       nextLevel = level + 1;
+      setLevelUpStage(1); // Mulai dari animasi level up
       setShowLevelUp(true);
     }
-    if (stat) nextStats[stat] = Math.min(100, stats[stat] + 2);
+
+    // 4. Hitung Bonus Statistik (Termasuk bakat)
+    if (stat) {
+      let statMultiplier = 1;
+      activeTalents.forEach(t => {
+        if (t.statBoost && (t.statBoost.stat === stat || t.statBoost.stat === 'ALL')) {
+          statMultiplier += t.statBoost.value;
+        }
+      });
+      nextStats[stat] = Math.min(100, stats[stat] + (2 * statMultiplier));
+    }
+
     setLevel(nextLevel); setXp(nextXp); setStats(nextStats);
     syncProgress(nextLevel, nextXp, nextStats, updatedQuests);
   };
@@ -670,7 +735,9 @@ export default function App() {
                 lastEvolutionDate={lastEvolutionDate} refreshCount={refreshCount}
                 decayResult={decayResult}
                 onTakeRecovery={handleTakeRecovery}
-                setPage={setPage} onGenerateInitialQuests={generateInitialQuests}
+                setPage={setPage}
+                talents={talents}
+                onGenerateInitialQuests={generateInitialQuests}
               />
             </motion.div>
           )}
@@ -692,6 +759,7 @@ export default function App() {
             <Profile
               name={name} level={level} xp={xp} stats={stats} analysis={characterAnalysis}
               onBack={() => setPage('DASHBOARD')}
+              talents={talents}
             />
           )}
           {page === 'LEADERBOARD' && (
@@ -711,61 +779,89 @@ export default function App() {
         {showLevelUp && (
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/95 backdrop-blur-2xl"
           >
-            <motion.div 
-              initial={{ scale: 0.5, y: 50, rotate: -10 }}
-              animate={{ scale: 1, y: 0, rotate: 0 }}
-              exit={{ scale: 0.5, y: 50, opacity: 0 }}
-              className="relative max-w-sm w-full bg-gradient-to-b from-jiwa to-rpg-black p-8 rounded-[40px] border border-white/20 shadow-[0_0_100px_rgba(255,255,255,0.1)] text-center overflow-hidden"
-            >
-              {/* Decorative elements */}
-              <div className="absolute top-0 left-0 w-full h-full">
-                <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-white/10 blur-3xl animate-pulse" />
-                <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-ilmu/20 blur-3xl" />
-              </div>
-
-              <div className="relative z-10 space-y-6">
+            <AnimatePresence mode="wait">
+              {levelUpStage === 1 ? (
                 <motion.div 
-                  animate={{ 
-                    rotateY: [0, 360],
-                    scale: [1, 1.2, 1]
-                  }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="w-24 h-24 bg-white/10 rounded-[32px] mx-auto flex items-center justify-center border border-white/20 shadow-2xl"
+                  key="lvl-anim"
+                  initial={{ scale: 0.5, y: 50, rotate: -10 }}
+                  animate={{ scale: 1, y: 0, rotate: 0 }}
+                  exit={{ scale: 0.8, opacity: 0, filter: 'blur(10px)' }}
+                  className="relative max-w-sm w-full bg-gradient-to-b from-jiwa to-rpg-black p-8 rounded-[40px] border border-white/20 shadow-[0_0_100px_rgba(255,255,255,0.1)] text-center overflow-hidden"
                 >
-                  <Star className="w-12 h-12 text-white fill-white" />
+                  {/* Decorative elements */}
+                  <div className="absolute top-0 left-0 w-full h-full">
+                    <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-white/10 blur-3xl animate-pulse" />
+                    <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-ilmu/20 blur-3xl" />
+                  </div>
+
+                  <div className="relative z-10 space-y-6">
+                    <motion.div 
+                      animate={{ 
+                        rotateY: [0, 360],
+                        scale: [1, 1.2, 1]
+                      }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="w-24 h-24 bg-white/10 rounded-[32px] mx-auto flex items-center justify-center border border-white/20 shadow-2xl"
+                    >
+                      <Star className="w-12 h-12 text-white fill-white" />
+                    </motion.div>
+
+                    <div>
+                      <h2 className="text-4xl font-black italic text-white tracking-tight">LEVEL UP!</h2>
+                      <p className="text-xs font-black text-white/60 uppercase tracking-[0.3em] mt-2">Kekuatanmu meningkat</p>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-4">
+                      <div className="text-center">
+                        <p className="text-[10px] font-black text-white/40 uppercase">Sebelumnya</p>
+                        <p className="text-2xl font-black text-white/60">{level - 1}</p>
+                      </div>
+                      <div className="w-8 h-px bg-white/20" />
+                      <div className="text-center">
+                        <p className="text-[10px] font-black text-jiwa uppercase">Sekarang</p>
+                        <p className="text-4xl font-black text-white">{level}</p>
+                      </div>
+                    </div>
+
+                    <p className="text-sm text-white/80 leading-relaxed italic">
+                      "Setiap langkah kecil yang kamu ambil hari ini telah membawamu ke level baru. Teruslah berkembang!"
+                    </p>
+
+                    <button 
+                      onClick={() => setLevelUpStage(2)}
+                      className="w-full py-4 bg-white text-black font-black rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all uppercase tracking-widest text-xs"
+                    >
+                      Pilih Bakat Baru
+                    </button>
+                  </div>
                 </motion.div>
-
-                <div>
-                  <h2 className="text-4xl font-black italic text-white tracking-tight">LEVEL UP!</h2>
-                  <p className="text-xs font-black text-white/60 uppercase tracking-[0.3em] mt-2">Kekuatanmu meningkat</p>
-                </div>
-
-                <div className="flex items-center justify-center gap-4">
-                  <div className="text-center">
-                    <p className="text-[10px] font-black text-white/40 uppercase">Sebelumnya</p>
-                    <p className="text-2xl font-black text-white/60">{level - 1}</p>
-                  </div>
-                  <div className="w-8 h-px bg-white/20" />
-                  <div className="text-center">
-                    <p className="text-[10px] font-black text-jiwa uppercase">Sekarang</p>
-                    <p className="text-4xl font-black text-white">{level}</p>
-                  </div>
-                </div>
-
-                <p className="text-sm text-white/80 leading-relaxed italic">
-                  "Setiap langkah kecil yang kamu ambil hari ini telah membawamu ke level baru. Teruslah berkembang!"
-                </p>
-
-                <button 
-                  onClick={() => setShowLevelUp(false)}
-                  className="w-full py-4 bg-white text-black font-black rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all uppercase tracking-widest text-xs"
+              ) : (
+                <motion.div 
+                  key="talent-selector"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.1 }}
+                  className="w-full max-w-5xl"
                 >
-                  Lanjutkan Petualangan
-                </button>
-              </div>
-            </motion.div>
+                  <TalentSelector 
+                    level={level} 
+                    onSelect={async (talent) => {
+                      const newTalents = [...talents, talent.id];
+                      setTalents(newTalents);
+                      setShowLevelUp(false);
+                      // Update DB
+                      if (session?.user.id) {
+                        await supabase.from('arutha_user').update({
+                          talents: newTalents
+                        }).eq('supabase_id', session.user.id);
+                      }
+                    }} 
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>

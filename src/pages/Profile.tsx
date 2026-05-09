@@ -1,9 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { 
-  ArrowLeft, Shield, Star, Zap, Award, Target, TrendingUp, Heart, Brain, Dumbbell, Coins, BookOpen, Users, Clock, History, Medal
+  ArrowLeft, Shield, Star, Zap, Award, Target, TrendingUp, Heart, Brain, Dumbbell, Coins, BookOpen, Users, Clock, History, Medal, Sparkles
 } from 'lucide-react';
 import { cn, getDimensionRank } from '../lib/utils';
+import { TALENTS } from '../lib/talents';
 
 interface Stats {
   JIWA: number; RAGA: number; HARTA: number; ILMU: number; KARMA: number;
@@ -16,9 +17,10 @@ interface ProfileProps {
   stats: Stats;
   analysis: any;
   onBack: () => void;
+  talents: string[];
 }
 
-export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analysis, onBack }) => {
+export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analysis, onBack, talents }) => {
   const achievements = [
     { title: "Langkah Pertama", desc: "Menyelesaikan quest perdana", icon: <Zap className="w-4 h-4" />, color: "bg-jiwa/20 text-jiwa" },
     { title: "Integritas Tinggi", desc: "Lulus verifikasi AI 5 kali berturut-turut", icon: <Shield className="w-4 h-4" />, color: "bg-raga/20 text-raga" },
@@ -156,6 +158,67 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
                   Berdasarkan pola aktivitasmu, kamu menunjukkan kecenderungan yang kuat pada dimensi <span className="text-jiwa font-black">JIWA</span>. Teruslah kembangkan dimensi lain untuk mencapai keseimbangan sempurna.
                 </p>
               </div>
+            </section>
+
+            {/* UNLOCKED TALENTS COLLECTION */}
+            <section className="glass-panel p-8 md:p-10 space-y-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="w-6 h-6 text-jiwa" />
+                  <h3 className="text-xs font-black tracking-[0.3em] text-neutral-400 uppercase">KOLEKSI BAKAT ({talents.length})</h3>
+                </div>
+              </div>
+              
+              {talents.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {talents.map(id => {
+                    const t = TALENTS.find(talent => talent.id === id);
+                    if (!t) return null;
+                    return (
+                      <div key={id} className={cn(
+                        "p-4 rounded-2xl border flex items-center gap-4 group hover:scale-[1.02] transition-all",
+                        t.rarity === 'Legendary' ? 'bg-amber-500/5 border-amber-500/10' :
+                        t.rarity === 'Epic' ? 'bg-purple-500/5 border-purple-500/10' :
+                        t.rarity === 'Rare' ? 'bg-blue-500/5 border-blue-500/10' :
+                        t.rarity === 'Uncommon' ? 'bg-green-500/5 border-green-500/10' :
+                        'bg-white/5 border-white/10'
+                      )}>
+                        <div className={cn(
+                          "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-lg",
+                          t.rarity === 'Legendary' ? 'bg-amber-500 text-black' :
+                          t.rarity === 'Epic' ? 'bg-purple-500 text-white' :
+                          t.rarity === 'Rare' ? 'bg-blue-500 text-white' :
+                          t.rarity === 'Uncommon' ? 'bg-green-500 text-white' :
+                          'bg-neutral-800 text-neutral-400'
+                        )}>
+                          <Sparkles className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-black text-white">{t.name}</h4>
+                            <span className={cn(
+                              "text-[8px] px-1.5 py-0.5 rounded font-black uppercase",
+                              t.rarity === 'Legendary' ? 'bg-amber-500/20 text-amber-500' :
+                              t.rarity === 'Epic' ? 'bg-purple-500/20 text-purple-500' :
+                              t.rarity === 'Rare' ? 'bg-blue-500/20 text-blue-500' :
+                              t.rarity === 'Uncommon' ? 'bg-green-500/20 text-green-500' :
+                              'bg-white/10 text-neutral-500'
+                            )}>
+                              {t.rarity}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-neutral-500 font-medium mt-0.5 line-clamp-1">{t.desc}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="py-12 text-center border-2 border-dashed border-white/5 rounded-3xl">
+                  <p className="text-sm font-black text-neutral-600 uppercase tracking-widest italic">Belum ada bakat yang terasah</p>
+                  <p className="text-[10px] text-neutral-700 mt-2">Naikkan level untuk membuka potensi terpendammu</p>
+                </div>
+              )}
             </section>
           </div>
 
