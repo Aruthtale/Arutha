@@ -21,11 +21,13 @@ import { cn } from './lib/utils';
 import { Star } from 'lucide-react';
 import { isAdmin } from './lib/config';
 import { Leaderboard } from './pages/Leaderboard';
+import { SplashScreen } from './components/SplashScreen';
 
 export default function App() {
   const [page, setPage] = useState<'LANDING' | 'LOGIN' | 'REGISTER' | 'COMPLETE_PROFILE' | 'ONBOARDING' | 'CHARACTER_REVEAL' | 'DASHBOARD' | 'SETTINGS' | 'PROFILE' | 'ADMIN' | 'LEADERBOARD'>('LANDING');
   const [session, setSession] = useState<Session | null>(null);
   const [dbUserId, setDbUserId] = useState<string | null>(null);
+  const [isDataReady, setIsDataReady] = useState(false);
   const [decayResult, setDecayResult] = useState<DecayResult | null>(null);
   const [name, setName] = useState('Player One');
   const [level, setLevel] = useState(1);
@@ -58,6 +60,8 @@ export default function App() {
       if (session) {
         setSession(session);
         initializeUserData(session);
+      } else {
+        setIsDataReady(true);
       }
     });
 
@@ -262,6 +266,8 @@ export default function App() {
       }
     } catch (err: any) {
       console.error("Init error detailed:", err.message || err);
+    } finally {
+      setIsDataReady(true);
     }
   };
 
@@ -567,17 +573,27 @@ export default function App() {
   const hideNavbar = page === 'ONBOARDING' || page === 'CHARACTER_REVEAL' || page === 'LOGIN' || page === 'REGISTER' || page === 'COMPLETE_PROFILE' || (page === 'LANDING' && !session);
 
   return (
-    <div className="min-h-screen bg-rpg-black text-white selection:bg-white selection:text-black">
-      <div className="fixed inset-0 -z-10 bg-rpg-black overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-jiwa/5 blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-ilmu/5 blur-[150px]" />
+    <div className="min-h-screen bg-rpg-black text-white selection:bg-white selection:text-black overflow-x-hidden">
+      <SplashScreen isReady={isDataReady} />
+      
+      {/* Performance Optimized Background Decor */}
+      <div className="fixed inset-0 -z-10 bg-rpg-black pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-full opacity-20">
+          <div className="absolute top-[-10%] left-[-10%] w-[70%] h-[70%] rounded-full bg-jiwa/10 blur-[150px] animate-pulse" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[80%] h-[80%] rounded-full bg-ilmu/10 blur-[180px]" />
+        </div>
+        {/* Subtle Noise Texture for Premium Feel */}
+        <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
       </div>
 
       {!hideNavbar && (
         <Navbar session={session} userName={name} onNavigate={(p) => setPage(p as any)} currentPage={page} stats={stats} />
       )}
 
-      <div className={cn("transition-all duration-300", !hideNavbar ? "md:pl-[280px]" : "")}>
+      <div className={cn(
+        "transition-all duration-500 ease-out min-h-screen",
+        !hideNavbar ? "md:pl-[280px] pb-24 md:pb-0" : ""
+      )}>
         <AnimatePresence mode="wait">
           {page === 'LANDING' && (
             <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>

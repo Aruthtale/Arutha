@@ -77,23 +77,26 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
       </nav>
 
       {/* Top Navbar - Mobile Only */}
-      <nav className="md:hidden fixed top-0 left-0 right-0 z-50 bg-rpg-black/90 backdrop-blur-xl border-b border-white/5">
-        <div className="px-4 h-16 flex items-center justify-between">
-          <button onClick={() => onNavigate('LANDING')} className="flex items-center gap-2">
-            <img src="/Arutha.png" alt="Arutha Logo" className="w-8 h-8 rounded-lg object-cover" />
-            <div className="flex flex-col items-start leading-none text-left">
-              <span className="text-base font-black tracking-tighter text-neutral-200">ARUTHA</span>
+      <nav className="md:hidden fixed top-0 left-0 right-0 z-50 bg-rpg-black/80 backdrop-blur-2xl border-b border-white/5 pt-[env(safe-area-inset-top)]">
+        <div className="px-6 h-16 flex items-center justify-between">
+          <button 
+            onClick={() => onNavigate('LANDING')} 
+            className="flex items-center gap-3 active:scale-95 transition-transform"
+          >
+            <img src="/Arutha.png" alt="Arutha Logo" className="w-9 h-9 rounded-xl object-cover shadow-lg" />
+            <div className="flex flex-col items-start leading-tight text-left">
+              <span className="text-lg font-black tracking-tighter text-white italic">ARUTHA</span>
               {session && (
-                <span className="text-[9px] font-black text-jiwa uppercase tracking-widest mt-0.5 line-clamp-1 max-w-[120px]">
+                <span className="text-[9px] font-black text-jiwa uppercase tracking-[0.2em] line-clamp-1 max-w-[120px]">
                   {userName}
                 </span>
               )}
             </div>
           </button>
           {!session && (
-            <div className="flex gap-2">
-              <button onClick={() => onNavigate('LOGIN')} className="px-4 py-1.5 text-xs font-bold text-neutral-400">Login</button>
-              <button onClick={() => onNavigate('REGISTER')} className="px-4 py-1.5 text-xs font-black bg-white text-black rounded-full">Register</button>
+            <div className="flex gap-3">
+              <button onClick={() => onNavigate('LOGIN')} className="text-xs font-bold text-neutral-400 px-2">Login</button>
+              <button onClick={() => onNavigate('REGISTER')} className="px-5 py-2 text-xs font-black bg-white text-black rounded-full shadow-xl">Register</button>
             </div>
           )}
         </div>
@@ -101,8 +104,8 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
 
       {/* Bottom Navigation - Mobile Only */}
       {session && (
-        <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-rpg-black/95 backdrop-blur-xl border-t border-white/10 pb-[env(safe-area-inset-bottom)]">
-          <div className="flex items-center justify-around px-2 py-2">
+        <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-rpg-black/90 backdrop-blur-2xl border-t border-white/10 px-4 pb-[env(safe-area-inset-bottom)] pt-2">
+          <div className="flex items-center justify-around py-2">
             <MobileNavPill active={currentPage === 'DASHBOARD'} onClick={() => onNavigate('DASHBOARD')} icon={<LayoutGrid />} label="Home" />
             <MobileNavPill active={currentPage === 'LEADERBOARD'} onClick={() => onNavigate('LEADERBOARD')} icon={<Trophy className="text-harta" />} label="Hall" />
             <MobileNavPill active={currentPage === 'PROFILE'} onClick={() => onNavigate('PROFILE')} icon={<Contact2 />} label="Profile" />
@@ -121,11 +124,15 @@ const SidebarPill = ({ active, onClick, icon, label }: { active: boolean; onClic
   <button
     onClick={onClick}
     className={cn(
-      'flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-black tracking-widest uppercase transition-all w-full text-left',
-      active ? 'bg-white/10 text-white border border-white/10' : 'text-neutral-500 hover:text-neutral-300 hover:bg-white/5 border border-transparent'
+      'flex items-center gap-4 px-5 py-3.5 rounded-2xl text-sm font-black tracking-widest uppercase transition-all w-full text-left group',
+      active 
+        ? 'bg-white/10 text-white border border-white/10 shadow-[0_10px_20px_rgba(0,0,0,0.2)]' 
+        : 'text-neutral-500 hover:text-neutral-300 hover:bg-white/5 border border-transparent'
     )}
   >
-    {icon}
+    <div className={cn("transition-transform group-active:scale-90", active && "text-white")}>
+      {icon}
+    </div>
     <span>{label}</span>
   </button>
 );
@@ -134,16 +141,21 @@ const MobileNavPill = ({ active, onClick, icon, label }: { active: boolean; onCl
   <button
     onClick={onClick}
     className={cn(
-      'flex flex-col items-center justify-center gap-1 w-16 transition-all',
-      active ? 'text-neutral-200' : 'text-neutral-500 hover:text-neutral-200'
+      'flex flex-col items-center justify-center gap-1.5 w-16 transition-all active:scale-75',
+      active ? 'text-white' : 'text-neutral-500'
     )}
   >
     <div className={cn(
-      "flex items-center justify-center w-8 h-8 rounded-full transition-all",
-      active ? "bg-white/20" : "bg-transparent"
+      "flex items-center justify-center w-10 h-10 rounded-2xl transition-all shadow-inner",
+      active ? "bg-white/15 scale-110 shadow-white/5" : "bg-transparent"
     )}>
-      {React.cloneElement(icon as React.ReactElement<any>, { className: "w-5 h-5" })}
+      {React.cloneElement(icon as React.ReactElement<any>, { 
+        className: cn("w-5 h-5", active ? "stroke-[2.5px]" : "stroke-[2px]") 
+      })}
     </div>
-    <span className="text-[10px] font-medium tracking-wide">{label}</span>
+    <span className={cn(
+      "text-[9px] font-black uppercase tracking-widest transition-all",
+      active ? "opacity-100" : "opacity-40"
+    )}>{label}</span>
   </button>
 );
