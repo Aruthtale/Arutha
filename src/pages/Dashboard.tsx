@@ -430,8 +430,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <p className="text-xs text-neutral-400 mt-2 leading-relaxed">AI akan menganalisis catatanmu untuk memverifikasi kejujuran progresmu di dimensi ini.</p>
               </div>
               <textarea value={userNote} onChange={e => setUserNote(e.target.value)}
-                placeholder="Apa yang kamu lakukan hari ini? Bagaimana perasaanmu? (Min. 5 karakter)..."
+                placeholder="Ceritakan pengalamanmu menyelesaikan misi ini... (Contoh: 'Saya sudah makan sayur bayam dan merasa lebih segar!')"
                 className="w-full h-40 p-6 bg-rpg-black border border-rpg-border rounded-2xl focus:border-jiwa outline-none text-white resize-none text-sm shadow-inner" />
+              <p className="text-[10px] text-neutral-500 italic text-center">Tip: Ceritakan minimal satu kalimat agar Mentor Arutha bisa memverifikasi progresmu.</p>
               {verificationFeedback && (
                 <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                   className={cn('p-4 rounded-xl text-xs font-bold flex items-center gap-3',
