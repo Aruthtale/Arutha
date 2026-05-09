@@ -346,25 +346,46 @@ export default function App() {
       const userData = users?.[0];
 
       if (userData) {
-        const { data: profiles } = await supabase
+        const { data: existingProfiles } = await supabase
           .from('character_profile')
-          .insert({
-            id: crypto.randomUUID(),
-            user_id: userData.id,
-            personality_type: analysis.personality_type,
-            personality_title: analysis.personality_title,
-            personality_desc: analysis.personality_desc,
-            character_summary: analysis.character_summary,
-            jiwa: analysis.stats.JIWA,
-            raga: analysis.stats.RAGA,
-            harta: analysis.stats.HARTA,
-            ilmu: analysis.stats.ILMU,
-            karma: analysis.stats.KARMA,
-          })
-          .select();
+          .select('id')
+          .eq('user_id', userData.id)
+          .limit(1);
 
-        const profile = profiles?.[0];
-        if (profile) setLastEvolutionDate(profile.created_at);
+        const profilePayload = {
+          user_id: userData.id,
+          personality_type: analysis.personality_type,
+          personality_title: analysis.personality_title,
+          personality_desc: analysis.personality_desc,
+          character_summary: analysis.character_summary,
+          jiwa: analysis.stats.JIWA,
+          raga: analysis.stats.RAGA,
+          harta: analysis.stats.HARTA,
+          ilmu: analysis.stats.ILMU,
+          karma: analysis.stats.KARMA,
+        };
+
+        let profileDate = new Date().toISOString();
+
+        if (existingProfiles && existingProfiles.length > 0) {
+          const { data: updated } = await supabase
+            .from('character_profile')
+            .update(profilePayload)
+            .eq('id', existingProfiles[0].id)
+            .select();
+          if (updated?.[0]) profileDate = updated[0].created_at;
+        } else {
+          const { data: inserted } = await supabase
+            .from('character_profile')
+            .insert({
+              id: crypto.randomUUID(),
+              ...profilePayload
+            })
+            .select();
+          if (inserted?.[0]) profileDate = inserted[0].created_at;
+        }
+
+        setLastEvolutionDate(profileDate);
 
         const aiQuests = await generateDailyQuests(analysis.stats);
         setQuests(aiQuests);
