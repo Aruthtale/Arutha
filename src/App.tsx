@@ -18,9 +18,12 @@ import { Admin } from './pages/Admin';
 import { CompleteGoogleProfile } from './pages/CompleteGoogleProfile';
 import { checkAndApplyDecay, resetFatigue, type DecayResult } from './lib/decaySystem';
 import { cn } from './lib/utils';
+import { Star } from 'lucide-react';
+import { isAdmin } from './lib/config';
+import { Leaderboard } from './pages/Leaderboard';
 
 export default function App() {
-  const [page, setPage] = useState<'LANDING' | 'LOGIN' | 'REGISTER' | 'COMPLETE_PROFILE' | 'ONBOARDING' | 'CHARACTER_REVEAL' | 'DASHBOARD' | 'SETTINGS' | 'PROFILE' | 'ADMIN'>('LANDING');
+  const [page, setPage] = useState<'LANDING' | 'LOGIN' | 'REGISTER' | 'COMPLETE_PROFILE' | 'ONBOARDING' | 'CHARACTER_REVEAL' | 'DASHBOARD' | 'SETTINGS' | 'PROFILE' | 'ADMIN' | 'LEADERBOARD'>('LANDING');
   const [session, setSession] = useState<Session | null>(null);
   const [dbUserId, setDbUserId] = useState<string | null>(null);
   const [decayResult, setDecayResult] = useState<DecayResult | null>(null);
@@ -41,6 +44,8 @@ export default function App() {
   const [lastEvolutionDate, setLastEvolutionDate] = useState<string | null>(null);
   const [refreshCount, setRefreshCount] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [lastStreakDate, setLastStreakDate] = useState<string | null>(null);
+  const [showLevelUp, setShowLevelUp] = useState(false);
   const [nameChangeCount, setNameChangeCount] = useState(0);
   const [lastNameChange, setLastNameChange] = useState<string | null>(null);
   const refreshLockRef = useRef(false);
@@ -113,21 +118,22 @@ export default function App() {
     try {
       const userEmail = session.user.email || `user_${session.user.id.slice(0, 8)}@arutha.local`;
       const now = new Date().toISOString();
-
-      // 1. Ambil data user atau buat baru jika belum ada (Upsert)
-      const { data: userDataList, error: upsertError } = await supabase
+      // Gunakan UPSERT dengan target 'email'
+      // Ini akan otomatis mengupdate jika email sudah ada (Data Healing)
+      // atau membuat baru jika belum ada.
+      const { data: upsertedList, error: upsertError } = await supabase
         .from('arutha_user')
         .upsert({
           id: crypto.randomUUID(),
           supabase_id: session.user.id,
           email: userEmail,
-          username: userMetadata.username || displayName.toLowerCase().replace(/\s+/g, '_') + Math.floor(Math.random() * 1000),
+          username: displayName,
           updated_at: now,
-        }, {
-          onConflict: 'supabase_id',
-          ignoreDuplicates: false
+        }, { 
+          onConflict: 'email',
+          ignoreDuplicates: false 
         })
-        .select('id, level, xp, active_quests, last_quest_update, refresh_count, last_refresh_date, name_change_count, last_name_change, streak, usia, gender')
+        .select()
         .limit(1);
 
       if (upsertError) {
@@ -135,10 +141,11 @@ export default function App() {
         throw upsertError;
       }
 
-      let userData = userDataList?.[0];
+      const userData = upsertedList?.[0];
 
       if (userData) {
         setDbUserId(userData.id);
+        setName(userData.username || displayName); // Use the username from database if exists
         setLevel(userData.level || 1);
         setXp(userData.xp || 0);
 
@@ -146,7 +153,32 @@ export default function App() {
         const decayResult = await checkAndApplyDecay(userData.id);
         setDecayResult(decayResult);
 
-        setStreak(userData.streak || 0);
+        // logic Streak
+        const lsd = userData.last_streak_date;
+        const currentStreak = userData.streak || 0;
+        setLastStreakDate(lsd ? String(lsd) : null);
+
+        if (lsd) {
+          const lastDate = new Date(lsd);
+          const today = new Date();
+          
+          // Reset time to midnight for comparison
+          const lastDateMidnight = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
+          const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          
+          const diffDays = Math.floor((todayMidnight.getTime() - lastDateMidnight.getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (diffDays > 1) {
+            // Missed more than 1 day
+            setStreak(0);
+            await supabase.from('arutha_user').update({ streak: 0 }).eq('id', userData.id);
+          } else {
+            setStreak(currentStreak);
+          }
+        } else {
+          setStreak(0);
+        }
+
         setNameChangeCount(userData.name_change_count || 0);
         setLastNameChange(userData.last_name_change ? String(userData.last_name_change) : null);
 
@@ -272,19 +304,28 @@ export default function App() {
         .gte('created_at', today)
         .limit(1);
 
+      const historyData = {
+        jiwa: Math.round(newStats.JIWA || 0),
+        raga: Math.round(newStats.RAGA || 0),
+        harta: Math.round(newStats.HARTA || 0),
+        ilmu: Math.round(newStats.ILMU || 0),
+        karma: Math.round(newStats.KARMA || 0)
+      };
+
       if (existingLogs && existingLogs.length > 0) {
-        await supabase.from('stat_history').update({
-          jiwa: newStats.JIWA, raga: newStats.RAGA, harta: newStats.HARTA, ilmu: newStats.ILMU, karma: newStats.KARMA
-        }).eq('id', existingLogs[0].id);
+        await supabase.from('stat_history').update(historyData).eq('id', existingLogs[0].id);
       } else {
         await supabase.from('stat_history').insert({
+          id: crypto.randomUUID(),
           user_id: dbUserId,
-          jiwa: newStats.JIWA, raga: newStats.RAGA, harta: newStats.HARTA, ilmu: newStats.ILMU, karma: newStats.KARMA
+          ...historyData
         });
         fetchStatHistory(dbUserId);
       }
 
-    } catch (err) { console.error("Sync error:", err); }
+    } catch (err: any) { 
+      console.error("Sync error:", err.message || err); 
+    }
   };
 
   const handleOnboardingComplete = async (analysis: CharacterAnalysis) => {
@@ -340,9 +381,7 @@ export default function App() {
     if (!dbUserId || !decayResult) return;
     setIsRefreshing(true);
     try {
-      const recQuests = [
-        { id: 'r1', title: 'Recovery Session', desc: 'Lakukan meditasi 10 menit untuk memulihkan energi.', stat: 'JIWA' as Dimension, xp: 200, completed: false }
-      ];
+      const recQuests = await generateRecoveryQuests(decayResult.fatigueDays);
       setQuests(recQuests);
       await supabase.from('arutha_user').update({ active_quests: recQuests }).eq('id', dbUserId);
     } catch (err) {
@@ -360,6 +399,7 @@ export default function App() {
     if (nextXp >= level * 1000) {
       nextXp = nextXp - (level * 1000);
       nextLevel = level + 1;
+      setShowLevelUp(true);
     }
     if (stat) nextStats[stat] = Math.min(100, stats[stat] + 2);
     setLevel(nextLevel); setXp(nextXp); setStats(nextStats);
@@ -493,6 +533,27 @@ export default function App() {
     }
   };
 
+  const handleClaimStreak = async () => {
+    if (!dbUserId) return;
+    const now = new Date();
+    const newStreak = streak + 1;
+    
+    setStreak(newStreak);
+    setLastStreakDate(now.toISOString());
+    
+    try {
+      await supabase.from('arutha_user').update({
+        streak: newStreak,
+        last_streak_date: now.toISOString()
+      }).eq('id', dbUserId);
+      
+      // Bonus XP for daily streak
+      addXp(100);
+    } catch (err) {
+      console.error("Claim streak error:", err);
+    }
+  };
+
   const handleProfileComplete = (data: { username: string; usia: number; gender: string }) => {
     setName(data.username);
     setUserContext({ usia: data.usia, gender: data.gender, username: data.username });
@@ -543,6 +604,8 @@ export default function App() {
                 userId={dbUserId || ''}
                 name={name} level={level} xp={xp} stats={stats} quests={quests} analysis={characterAnalysis}
                 streak={streak}
+                lastStreakDate={lastStreakDate}
+                onClaimStreak={handleClaimStreak}
                 statHistory={statHistory}
                 completeQuest={completeQuest} handleLogout={() => supabase.auth.signOut()} addXp={addXp}
                 onReOnboard={() => setPage('ONBOARDING')} onRefreshQuests={refreshQuests} isRefreshing={isRefreshing}
@@ -573,11 +636,81 @@ export default function App() {
               onBack={() => setPage('DASHBOARD')}
             />
           )}
-          {page === 'ADMIN' && session?.user.email === 'aruthtale@gmail.com' && (
+          {page === 'LEADERBOARD' && (
+            <Leaderboard 
+              currentUserId={dbUserId || ''} 
+              onBack={() => setPage('DASHBOARD')} 
+            />
+          )}
+          {page === 'ADMIN' && isAdmin(session?.user.email) && (
             <Admin onBack={() => setPage('DASHBOARD')} />
           )}
         </AnimatePresence>
       </div>
+
+      {/* LEVEL UP MODAL */}
+      <AnimatePresence>
+        {showLevelUp && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl"
+          >
+            <motion.div 
+              initial={{ scale: 0.5, y: 50, rotate: -10 }}
+              animate={{ scale: 1, y: 0, rotate: 0 }}
+              exit={{ scale: 0.5, y: 50, opacity: 0 }}
+              className="relative max-w-sm w-full bg-gradient-to-b from-jiwa to-rpg-black p-8 rounded-[40px] border border-white/20 shadow-[0_0_100px_rgba(255,255,255,0.1)] text-center overflow-hidden"
+            >
+              {/* Decorative elements */}
+              <div className="absolute top-0 left-0 w-full h-full">
+                <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-white/10 blur-3xl animate-pulse" />
+                <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-ilmu/20 blur-3xl" />
+              </div>
+
+              <div className="relative z-10 space-y-6">
+                <motion.div 
+                  animate={{ 
+                    rotateY: [0, 360],
+                    scale: [1, 1.2, 1]
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="w-24 h-24 bg-white/10 rounded-[32px] mx-auto flex items-center justify-center border border-white/20 shadow-2xl"
+                >
+                  <Star className="w-12 h-12 text-white fill-white" />
+                </motion.div>
+
+                <div>
+                  <h2 className="text-4xl font-black italic text-white tracking-tight">LEVEL UP!</h2>
+                  <p className="text-xs font-black text-white/60 uppercase tracking-[0.3em] mt-2">Kekuatanmu meningkat</p>
+                </div>
+
+                <div className="flex items-center justify-center gap-4">
+                  <div className="text-center">
+                    <p className="text-[10px] font-black text-white/40 uppercase">Sebelumnya</p>
+                    <p className="text-2xl font-black text-white/60">{level - 1}</p>
+                  </div>
+                  <div className="w-8 h-px bg-white/20" />
+                  <div className="text-center">
+                    <p className="text-[10px] font-black text-jiwa uppercase">Sekarang</p>
+                    <p className="text-4xl font-black text-white">{level}</p>
+                  </div>
+                </div>
+
+                <p className="text-sm text-white/80 leading-relaxed italic">
+                  "Setiap langkah kecil yang kamu ambil hari ini telah membawamu ke level baru. Teruslah berkembang!"
+                </p>
+
+                <button 
+                  onClick={() => setShowLevelUp(false)}
+                  className="w-full py-4 bg-white text-black font-black rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all uppercase tracking-widest text-xs"
+                >
+                  Lanjutkan Petualangan
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

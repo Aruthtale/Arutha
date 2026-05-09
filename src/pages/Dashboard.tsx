@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LogOut, Sparkles, Star, LayoutDashboard, User, Users, Map, Brain, Dumbbell, Coins, BookOpen, TrendingUp, Clock, Target, ArrowRight, Shield, RefreshCw, Loader2, AlertCircle, Zap, Contact2, ShieldAlert
@@ -24,6 +24,8 @@ interface DashboardProps {
   userId: string;
   name: string; level: number; xp: number; stats: Stats; quests: Quest[]; analysis: any;
   streak: number;
+  lastStreakDate: string | null;
+  onClaimStreak: () => void;
   statHistory: any[];
   completeQuest: (id: string, note: string) => Promise<{ success: boolean; feedback: string }>;
   handleLogout: () => void;
@@ -42,7 +44,7 @@ interface DashboardProps {
 const EMOJIS = ['😡', '😔', '😐', '😊', '🤩'];
 
 export const Dashboard: React.FC<DashboardProps> = ({ 
-  session, userId, name, level, xp, stats, quests, analysis, streak, statHistory, completeQuest, handleLogout, onReOnboard, onRefreshQuests, onGenerateInitialQuests, isRefreshing, lastEvolutionDate, refreshCount, decayResult, onTakeRecovery, setPage 
+  session, userId, name, level, xp, stats, quests, analysis, streak, lastStreakDate, onClaimStreak, statHistory, completeQuest, handleLogout, onReOnboard, onRefreshQuests, onGenerateInitialQuests, isRefreshing, lastEvolutionDate, refreshCount, decayResult, onTakeRecovery, setPage 
 }) => {
   const [isMounted, setIsMounted] = useState(false);
   const [isChartVisible, setIsChartVisible] = useState(false);
@@ -52,6 +54,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const highestDim = statsArray.reduce((prev, current) => (prev.val > current.val) ? prev : current).name;
   const avgStats = statsArray.reduce((acc, curr) => acc + curr.val, 0) / statsArray.length;
   const dominantColor = getDimensionColor(highestDim);
+
+  const chartData = useMemo(() => [
+    { subject: 'JIWA', A: stats.JIWA },
+    { subject: 'RAGA', A: stats.RAGA },
+    { subject: 'HARTA', A: stats.HARTA },
+    { subject: 'ILMU', A: stats.ILMU },
+    { subject: 'KARMA', A: stats.KARMA },
+  ], [stats]);
   const [userNote, setUserNote] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationFeedback, setVerificationFeedback] = useState<{success: boolean, text: string} | null>(null);
@@ -86,6 +96,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
+  const isClaimedToday = () => {
+    if (!lastStreakDate) return false;
+    const lastDate = new Date(lastStreakDate);
+    const today = new Date();
+    return lastDate.getDate() === today.getDate() &&
+           lastDate.getMonth() === today.getMonth() &&
+           lastDate.getFullYear() === today.getFullYear();
+  };
+
+  const claimed = isClaimedToday();
+
   const getCooldownStatus = () => {
     if (!lastEvolutionDate) return { canEvolve: true, daysLeft: 0 };
     const lastDate = new Date(lastEvolutionDate);
@@ -99,27 +120,47 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const DecayStatusBanner = () => {
     if (!decayResult || decayResult.status === 'ok') return null;
-    const colors = {
-      warning: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500',
-      fatigue: 'bg-orange-500/10 border-orange-500/20 text-orange-500',
-      decay: 'bg-red-500/10 border-red-500/20 text-red-500'
-    };
     return (
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-        className={cn("mb-6 p-4 rounded-2xl border flex items-center justify-between gap-4", colors[decayResult.status])}>
-        <div className="flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 shrink-0" />
-          <p className="text-xs font-bold leading-tight">{decayResult.message}</p>
-        </div>
-        <button onClick={onTakeRecovery} className="px-4 py-2 bg-current text-rpg-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">
-          Ambil Pemulihan
-        </button>
-      </motion.div>
+      <AnimatePresence>
+        <motion.div 
+          initial={{ opacity: 0, x: 50, scale: 0.9 }} 
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          exit={{ opacity: 0, x: 50, scale: 0.9 }}
+          className="fixed bottom-24 md:bottom-8 right-4 md:right-8 z-50 max-w-[340px] w-[calc(100vw-32px)] glass-panel p-6 border-orange-500/30 shadow-[0_20px_50px_rgba(0,0,0,0.5),0_0_20px_rgba(249,115,22,0.1)] overflow-hidden group"
+        >
+          {/* Background Glow */}
+          <div className="absolute -top-10 -left-10 w-32 h-32 bg-orange-500/10 blur-[40px] rounded-full pointer-events-none" />
+          
+          <div className="relative z-10 space-y-4">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center shrink-0 border border-orange-500/20">
+                <ShieldAlert className="w-6 h-6 text-orange-500" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-black italic uppercase tracking-widest text-orange-400 mb-1 leading-none">Misi Pemulihan</h4>
+                <p className="text-[11px] font-medium leading-relaxed text-neutral-300">
+                  Beberapa stat kamu sedikit menurun karena lama tidak aktif. Ambil misi ringan ini untuk memulihkan kondisimu!
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button 
+                onClick={onTakeRecovery} 
+                className="flex-1 py-3 bg-white text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-lg"
+              >
+                Ambil Misi
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
     );
   };
 
   return (
     <div className="min-h-screen text-white pb-24 pt-32 md:pt-20">
+      <DecayStatusBanner />
       
       {/* SUB-HEADER BAR */}
       <div className="fixed top-16 md:top-0 left-0 md:left-[280px] right-0 z-40 bg-rpg-black/80 backdrop-blur-xl border-b border-white/5">
@@ -139,10 +180,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span className="text-[10px] font-black text-neutral-500 font-mono shrink-0">{xp} / {level * 1000}</span>
           </div>
 
-          <div className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 bg-harta/10 rounded-full border border-harta/20 text-harta shrink-0">
-            <Zap className="w-4 h-4 fill-harta" />
-            <span className="text-xs font-black tracking-tighter uppercase">{streak} <span className="hidden sm:inline">Streak</span></span>
-          </div>
+          <motion.button 
+            whileHover={!claimed ? { scale: 1.05 } : {}}
+            whileTap={!claimed ? { scale: 0.95 } : {}}
+            onClick={() => !claimed && onClaimStreak()}
+            disabled={claimed}
+            className={cn(
+              "flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 rounded-full border transition-all shrink-0",
+              claimed 
+                ? "bg-harta/10 border-harta/20 text-harta opacity-60" 
+                : "bg-harta text-black border-harta shadow-[0_0_15px_rgba(255,193,7,0.3)] animate-pulse"
+            )}
+          >
+            <Zap className={cn("w-4 h-4", claimed ? "fill-harta" : "fill-black")} />
+            <span className="text-xs font-black tracking-tighter uppercase">
+              {streak} <span className="hidden sm:inline">Streak</span>
+              {!claimed && <span className="ml-1 text-[8px] animate-bounce">!</span>}
+            </span>
+          </motion.button>
         </div>
       </div>
 
@@ -207,8 +262,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       </div>
                     </div>
                     
-                    <h4 className="text-xl md:text-2xl font-black italic mb-3 group-hover:text-jiwa text-neutral-200 transition-colors leading-tight">{quest.title}</h4>
-                    <p className="text-sm md:text-base text-neutral-400 mb-8 leading-relaxed flex-1">{quest.desc}</p>
+                    <h4 className="text-2xl md:text-3xl font-black italic mb-4 group-hover:text-jiwa text-neutral-100 transition-colors leading-tight">
+                      {quest.title}
+                    </h4>
+                    <p className="text-sm md:text-base text-neutral-400 mb-8 leading-relaxed flex-1 font-medium">
+                      {quest.desc}
+                    </p>
                     
                     <div className="mt-auto">
                       {!quest.completed ? (
@@ -238,39 +297,36 @@ export const Dashboard: React.FC<DashboardProps> = ({
             "glass-panel p-8 bg-gradient-to-b from-rpg-card to-rpg-black/60 transition-all duration-1000",
             getRankGlow(avgStats)
           )}>
-            <div className="flex flex-col items-center mb-8">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-2">Status Dimensi</h3>
+            <div className="flex flex-col items-center mb-6">
+              <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-neutral-500 mb-2 italic">Status Dimensi</h3>
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: dominantColor }} />
-                <span className="text-[9px] font-black tracking-widest opacity-40 uppercase">Puncak: {highestDim}</span>
+                <span className="text-[10px] font-black tracking-widest opacity-60 uppercase">Puncak: {highestDim}</span>
               </div>
             </div>
             
-            <div className="w-full h-[320px]">
+            <div className="w-full aspect-square max-w-[280px] mx-auto relative mb-4 h-[280px]">
+              <div className="absolute inset-0 bg-current/5 blur-[40px] rounded-full pointer-events-none" style={{ color: dominantColor }} />
               {isChartVisible && (
-                <ResponsiveContainer id="radar-container" width="100%" height={320} debounce={50}>
-                  <RadarChart cx="50%" cy="50%" outerRadius="80%" data={[
-                    { subject: 'JIWA', A: stats.JIWA },
-                    { subject: 'RAGA', A: stats.RAGA },
-                    { subject: 'HARTA', A: stats.HARTA },
-                    { subject: 'ILMU', A: stats.ILMU },
-                    { subject: 'KARMA', A: stats.KARMA },
-                  ]}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart cx="50%" cy="50%" outerRadius="70%" data={chartData}>
                     <PolarGrid stroke="#333" />
                     <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#888', fontSize: 10, fontWeight: 'bold' }} />
+                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#888', fontSize: 10, fontWeight: '900' }} />
                     <Radar 
                       name="Player" 
                       dataKey="A" 
                       stroke={dominantColor} 
                       fill={dominantColor} 
-                      fillOpacity={0.2} 
+                      fillOpacity={0.3} 
                       strokeWidth={3}
+                      isAnimationActive={false}
                     />
                   </RadarChart>
                 </ResponsiveContainer>
               )}
             </div>
+
             <div className="mt-8 space-y-5">
               {[
                 { name: 'JIWA', val: stats.JIWA, bar: 'bg-jiwa' },
@@ -301,6 +357,58 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </section>
 
+          {/* PROGRESS HISTORY */}
+          <section className="glass-panel p-8 bg-rpg-card border-white/5 overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+              <TrendingUp className="w-24 h-24" />
+            </div>
+            <div className="flex items-center gap-3 mb-8">
+              <div className="p-2 bg-ilmu/10 text-ilmu rounded-lg"><TrendingUp className="w-4 h-4" /></div>
+              <h3 className="text-xs font-black uppercase tracking-widest text-neutral-300">Progress History</h3>
+            </div>
+            
+            <div className="w-full h-48">
+              {statHistory && statHistory.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={statHistory}>
+                    <XAxis 
+                      dataKey="created_at" 
+                      hide 
+                    />
+                    <YAxis hide domain={[0, 100]} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }}
+                      itemStyle={{ fontWeight: 'bold' }}
+                      labelFormatter={(label) => new Date(label).toLocaleDateString()}
+                    />
+                    <Line type="monotone" dataKey="jiwa" stroke="#ec4899" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="raga" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="harta" stroke="#eab308" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="ilmu" stroke="#a855f7" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="karma" stroke="#22c55e" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-[10px] font-black text-neutral-600 uppercase tracking-widest border border-dashed border-white/5 rounded-2xl">
+                  Data sejarah belum tersedia
+                </div>
+              )}
+            </div>
+            <div className="flex justify-center gap-3 mt-4">
+               {['jiwa', 'raga', 'harta', 'ilmu', 'karma'].map(dim => (
+                 <div key={dim} className="flex items-center gap-1.5">
+                   <div className={cn("w-1.5 h-1.5 rounded-full", 
+                     dim === 'jiwa' ? 'bg-jiwa' : 
+                     dim === 'raga' ? 'bg-raga' : 
+                     dim === 'harta' ? 'bg-harta' : 
+                     dim === 'ilmu' ? 'bg-ilmu' : 'bg-karma'
+                   )} />
+                   <span className="text-[8px] font-black text-neutral-500 uppercase">{dim}</span>
+                 </div>
+               ))}
+            </div>
+          </section>
+
           <button onClick={onReOnboard} disabled={!canEvolve}
             className={cn('w-full py-5 rounded-2xl text-[10px] font-black tracking-[0.3em] transition-all flex items-center justify-center gap-3',
               canEvolve ? 'bg-jiwa/10 text-jiwa border border-jiwa/20 hover:bg-jiwa/20' : 'bg-white/5 text-neutral-600 border border-white/5 opacity-50 cursor-not-allowed')}>
@@ -318,7 +426,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
               className="glass-panel p-8 max-w-lg w-full space-y-6 border-jiwa/20 shadow-2xl">
               <div>
-                <h3 className="text-2xl font-black italic">Buktikan Keberhasilanmu</h3>
+                <h3 className="text-2xl md:text-3xl font-black italic tracking-tighter">Buktikan Keberhasilanmu</h3>
                 <p className="text-xs text-neutral-400 mt-2 leading-relaxed">AI akan menganalisis catatanmu untuk memverifikasi kejujuran progresmu di dimensi ini.</p>
               </div>
               <textarea value={userNote} onChange={e => setUserNote(e.target.value)}
@@ -346,8 +454,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
-
-
 
     </div>
   );

@@ -11,6 +11,7 @@ import {
 import { cn } from '../lib/utils';
 import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import { Session } from '@supabase/supabase-js';
+import { Leaderboard } from './Leaderboard';
 
 interface LandingProps {
   session: Session | null;
@@ -19,7 +20,12 @@ interface LandingProps {
 }
 
 export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }) => {
+  const leaderboardRef = React.useRef<HTMLDivElement>(null);
   const [isMounted, setIsMounted] = React.useState(false);
+
+  const scrollToLeaderboard = () => {
+    leaderboardRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
   React.useEffect(() => {
     const timer = setTimeout(() => setIsMounted(true), 500);
     return () => clearTimeout(timer);
@@ -93,7 +99,10 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
           >
             {(session && hasProfile) ? 'KE DASHBOARD' : 'MULAI PETUALANGAN'} <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
           </button>
-          <button className="w-full sm:w-auto px-8 md:px-12 py-4 md:py-5 bg-rpg-card border border-rpg-border text-white font-bold rounded-full hover:bg-neutral-800 transition-all text-xs md:text-base flex items-center justify-center">
+          <button 
+            onClick={scrollToLeaderboard}
+            className="w-full sm:w-auto px-8 md:px-12 py-4 md:py-5 bg-rpg-card border border-rpg-border text-white font-bold rounded-full hover:bg-neutral-800 transition-all text-xs md:text-base flex items-center justify-center"
+          >
             LIHAT LEADERBOARD
           </button>
         </motion.div>
@@ -209,6 +218,14 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
              <h3 className="text-3xl font-bold mb-4">Guild System</h3>
              <p className="text-neutral-400 max-w-md">Bergabung dengan "Guild" di kotamu. Selesaikan quest party bareng teman-teman nyata untuk bonus stat KARMA.</p>
           </div>
+        </div>
+
+        {/* Leaderboard Preview */}
+        <div ref={leaderboardRef} className="scroll-mt-32">
+          <Leaderboard 
+            isPreview={true} 
+            onJoin={() => setPage(session ? 'DASHBOARD' : 'REGISTER')} 
+          />
         </div>
 
         {/* Testimonial / Vision */}

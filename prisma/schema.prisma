@@ -24,6 +24,7 @@ model User {
   fatigueDays     Int                   @default(0) @map("fatigue_days")
   nameChangeCount Int                   @default(0) @map("name_change_count")
   streak          Int                   @default(0)
+  lastStreakDate  DateTime?             @map("last_streak_date")
   lastNameChange  DateTime?             @map("last_name_change")
   createdAt       DateTime              @default(now()) @map("created_at")
   updatedAt       DateTime              @updatedAt @map("updated_at")

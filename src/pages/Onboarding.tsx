@@ -4,13 +4,16 @@ import { Send, Loader2, Sparkles } from 'lucide-react';
 import { analyzeCharacter, generateOnboardingQuestions, type OnboardingAnswer, type CharacterAnalysis } from '../lib/gemini';
 
 const FALLBACK_QUESTIONS = [
-  "Ceritakan, bagaimana harimu hari ini?",
-  "Apa yang biasanya kamu lakukan ketika punya waktu senggang?",
-  "Kalau ada uang 10 juta tiba-tiba masuk rekeningmu, apa yang pertama kamu pikirkan?",
-  "Hal terakhir apa yang membuatmu penasaran dan ingin tahu lebih dalam?",
-  "Bagaimana hubunganmu dengan orang-orang di sekitarmu belakangan ini?",
-  "Apa yang paling sering membuatmu cemas atau khawatir?",
-  "Kalau hidupmu dijadikan sebuah novel, kira-kira apa judul chapter yang sedang kamu jalani sekarang?",
+  "Apa hobimu saat sedang bosan?",
+  "Pilih satu: Olahraga, Main Game, atau Tidur?",
+  "Jika punya 10 juta, buat apa?",
+  "Siapa tokoh idola atau panutanmu?",
+  "Hal apa yang paling sering bikin kamu kepikiran?",
+  "Apa cita-citamu waktu masih kecil?",
+  "Suka keramaian atau menyendiri?",
+  "Lebih pilih uang banyak atau teman banyak?",
+  "Apa satu hal yang ingin kamu ubah dari dirimu?",
+  "Sebutkan satu kata yang menggambarkan kamu hari ini!",
 ];
 
 interface OnboardingProps {
@@ -111,7 +114,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext 
               Setiap pahlawan memiliki awal ceritanya masing-masing. Sebelum kamu memulai petualangan ini, Arutha perlu memahami siapa kamu yang sebenarnya.
             </p>
             <p>
-              Kami akan mengajukan 7 pertanyaan acak yang dirancang khusus oleh AI untuk mengukur potensimu dalam 5 Dimensi Kehidupan: <strong className="text-jiwa">Jiwa</strong>, <strong className="text-raga">Raga</strong>, <strong className="text-harta">Harta</strong>, <strong className="text-ilmu">Ilmu</strong>, dan <strong className="text-karma">Karma</strong>.
+              Kami akan mengajukan 10 pertanyaan singkat untuk mengukur potensimu dalam 5 Dimensi Kehidupan: <strong className="text-jiwa">Jiwa</strong>, <strong className="text-raga">Raga</strong>, <strong className="text-harta">Harta</strong>, <strong className="text-ilmu">Ilmu</strong>, dan <strong className="text-karma">Karma</strong>.
             </p>
             <p className="text-neutral-200 font-medium">
               Jawablah sejujur mungkin. Tidak ada jawaban benar atau salah.

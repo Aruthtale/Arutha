@@ -1,7 +1,8 @@
 import React from 'react';
-import { LayoutGrid, User, Map, ShieldAlert, Contact2, Mail } from 'lucide-react';
+import { LayoutGrid, User, Map, ShieldAlert, Contact2, Mail, Trophy } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
 import { cn, getDimensionRank } from '../lib/utils';
+import { isAdmin } from '../lib/config';
 
 interface NavbarProps {
   session: Session | null;
@@ -44,10 +45,11 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
           {session && (
             <div className="flex flex-col gap-2 w-full">
               <SidebarPill active={currentPage === 'DASHBOARD'} onClick={() => onNavigate('DASHBOARD')} icon={<LayoutGrid className="w-4 h-4" />} label="Home" />
+              <SidebarPill active={currentPage === 'LEADERBOARD'} onClick={() => onNavigate('LEADERBOARD')} icon={<Trophy className="w-4 h-4 text-harta" />} label="Hall of Fame" />
               <SidebarPill active={currentPage === 'PROFILE'} onClick={() => onNavigate('PROFILE')} icon={<Contact2 className="w-4 h-4" />} label="Profile" />
               <SidebarPill active={false} onClick={() => {}} icon={<Map className="w-4 h-4" />} label="Quests" />
               <SidebarPill active={currentPage === 'SETTINGS'} onClick={() => onNavigate('SETTINGS')} icon={<User className="w-4 h-4" />} label="Settings" />
-              {session.user.email === 'aruthtale@gmail.com' && (
+              {isAdmin(session.user.email) && (
                 <SidebarPill active={currentPage === 'ADMIN'} onClick={() => onNavigate('ADMIN')} icon={<ShieldAlert className="w-4 h-4 text-jiwa" />} label="Admin" />
               )}
             </div>
@@ -102,10 +104,10 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
         <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-rpg-black/95 backdrop-blur-xl border-t border-white/10 pb-[env(safe-area-inset-bottom)]">
           <div className="flex items-center justify-around px-2 py-2">
             <MobileNavPill active={currentPage === 'DASHBOARD'} onClick={() => onNavigate('DASHBOARD')} icon={<LayoutGrid />} label="Home" />
+            <MobileNavPill active={currentPage === 'LEADERBOARD'} onClick={() => onNavigate('LEADERBOARD')} icon={<Trophy className="text-harta" />} label="Hall" />
             <MobileNavPill active={currentPage === 'PROFILE'} onClick={() => onNavigate('PROFILE')} icon={<Contact2 />} label="Profile" />
-            <MobileNavPill active={false} onClick={() => {}} icon={<Map />} label="Quests" />
             <MobileNavPill active={currentPage === 'SETTINGS'} onClick={() => onNavigate('SETTINGS')} icon={<User />} label="Settings" />
-            {session.user.email === 'aruthtale@gmail.com' && (
+            {isAdmin(session.user.email) && (
               <MobileNavPill active={currentPage === 'ADMIN'} onClick={() => onNavigate('ADMIN')} icon={<ShieldAlert className="text-jiwa" />} label="Admin" />
             )}
           </div>
