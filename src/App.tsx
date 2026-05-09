@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
-import { type CharacterAnalysis, analyzeCharacter, generateDailyQuests, verifyQuestCompletion, type Quest, type Stats, type Dimension, generateRecoveryQuests } from './lib/gemini';
+import { type CharacterAnalysis, generateDailyQuests, type Quest, type Stats } from './lib/gemini';
 import { Navbar } from './components/Navbar';
 import { Landing } from './pages/Landing';
 import { Login } from './pages/Login';
@@ -16,44 +15,40 @@ import { Settings } from './pages/Settings';
 import { Profile } from './pages/Profile';
 import { Admin } from './pages/Admin';
 import { CompleteGoogleProfile } from './pages/CompleteGoogleProfile';
-import { checkAndApplyDecay, resetFatigue, type DecayResult } from './lib/decaySystem';
+import { checkAndApplyDecay } from './lib/decaySystem';
 import { cn } from './lib/utils';
 import { Star } from 'lucide-react';
 import { isAdmin } from './lib/config';
 import { Leaderboard } from './pages/Leaderboard';
 import { SplashScreen } from './components/SplashScreen';
+import { useStore } from './store/useStore';
 
 export default function App() {
-  const [page, setPage] = useState<'LANDING' | 'LOGIN' | 'REGISTER' | 'COMPLETE_PROFILE' | 'ONBOARDING' | 'CHARACTER_REVEAL' | 'DASHBOARD' | 'SETTINGS' | 'PROFILE' | 'ADMIN' | 'LEADERBOARD'>('LANDING');
-  const [session, setSession] = useState<Session | null>(null);
-  const [dbUserId, setDbUserId] = useState<string | null>(null);
-  const [isDataReady, setIsDataReady] = useState(false);
-  const [decayResult, setDecayResult] = useState<DecayResult | null>(null);
-  const [name, setName] = useState('Player One');
-  const [level, setLevel] = useState(1);
-  const [xp, setXp] = useState(0);
-  const [stats, setStats] = useState<Stats>({
-    JIWA: 50,
-    RAGA: 50,
-    HARTA: 50,
-    ILMU: 50,
-    KARMA: 50,
-  });
-  const [characterAnalysis, setCharacterAnalysis] = useState<CharacterAnalysis | null>(null);
-  const [quests, setQuests] = useState<Quest[]>([]);
-  const [statHistory, setStatHistory] = useState<any[]>([]);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastEvolutionDate, setLastEvolutionDate] = useState<string | null>(null);
-  const [refreshCount, setRefreshCount] = useState(0);
-  const [streak, setStreak] = useState(0);
-  const [lastStreakDate, setLastStreakDate] = useState<string | null>(null);
-  const [showLevelUp, setShowLevelUp] = useState(false);
-  const [nameChangeCount, setNameChangeCount] = useState(0);
-  const [lastNameChange, setLastNameChange] = useState<string | null>(null);
-  const refreshLockRef = useRef(false);
+  const {
+    page, setPage,
+    session, setSession,
+    dbUserId, setDbUserId,
+    isDataReady, setIsDataReady,
+    decayResult, setDecayResult,
+    name, setName,
+    level, setLevel,
+    xp, setXp,
+    stats, setStats,
+    characterAnalysis, setCharacterAnalysis,
+    quests, setQuests,
+    statHistory, setStatHistory,
+    isRefreshing, setIsRefreshing,
+    lastEvolutionDate, setLastEvolutionDate,
+    refreshCount, setRefreshCount,
+    streak, setStreak,
+    lastStreakDate, setLastStreakDate,
+    showLevelUp, setShowLevelUp,
+    nameChangeCount, setNameChangeCount,
+    lastNameChange, setLastNameChange,
+    userContext, setUserContext
+  } = useStore();
 
-  // Tambahan state untuk menyimpan context user
-  const [userContext, setUserContext] = useState<{ usia?: number; gender?: string; username?: string }>({});
+  const refreshLockRef = useRef(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
