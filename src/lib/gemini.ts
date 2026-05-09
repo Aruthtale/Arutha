@@ -111,12 +111,22 @@ export interface CharacterAnalysis {
   };
 }
 
-export async function analyzeCharacter(answers: OnboardingAnswer[]): Promise<CharacterAnalysis> {
+export async function analyzeCharacter(answers: OnboardingAnswer[], userContext?: { usia?: number; gender?: string; username?: string }): Promise<CharacterAnalysis> {
   const aiClient = getClient();
   const qaBlock = answers.map((a, i) => `Pertanyaan ${i + 1}: "${a.question}"\nJawaban: "${a.answer}"`).join('\n\n');
 
+  const contextBlock = userContext && userContext.usia 
+    ? `User Profile:
+- Name: ${userContext.username || 'Unknown'}
+- Age: ${userContext.usia} years old
+- Gender: ${userContext.gender || 'Unknown'}
+Berikan profil, misi, dan analisis psikologis yang sangat cocok dengan tahap perkembangan usia dan jenis kelamin ini.`
+    : '';
+
   const prompt = `Kamu adalah AI psikolog dan game designer untuk aplikasi bernama ARUTHA.
 Analisis jawaban user berikut dan berikan output JSON MURNI untuk profil karakter RPG.
+
+${contextBlock}
 
 User Answers:
 ${qaBlock}

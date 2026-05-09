@@ -15,9 +15,10 @@ const FALLBACK_QUESTIONS = [
 
 interface OnboardingProps {
   onComplete: (analysis: CharacterAnalysis) => void;
+  userContext?: { usia?: number; gender?: string; username?: string };
 }
 
-export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
+export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext }) => {
   const [step, setStep] = useState(-1); // -1 is Intro
   const [questions, setQuestions] = useState<string[]>(FALLBACK_QUESTIONS);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
@@ -69,8 +70,8 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
       setIsAnalyzing(true);
       setAnalyzeError(null);
       try {
-        const result = await analyzeCharacter(updatedAnswers);
-        onComplete(result);
+        const analysis = await analyzeCharacter(updatedAnswers, userContext);
+        onComplete(analysis);
       } catch (err: any) {
         console.error('Analysis failed:', err);
         setAnalyzeError(err.message || 'Gagal menganalisis. Coba lagi.');

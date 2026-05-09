@@ -40,7 +40,7 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
   );
 
   return (
-    <div className="min-h-screen bg-rpg-black text-white p-4 md:p-6 pb-32 pt-32 md:pt-36">
+    <div className="min-h-screen bg-rpg-black text-white p-4 md:p-6 pb-32 pt-24 md:pt-8">
       <div className="max-w-5xl mx-auto space-y-8 md:space-y-12">
         
         {/* HEADER NAVIGATION */}

@@ -15,10 +15,12 @@ import { Dashboard } from './pages/Dashboard';
 import { Settings } from './pages/Settings';
 import { Profile } from './pages/Profile';
 import { Admin } from './pages/Admin';
+import { CompleteGoogleProfile } from './pages/CompleteGoogleProfile';
 import { checkAndApplyDecay, resetFatigue, type DecayResult } from './lib/decaySystem';
+import { cn } from './lib/utils';
 
 export default function App() {
-  const [page, setPage] = useState<'LANDING' | 'LOGIN' | 'REGISTER' | 'ONBOARDING' | 'CHARACTER_REVEAL' | 'DASHBOARD' | 'SETTINGS' | 'PROFILE' | 'ADMIN'>('LANDING');
+  const [page, setPage] = useState<'LANDING' | 'LOGIN' | 'REGISTER' | 'COMPLETE_PROFILE' | 'ONBOARDING' | 'CHARACTER_REVEAL' | 'DASHBOARD' | 'SETTINGS' | 'PROFILE' | 'ADMIN'>('LANDING');
   const [session, setSession] = useState<Session | null>(null);
   const [dbUserId, setDbUserId] = useState<string | null>(null);
   const [decayResult, setDecayResult] = useState<DecayResult | null>(null);
@@ -42,6 +44,9 @@ export default function App() {
   const [nameChangeCount, setNameChangeCount] = useState(0);
   const [lastNameChange, setLastNameChange] = useState<string | null>(null);
   const refreshLockRef = useRef(false);
+
+  // Tambahan state untuk menyimpan context user
+  const [userContext, setUserContext] = useState<{ usia?: number; gender?: string; username?: string }>({});
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -118,11 +123,11 @@ export default function App() {
           email: userEmail,
           username: userMetadata.username || displayName.toLowerCase().replace(/\s+/g, '_') + Math.floor(Math.random() * 1000),
           updated_at: now,
-        }, { 
+        }, {
           onConflict: 'supabase_id',
           ignoreDuplicates: false
         })
-        .select('id, level, xp, active_quests, last_quest_update, refresh_count, last_refresh_date, name_change_count, last_name_change, streak')
+        .select('id, level, xp, active_quests, last_quest_update, refresh_count, last_refresh_date, name_change_count, last_name_change, streak, usia, gender')
         .limit(1);
 
       if (upsertError) {
@@ -152,13 +157,20 @@ export default function App() {
         setRefreshCount(isNewDay ? 0 : (userData.refresh_count || 0));
         if (isNewDay) refreshLockRef.current = false;
 
+        setUserContext({ usia: userData.usia, gender: userData.gender, username: displayName });
+
+        if (!userData.usia || !userData.gender) {
+          setPage('COMPLETE_PROFILE');
+          return;
+        }
+
         const { data: profiles } = await supabase
           .from('character_profile')
           .select('*')
           .eq('user_id', userData.id)
           .order('created_at', { ascending: false })
           .limit(1);
-        
+
         const profileData = profiles?.[0];
 
         if (profileData) {
@@ -189,8 +201,8 @@ export default function App() {
             setQuests(aiQuests);
             setRefreshCount(0);
             refreshLockRef.current = false;
-            await supabase.from('arutha_user').update({ 
-              active_quests: aiQuests, 
+            await supabase.from('arutha_user').update({
+              active_quests: aiQuests,
               last_quest_update: new Date().toISOString(),
               refresh_count: 0,
               last_refresh_date: new Date().toISOString()
@@ -201,7 +213,7 @@ export default function App() {
               refreshLockRef.current = true;
             }
           }
-          
+
           const decay = await checkAndApplyDecay(userData.id);
           setDecayResult(decay);
 
@@ -229,7 +241,7 @@ export default function App() {
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(7);
-      
+
       if (error) throw error;
       if (data) setStatHistory(data.reverse());
     } catch (err) {
@@ -243,7 +255,7 @@ export default function App() {
       const updateData: any = { level: newLevel, xp: newXp };
       if (updatedQuests) updateData.active_quests = updatedQuests;
       await supabase.from('arutha_user').update(updateData).eq('id', dbUserId);
-      
+
       const { data: profiles } = await supabase.from('character_profile').select('id').eq('user_id', dbUserId).order('created_at', { ascending: false }).limit(1);
       const latestProfile = profiles?.[0];
       if (latestProfile) {
@@ -303,20 +315,20 @@ export default function App() {
             karma: analysis.stats.KARMA,
           })
           .select();
-        
+
         const profile = profiles?.[0];
         if (profile) setLastEvolutionDate(profile.created_at);
-        
+
         const aiQuests = await generateDailyQuests(analysis.stats);
         setQuests(aiQuests);
-        
+
         await supabase
           .from('arutha_user')
           .update({ active_quests: aiQuests, last_quest_update: new Date().toISOString() })
           .eq('id', userData.id);
       }
-    } catch (err) { 
-      console.error("Save error:", err); 
+    } catch (err) {
+      console.error("Save error:", err);
     }
     setCharacterAnalysis(analysis);
     setStats(analysis.stats);
@@ -356,7 +368,7 @@ export default function App() {
 
   const handleUpdateName = async (newName: string) => {
     if (!session || !dbUserId) return;
-    
+
     // Check Cooldown Logic
     // Check Cooldown Logic (Locked only after 3 changes)
     if (nameChangeCount >= 3 && lastNameChange) {
@@ -371,7 +383,7 @@ export default function App() {
     try {
       // 1. Force refresh session to ensure tokens are fresh
       const { data: { session: currentSession }, error: refreshError } = await supabase.auth.refreshSession();
-      
+
       if (refreshError || !currentSession) {
         throw new Error("Sesi login tidak valid. Silakan coba Logout dan Login kembali.");
       }
@@ -393,13 +405,13 @@ export default function App() {
       // 3. Update Database (Critical)
       const { error: dbError } = await supabase
         .from('arutha_user')
-        .update({ 
+        .update({
           username: newName,
           name_change_count: newCount,
           last_name_change: now
         })
         .eq('supabase_id', currentSession.user.id);
-      
+
       if (dbError) throw dbError;
 
       // 4. Update Local State
@@ -421,7 +433,7 @@ export default function App() {
         const updatedQuests = quests.map(q => q.id === id ? { ...q, completed: true } : q);
         setQuests(updatedQuests);
         addXp(quest.xp, quest.stat, updatedQuests);
-        
+
         // RESET FATIGUE
         if (dbUserId) {
           await resetFatigue(dbUserId);
@@ -439,8 +451,8 @@ export default function App() {
     try {
       const aiQuests = await generateDailyQuests(stats, mood);
       setQuests(aiQuests);
-      
-      await supabase.from('arutha_user').update({ 
+
+      await supabase.from('arutha_user').update({
         active_quests: aiQuests,
         last_quest_update: new Date().toISOString(),
         refresh_count: 0, // Still have 1 free refresh
@@ -463,8 +475,8 @@ export default function App() {
     try {
       const aiQuests = await generateDailyQuests(stats);
       setQuests(aiQuests);
-      
-      await supabase.from('arutha_user').update({ 
+
+      await supabase.from('arutha_user').update({
         active_quests: aiQuests,
         last_quest_update: new Date().toISOString(),
         refresh_count: 1,
@@ -481,7 +493,17 @@ export default function App() {
     }
   };
 
-  const hideNavbar = page === 'ONBOARDING' || page === 'CHARACTER_REVEAL' || page === 'LOGIN' || page === 'REGISTER';
+  const handleProfileComplete = (data: { username: string; usia: number; gender: string }) => {
+    setName(data.username);
+    setUserContext({ usia: data.usia, gender: data.gender, username: data.username });
+    if (characterAnalysis) {
+      setPage('DASHBOARD');
+    } else {
+      setPage('ONBOARDING');
+    }
+  };
+
+  const hideNavbar = page === 'ONBOARDING' || page === 'CHARACTER_REVEAL' || page === 'LOGIN' || page === 'REGISTER' || page === 'COMPLETE_PROFILE';
 
   return (
     <div className="min-h-screen bg-rpg-black text-white selection:bg-white selection:text-black">
@@ -491,62 +513,71 @@ export default function App() {
       </div>
 
       {!hideNavbar && (
-        <Navbar session={session} userName={name} onNavigate={(p) => setPage(p as any)} currentPage={page} />
+        <Navbar session={session} userName={name} onNavigate={(p) => setPage(p as any)} currentPage={page} stats={stats} />
       )}
 
-      <AnimatePresence mode="wait">
-        {page === 'LANDING' && (
-          <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-            <Landing session={session} hasProfile={!!characterAnalysis} setPage={setPage} />
-          </motion.div>
-        )}
-        {page === 'LOGIN' && <Login onBack={() => setPage('LANDING')} />}
-        {page === 'REGISTER' && <Register onBack={() => setPage('LANDING')} />}
-        {page === 'ONBOARDING' && <Onboarding onComplete={handleOnboardingComplete} />}
-        {page === 'CHARACTER_REVEAL' && characterAnalysis && (
-          <CharacterReveal analysis={characterAnalysis} onContinue={() => setPage('DASHBOARD')} />
-        )}
-        {page === 'DASHBOARD' && (
-          <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-            <Dashboard 
-              session={session}
-              userId={dbUserId || ''}
-              name={name} level={level} xp={xp} stats={stats} quests={quests} analysis={characterAnalysis}
-              streak={streak}
-              statHistory={statHistory}
-              completeQuest={completeQuest} handleLogout={() => supabase.auth.signOut()} addXp={addXp}
-              onReOnboard={() => setPage('ONBOARDING')} onRefreshQuests={refreshQuests} isRefreshing={isRefreshing}
-              lastEvolutionDate={lastEvolutionDate} refreshCount={refreshCount}
-              decayResult={decayResult}
-              onTakeRecovery={handleTakeRecovery}
-              setPage={setPage} onGenerateInitialQuests={generateInitialQuests}
+      <div className={cn("transition-all duration-300", !hideNavbar ? "md:pl-[280px]" : "")}>
+        <AnimatePresence mode="wait">
+          {page === 'LANDING' && (
+            <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+              <Landing session={session} hasProfile={!!characterAnalysis} setPage={setPage} />
+            </motion.div>
+          )}
+          {page === 'LOGIN' && <Login onBack={() => setPage('LANDING')} />}
+          {page === 'REGISTER' && <Register onBack={() => setPage('LANDING')} />}
+          {page === 'COMPLETE_PROFILE' && dbUserId && (
+            <CompleteGoogleProfile
+              userId={dbUserId}
+              initialUsername={name}
+              onComplete={handleProfileComplete}
             />
-          </motion.div>
-        )}
-        {page === 'SETTINGS' && session && (
-          <motion.div key="settings" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-            <Settings 
-              userId={dbUserId || ''}
-              initialName={name}
-              email={session.user.email || ''}
-              nameChangeCount={nameChangeCount}
-              lastNameChange={lastNameChange}
-              onUpdateName={handleUpdateName}
-              onLogout={() => supabase.auth.signOut()}
+          )}
+          {page === 'ONBOARDING' && <Onboarding onComplete={handleOnboardingComplete} userContext={userContext} />}
+          {page === 'CHARACTER_REVEAL' && characterAnalysis && (
+            <CharacterReveal analysis={characterAnalysis} onContinue={() => setPage('DASHBOARD')} />
+          )}
+          {page === 'DASHBOARD' && (
+            <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+              <Dashboard
+                session={session}
+                userId={dbUserId || ''}
+                name={name} level={level} xp={xp} stats={stats} quests={quests} analysis={characterAnalysis}
+                streak={streak}
+                statHistory={statHistory}
+                completeQuest={completeQuest} handleLogout={() => supabase.auth.signOut()} addXp={addXp}
+                onReOnboard={() => setPage('ONBOARDING')} onRefreshQuests={refreshQuests} isRefreshing={isRefreshing}
+                lastEvolutionDate={lastEvolutionDate} refreshCount={refreshCount}
+                decayResult={decayResult}
+                onTakeRecovery={handleTakeRecovery}
+                setPage={setPage} onGenerateInitialQuests={generateInitialQuests}
+              />
+            </motion.div>
+          )}
+          {page === 'SETTINGS' && session && (
+            <motion.div key="settings" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <Settings
+                userId={dbUserId || ''}
+                initialName={name}
+                email={session.user.email || ''}
+                nameChangeCount={nameChangeCount}
+                lastNameChange={lastNameChange}
+                onUpdateName={handleUpdateName}
+                onLogout={() => supabase.auth.signOut()}
+                onBack={() => setPage('DASHBOARD')}
+              />
+            </motion.div>
+          )}
+          {page === 'PROFILE' && characterAnalysis && (
+            <Profile
+              name={name} level={level} xp={xp} stats={stats} analysis={characterAnalysis}
               onBack={() => setPage('DASHBOARD')}
             />
-          </motion.div>
-        )}
-        {page === 'PROFILE' && characterAnalysis && (
-          <Profile 
-            name={name} level={level} xp={xp} stats={stats} analysis={characterAnalysis}
-            onBack={() => setPage('DASHBOARD')}
-          />
-        )}
-        {page === 'ADMIN' && session?.user.email === 'aruthtale@gmail.com' && (
-          <Admin onBack={() => setPage('DASHBOARD')} />
-        )}
-      </AnimatePresence>
+          )}
+          {page === 'ADMIN' && session?.user.email === 'aruthtale@gmail.com' && (
+            <Admin onBack={() => setPage('DASHBOARD')} />
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

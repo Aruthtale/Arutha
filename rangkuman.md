@@ -94,4 +94,22 @@ Halaman Profile kini berfungsi sebagai **"Character Sheet"** premium yang menyim
 5.  **Admin Sanctum**: Control Center Admin (Status: Active for aruthtale@gmail.com).
 
 ---
-**Status Terakhir (8 Mei 2026):** *Aplikasi dalam kondisi FINAL & STABLE. Seluruh bug kritikal dan permintaan fitur tambahan telah diimplementasikan sepenuhnya.*
+
+## VIII. UPDATE TERBARU (9 Mei 2026): REFINEMENT UX & EXPANSI ADMIN
+1. **Refinement Halaman Settings & Informasi Aplikasi:**
+   * **Two-Column Grid Layout**: Mendesain ulang struktur halaman Settings menjadi 2 kolom responsif. Kolom kiri untuk pengaturan akun, kolom kanan khusus untuk "Informasi Aplikasi" yang mencakup Panduan, Definisi 5 Dimensi, dan Fitur Utama.
+   * **Mobile Bottom Sheet Modal**: Untuk layar HP (mobile), informasi aplikasi dipadatkan menjadi sebuah tombol di atas *Danger Zone*. Saat ditekan, tombol ini memunculkan jendela laci dari bawah layar (*Bottom Sheet Modal*) agar tampilan tetap rapi tanpa harus melakukan *scroll* panjang.
+
+2. **Peningkatan Admin Dashboard (Control Center):**
+   * **View Profile (AI Personality)**: Admin kini bisa melihat Profil Kepribadian AI (Tipe, Judul, Deskripsi, dan Statistik 5 Dimensi) dari masing-masing user langsung dari tabel dengan mengklik tombol "View" (ikon 👁️).
+   * **Demographic Data**: Tabel admin sekarang menampilkan Usia dan Gender dari user untuk analisis data pemain yang lebih baik.
+   * **Level Up Instan**: Menambahkan tombol "+LVL" untuk langsung meningkatkan level user secara paksa (berguna untuk testing/event).
+   * **Safe Cascade Delete**: Memperbaiki dan melengkapi fungsi Hapus Akun agar secara aman menghapus riwayat stat (`stat_history`) dan profil AI (`character_profile`) terlebih dahulu sebelum menghapus data pemain dari database.
+   * **Deteksi Row Level Security (RLS)**: Menambahkan deteksi dan notifikasi *Alert* otomatis jika proses Delete diblokir oleh sistem keamanan RLS Supabase.
+
+3. **Penyelesaian Bug Kritis UI/UX:**
+   * **Mobile Sub-Header Fix**: Merapikan komponen pendukung di Navbar dan Dashboard (menyembunyikan elemen non-esensial di layar kecil) menggunakan utility `.hide-scrollbar` agar layout tidak berantakan.
+   * **Radar Chart Stabilization**: Mengeliminasi peringatan membandel `width(-1)` dari library Recharts di Dashboard dengan menyematkan properti `debounce={50}`, `id`, dan dimensi absolut pada `ResponsiveContainer`.
+
+---
+**Status Terakhir (9 Mei 2026):** *Aplikasi telah melalui tahapan final polishing UX mobile dan perluasan fitur Admin Dashboard. Seluruh peringatan konsol (warnings) dan isu tata letak telah tertangani.*

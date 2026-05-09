@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  User, Shield, Bell, Trash2, LogOut, ChevronRight, Mail, Lock, AlertTriangle, CheckCircle, ArrowLeft, Loader2
+  User, Shield, Bell, Trash2, LogOut, Mail, AlertTriangle, CheckCircle, ArrowLeft, Loader2, Info, Brain, Dumbbell, Coins, BookOpen, Users, Sparkles, Flame, Target, Zap, ChevronDown, X
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
@@ -51,6 +51,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   const handleUpdateProfile = async () => {
     if (name === initialName) return;
@@ -84,8 +85,8 @@ export const Settings: React.FC<SettingsProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-rpg-black text-white pb-32 pt-32 px-4 md:px-6">
-      <div className="max-w-2xl mx-auto space-y-8">
+    <div className="min-h-screen bg-rpg-black text-white pb-32 pt-24 md:pt-12 px-4 md:px-6">
+      <div className="max-w-6xl mx-auto">
         
         {/* Header */}
         <header className="flex items-center gap-4 mb-10">
@@ -104,7 +105,7 @@ export const Settings: React.FC<SettingsProps> = ({
             <motion.div 
               initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className={cn(
-                "p-4 rounded-2xl border flex items-center gap-3 text-sm font-bold shadow-lg",
+                "p-4 rounded-2xl border flex items-center gap-3 text-sm font-bold shadow-lg mb-8",
                 message.type === 'success' ? "bg-jiwa/10 border-jiwa/20 text-jiwa" : "bg-red-500/10 border-red-500/20 text-red-500"
               )}
             >
@@ -114,106 +115,175 @@ export const Settings: React.FC<SettingsProps> = ({
           )}
         </AnimatePresence>
 
-        {/* Account Section */}
-        <section className="space-y-4">
-          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-neutral-500 flex items-center gap-2 px-2">
-            <User className="w-4 h-4" /> Account Profile
-          </h3>
-          <div className="glass-panel p-6 space-y-6">
-            <div className="space-y-3">
-              <div className="flex justify-between items-end px-1">
-                <label className="text-xs font-bold text-neutral-400 uppercase">Display Name</label>
-                <AnimatePresence mode="wait">
-                  <motion.span 
-                    key={isLocked ? 'locked' : 'available'}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className={cn("text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md", 
-                      isLocked ? "text-red-500 bg-red-500/10" : "text-jiwa bg-jiwa/10")}
-                  >
-                    {isLocked ? `COOLDOWN: ${cooldownDays} HARI` : `${Math.max(0, 3 - nameChangeCount)} SISA PERUBAHAN`}
-                  </motion.span>
-                </AnimatePresence>
+        {/* Two-Column Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
+          
+          {/* LEFT COLUMN: Account & Preferences */}
+          <div className="space-y-8">
+            {/* Account Section */}
+            <section className="space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-neutral-500 flex items-center gap-2 px-2">
+                <User className="w-4 h-4" /> Account Profile
+              </h3>
+              <div className="glass-panel p-6 space-y-6">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-end px-1">
+                    <label className="text-xs font-bold text-neutral-400 uppercase">Display Name</label>
+                    <AnimatePresence mode="wait">
+                      <motion.span 
+                        key={isLocked ? 'locked' : 'available'}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className={cn("text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md", 
+                          isLocked ? "text-red-500 bg-red-500/10" : "text-jiwa bg-jiwa/10")}
+                      >
+                        {isLocked ? `COOLDOWN: ${cooldownDays} HARI` : `${Math.max(0, 3 - nameChangeCount)} SISA PERUBAHAN`}
+                      </motion.span>
+                    </AnimatePresence>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input 
+                      type="text" value={name} onChange={e => setName(e.target.value)}
+                      disabled={isLocked}
+                      placeholder={isLocked ? "Nama terkunci..." : "Masukkan nama baru"}
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-base outline-none focus:border-white/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                    />
+                    <button 
+                      onClick={handleUpdateProfile}
+                      disabled={isUpdatingName || name === initialName || isLocked}
+                      className="px-6 py-3 bg-white text-black font-black text-sm rounded-xl hover:scale-105 disabled:opacity-50 transition-all shrink-0 sm:w-auto w-full"
+                    >
+                      {isUpdatingName ? <Loader2 className="w-5 h-5 animate-spin" /> : 'SAVE'}
+                    </button>
+                  </div>
+                  <AnimatePresence>
+                    {isLocked && (
+                      <motion.p 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="text-[10px] text-red-400/60 font-medium ml-1"
+                      >
+                        Fitur ganti nama sedang dikunci. Anda dapat mengganti nama kembali dalam <span className="font-black text-red-500">{cooldownDays} hari</span>.
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-neutral-400 uppercase ml-1">Email Address</label>
+                  <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3 opacity-60">
+                    <Mail className="w-5 h-5 text-neutral-500" />
+                    <span className="text-base text-neutral-300 font-medium">{email}</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <input 
-                  type="text" value={name} onChange={e => setName(e.target.value)}
-                  disabled={isLocked}
-                  placeholder={isLocked ? "Nama terkunci..." : "Masukkan nama baru"}
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-base outline-none focus:border-white/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                />
+            </section>
+
+            {/* Preferences */}
+            <section className="space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-neutral-500 flex items-center gap-2 px-2">
+                <Bell className="w-4 h-4" /> Preferences
+              </h3>
+              <div className="glass-panel p-6 space-y-4">
+                <ToggleItem label="Push Notifications" desc="Pengingat quest harian di HP." defaultChecked />
+                <ToggleItem label="Sound Effects" desc="Efek suara saat quest selesai." defaultChecked />
+              </div>
+            </section>
+
+            {/* Mobile Only: Info Button */}
+            <button
+              onClick={() => setShowInfoModal(true)}
+              className="lg:hidden flex items-center justify-between w-full p-5 glass-panel border border-white/10 rounded-2xl hover:bg-white/5 transition-all group mt-4"
+            >
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-jiwa/10 rounded-xl">
+                  <Info className="w-5 h-5 text-jiwa" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-black text-neutral-200">Informasi Aplikasi</p>
+                  <p className="text-xs text-neutral-500 mt-0.5">Panduan & penjelasan 5 Dimensi</p>
+                </div>
+              </div>
+              <ChevronDown className="w-5 h-5 text-neutral-500 group-hover:text-neutral-200 transition-colors" />
+            </button>
+
+            {/* Danger Zone */}
+            <section className="space-y-4 pt-10 border-t border-white/5">
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-red-500 flex items-center gap-2 px-2">
+                <AlertTriangle className="w-4 h-4" /> Danger Zone
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button 
-                  onClick={handleUpdateProfile}
-                  disabled={isUpdatingName || name === initialName || isLocked}
-                  className="px-6 py-3 bg-white text-black font-black text-sm rounded-xl hover:scale-105 disabled:opacity-50 transition-all shrink-0 sm:w-auto w-full"
+                  onClick={onLogout}
+                  className="flex items-center gap-4 p-5 bg-white/5 border border-white/10 rounded-2xl hover:bg-red-500/10 hover:border-red-500/20 transition-all group"
                 >
-                  {isUpdatingName ? <Loader2 className="w-5 h-5 animate-spin" /> : 'SAVE'}
+                  <div className="p-3 bg-white/5 text-neutral-400 group-hover:text-red-500 transition-colors rounded-xl">
+                    <LogOut className="w-5 h-5" />
+                  </div>
+                  <span className="text-base font-black">Logout</span>
+                </button>
+                <button 
+                  onClick={() => setShowDeleteModal(true)}
+                  className="flex items-center gap-4 p-5 bg-red-500/5 border border-red-500/10 rounded-2xl hover:bg-red-500/20 hover:border-red-500/40 transition-all group"
+                >
+                  <div className="p-3 bg-red-500/10 text-red-500 rounded-xl">
+                    <Trash2 className="w-5 h-5" />
+                  </div>
+                  <span className="text-base font-black text-red-500">Hapus Akun</span>
                 </button>
               </div>
-              <AnimatePresence>
-                {isLocked && (
-                  <motion.p 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="text-[10px] text-red-400/60 font-medium ml-1"
-                  >
-                    Fitur ganti nama sedang dikunci. Anda dapat mengganti nama kembali dalam <span className="font-black text-red-500">{cooldownDays} hari</span>.
-                  </motion.p>
-                )}
-              </AnimatePresence>
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-neutral-400 uppercase ml-1">Email Address</label>
-              <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3 opacity-60">
-                <Mail className="w-5 h-5 text-neutral-500" />
-                <span className="text-base text-neutral-300 font-medium">{email}</span>
-              </div>
-            </div>
+            </section>
           </div>
-        </section>
 
-
-        {/* Preferences (Mock) */}
-        <section className="space-y-4">
-          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-neutral-500 flex items-center gap-2 px-2">
-            <Bell className="w-4 h-4" /> Preferences
-          </h3>
-          <div className="glass-panel p-6 space-y-4">
-            <ToggleItem label="Push Notifications" desc="Pengingat quest harian di HP." defaultChecked />
-            <ToggleItem label="Sound Effects" desc="Efek suara saat quest selesai." defaultChecked />
+          {/* RIGHT COLUMN: Informasi Aplikasi - Desktop only */}
+          <div className="hidden lg:block space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-neutral-500 flex items-center gap-2 px-2">
+              <Info className="w-4 h-4" /> Informasi Aplikasi
+            </h3>
+            <AppInfoContent />
           </div>
-        </section>
 
-        {/* Danger Zone */}
-        <section className="space-y-4 pt-10 border-t border-white/5">
-          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-red-500 flex items-center gap-2 px-2">
-            <AlertTriangle className="w-4 h-4" /> Danger Zone
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button 
-              onClick={onLogout}
-              className="flex items-center gap-4 p-5 bg-white/5 border border-white/10 rounded-2xl hover:bg-red-500/10 hover:border-red-500/20 transition-all group"
-            >
-              <div className="p-3 bg-white/5 text-neutral-400 group-hover:text-red-500 transition-colors rounded-xl">
-                <LogOut className="w-5 h-5" />
-              </div>
-              <span className="text-base font-black">Logout</span>
-            </button>
-            <button 
-              onClick={() => setShowDeleteModal(true)}
-              className="flex items-center gap-4 p-5 bg-red-500/5 border border-red-500/10 rounded-2xl hover:bg-red-500/20 hover:border-red-500/40 transition-all group"
-            >
-              <div className="p-3 bg-red-500/10 text-red-500 rounded-xl">
-                <Trash2 className="w-5 h-5" />
-              </div>
-              <span className="text-base font-black text-red-500">Hapus Akun</span>
-            </button>
-          </div>
-        </section>
+        </div>
+        {/* end grid */}
 
       </div>
+
+      {/* Mobile Info Bottom Sheet */}
+      <AnimatePresence>
+        {showInfoModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowInfoModal(false)}
+              className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm lg:hidden"
+            />
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+              className="fixed bottom-0 left-0 right-0 z-[101] bg-rpg-card border-t border-white/10 rounded-t-[32px] max-h-[85vh] flex flex-col lg:hidden"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-white/5 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-jiwa/10 rounded-xl">
+                    <Info className="w-5 h-5 text-jiwa" />
+                  </div>
+                  <h3 className="text-base font-black uppercase tracking-widest text-neutral-200">Informasi</h3>
+                </div>
+                <button 
+                  onClick={() => setShowInfoModal(false)}
+                  className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto hide-scrollbar">
+                <AppInfoContent />
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
@@ -294,6 +364,109 @@ const ToggleItem = ({ label, desc, defaultChecked }: { label: string, desc: stri
           enabled ? "translate-x-6" : "translate-x-0"
         )} />
       </button>
+    </div>
+  );
+};
+
+const AppInfoContent = () => {
+  return (
+    <div className="glass-panel p-6 md:p-8 space-y-8">
+      {/* Intro */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-jiwa/10 rounded-xl">
+            <Sparkles className="w-5 h-5 text-jiwa" />
+          </div>
+          <h4 className="text-base font-black text-neutral-200">Apa itu Arutha?</h4>
+        </div>
+        <p className="text-sm text-neutral-400 leading-relaxed">
+          Arutha adalah platform pengembangan diri berbasis RPG yang didukung oleh kecerdasan buatan (AI). 
+          Setiap hari, Anda akan menerima <span className="text-neutral-200 font-bold">misi harian</span> yang disesuaikan secara personal 
+          berdasarkan profil psikologis, usia, dan kebutuhan Anda. Selesaikan misi untuk menaikkan statistik dimensi dan naik level!
+        </p>
+      </div>
+
+      {/* Cara Bermain */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-harta/10 rounded-xl">
+            <Target className="w-5 h-5 text-harta" />
+          </div>
+          <h4 className="text-base font-black text-neutral-200">Cara Bermain</h4>
+        </div>
+        <div className="space-y-2 text-sm text-neutral-400">
+          <div className="flex items-start gap-3 p-3 bg-white/5 rounded-xl">
+            <span className="text-xs font-black text-jiwa bg-jiwa/10 px-2 py-1 rounded-lg shrink-0">1</span>
+            <p>Buka Dashboard dan lihat <span className="text-neutral-200 font-bold">Misi Harian</span> yang telah disiapkan AI khusus untuk Anda.</p>
+          </div>
+          <div className="flex items-start gap-3 p-3 bg-white/5 rounded-xl">
+            <span className="text-xs font-black text-jiwa bg-jiwa/10 px-2 py-1 rounded-lg shrink-0">2</span>
+            <p>Kerjakan misi di dunia nyata, lalu tekan <span className="text-neutral-200 font-bold">"Buktikan Quest"</span> dan tuliskan bukti/catatan Anda.</p>
+          </div>
+          <div className="flex items-start gap-3 p-3 bg-white/5 rounded-xl">
+            <span className="text-xs font-black text-jiwa bg-jiwa/10 px-2 py-1 rounded-lg shrink-0">3</span>
+            <p>AI akan <span className="text-neutral-200 font-bold">memverifikasi</span> jawaban Anda. Jika lolos, Anda mendapatkan XP dan statistik dimensi meningkat!</p>
+          </div>
+        </div>
+      </div>
+
+      {/* 5 Dimensi */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-ilmu/10 rounded-xl">
+            <Zap className="w-5 h-5 text-ilmu" />
+          </div>
+          <h4 className="text-base font-black text-neutral-200">5 Dimensi Kehidupan</h4>
+        </div>
+        <div className="grid gap-3">
+          {[
+            { icon: <Brain className="w-4 h-4" />, name: 'JIWA', desc: 'Mentalitas & Ketenangan — Mengukur kesehatan mental, ketenangan batin, dan kecerdasan emosional Anda.', color: 'text-jiwa', bg: 'bg-jiwa/10' },
+            { icon: <Dumbbell className="w-4 h-4" />, name: 'RAGA', desc: 'Vitalitas & Kekuatan Fisik — Mengukur aktivitas fisik, kesehatan tubuh, dan konsistensi olahraga Anda.', color: 'text-raga', bg: 'bg-raga/10' },
+            { icon: <Coins className="w-4 h-4" />, name: 'HARTA', desc: 'Keuangan & Strategi Aset — Mengukur literasi keuangan, kebiasaan menabung, dan pengelolaan uang Anda.', color: 'text-harta', bg: 'bg-harta/10' },
+            { icon: <BookOpen className="w-4 h-4" />, name: 'ILMU', desc: 'Kecerdasan & Literasi — Mengukur kebiasaan belajar, rasa ingin tahu, dan pengembangan pengetahuan Anda.', color: 'text-ilmu', bg: 'bg-ilmu/10' },
+            { icon: <Users className="w-4 h-4" />, name: 'KARMA', desc: 'Sosial & Dampak Komunitas — Mengukur hubungan sosial, empati, dan kontribusi Anda terhadap lingkungan sekitar.', color: 'text-karma', bg: 'bg-karma/10' },
+          ].map(dim => (
+            <div key={dim.name} className="flex items-start gap-3 p-4 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-all">
+              <div className={cn('p-2 rounded-lg shrink-0', dim.bg, dim.color)}>
+                {dim.icon}
+              </div>
+              <div>
+                <h5 className={cn('text-sm font-black tracking-widest', dim.color)}>{dim.name}</h5>
+                <p className="text-xs text-neutral-500 leading-relaxed mt-0.5">{dim.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Fitur Utama */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-raga/10 rounded-xl">
+            <Flame className="w-5 h-5 text-raga" />
+          </div>
+          <h4 className="text-base font-black text-neutral-200">Fitur Utama</h4>
+        </div>
+        <div className="grid gap-2 text-sm">
+          <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+            <Shield className="w-4 h-4 text-jiwa shrink-0" />
+            <p className="text-neutral-400"><span className="text-neutral-200 font-bold">Verifikasi AI</span> — Setiap bukti quest diverifikasi oleh AI untuk menjaga integritas progres Anda.</p>
+          </div>
+          <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+            <Flame className="w-4 h-4 text-harta shrink-0" />
+            <p className="text-neutral-400"><span className="text-neutral-200 font-bold">Streak System</span> — Selesaikan quest setiap hari untuk membangun streak dan bonus XP.</p>
+          </div>
+          <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+            <Sparkles className="w-4 h-4 text-ilmu shrink-0" />
+            <p className="text-neutral-400"><span className="text-neutral-200 font-bold">Oracle AI</span> — Setiap hari Anda menerima pesan motivasi yang dipersonalisasi oleh AI.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Version */}
+      <div className="pt-4 border-t border-white/5 text-center">
+        <p className="text-[10px] font-black tracking-[0.3em] text-neutral-600 uppercase">Arutha v1.0.0 · By AruThTale</p>
+      </div>
     </div>
   );
 };

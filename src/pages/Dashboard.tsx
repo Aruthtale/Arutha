@@ -119,29 +119,29 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   return (
-    <div className="min-h-screen text-white pb-24 pt-32 md:pt-36">
+    <div className="min-h-screen text-white pb-24 pt-32 md:pt-20">
       
       {/* SUB-HEADER BAR */}
-      <div className="fixed top-20 left-0 right-0 z-40 bg-rpg-black/80 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 h-14 flex items-center gap-4">
-          <div className="flex items-center gap-2.5 px-4 py-1.5 bg-white/10 rounded-full border border-white/10">
+      <div className="fixed top-16 md:top-0 left-0 md:left-[280px] right-0 z-40 bg-rpg-black/80 backdrop-blur-xl border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 h-14 flex items-center gap-3 md:gap-4 overflow-x-auto hide-scrollbar">
+          <div className="flex items-center gap-2.5 px-3 md:px-4 py-1.5 bg-white/10 rounded-full border border-white/10 shrink-0">
             <LayoutDashboard className="w-4 h-4 text-white" />
-            <span className="text-xs font-black text-neutral-200 tracking-widest uppercase">Pusat Misi</span>
+            <span className="hidden sm:inline text-xs font-black text-neutral-200 tracking-widest uppercase">Pusat Misi</span>
           </div>
-          <div className="w-px h-6 bg-white/10" />
+          <div className="hidden sm:block w-px h-6 bg-white/10" />
           
-          <div className="flex-1 flex items-center gap-4 px-4 bg-white/5 rounded-2xl border border-white/5 h-10 group">
-            <Star className="w-4 h-4 text-harta fill-harta/20" />
+          <div className="flex-1 flex items-center gap-2 md:gap-4 px-3 md:px-4 bg-white/5 rounded-2xl border border-white/5 h-10 group min-w-[120px]">
+            <Star className="w-4 h-4 text-harta fill-harta/20 shrink-0" />
             <div className="flex-1 h-1.5 bg-rpg-black rounded-full overflow-hidden">
               <motion.div initial={{ width: 0 }} animate={{ width: `${(xp / (level * 1000)) * 100}%` }}
                 className="h-full bg-gradient-to-r from-jiwa to-ilmu animate-shimmer" />
             </div>
-            <span className="text-[10px] font-black text-neutral-500 font-mono">{xp} / {level * 1000} XP</span>
+            <span className="text-[10px] font-black text-neutral-500 font-mono shrink-0">{xp} / {level * 1000}</span>
           </div>
 
-          <div className="flex items-center gap-2 px-4 py-1.5 bg-harta/10 rounded-full border border-harta/20 text-harta shrink-0">
+          <div className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 bg-harta/10 rounded-full border border-harta/20 text-harta shrink-0">
             <Zap className="w-4 h-4 fill-harta" />
-            <span className="text-xs font-black tracking-tighter uppercase">{streak} Streak</span>
+            <span className="text-xs font-black tracking-tighter uppercase">{streak} <span className="hidden sm:inline">Streak</span></span>
           </div>
         </div>
       </div>
@@ -150,8 +150,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
         
         {/* LEFT COLUMN: ACTION CENTER */}
         <div className="space-y-8">
-          <DecayStatusBanner />
-
           {/* ORACLE SECTION */}
           <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-rpg-card to-rpg-black border border-white/5 p-8 md:p-10 shadow-2xl">
             <div className="absolute top-0 right-0 w-64 h-64 bg-jiwa/10 blur-[100px] rounded-full -mr-20 -mt-20 opacity-30" />
@@ -250,7 +248,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             
             <div className="w-full h-[320px]">
               {isChartVisible && (
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <ResponsiveContainer id="radar-container" width="100%" height={320} debounce={50}>
                   <RadarChart cx="50%" cy="50%" outerRadius="80%" data={[
                     { subject: 'JIWA', A: stats.JIWA },
                     { subject: 'RAGA', A: stats.RAGA },
@@ -259,6 +257,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     { subject: 'KARMA', A: stats.KARMA },
                   ]}>
                     <PolarGrid stroke="#333" />
+                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                     <PolarAngleAxis dataKey="subject" tick={{ fill: '#888', fontSize: 10, fontWeight: 'bold' }} />
                     <Radar 
                       name="Player" 

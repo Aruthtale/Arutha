@@ -1,72 +1,99 @@
 import React from 'react';
-import { LayoutGrid, User, Map, ShieldAlert, Contact2 } from 'lucide-react';
+import { LayoutGrid, User, Map, ShieldAlert, Contact2, Mail } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
-import { cn } from '../lib/utils';
+import { cn, getDimensionRank } from '../lib/utils';
 
 interface NavbarProps {
   session: Session | null;
   userName: string;
   onNavigate: (page: any) => void;
   currentPage: string;
+  stats?: { JIWA: number; RAGA: number; HARTA: number; ILMU: number; KARMA: number };
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, currentPage }) => {
+export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, currentPage, stats }) => {
+  const avgStats = stats ? Object.values(stats).reduce((a, b) => a + b, 0) / 5 : 0;
+  const currentRank = getDimensionRank(avgStats);
+
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-rpg-black/90 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 h-20 flex items-center justify-between gap-4">
-
+      {/* Desktop Left Sidebar */}
+      <nav className="hidden md:flex fixed top-0 left-0 bottom-0 w-[280px] z-50 bg-rpg-black/95 border-r border-white/5 flex-col justify-between py-8">
+        
+        <div className="flex flex-col items-center w-full px-6">
           {/* Logo Section */}
           <button
             onClick={() => onNavigate('LANDING')}
-            className="flex items-center gap-3 shrink-0 hover:opacity-80 transition-opacity"
+            className="flex flex-col items-center gap-4 hover:opacity-80 transition-opacity mb-10 w-full"
           >
-            <img src="/Arutha.png" alt="Arutha Logo" className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl object-cover shadow-lg border border-white/10" />
-            <div className="flex flex-col items-start leading-none">
-              <span className="text-xl font-black tracking-tighter text-neutral-200">ARUTHA</span>
+            <div className="w-24 h-24 rounded-full border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.05)] p-1 relative">
+              <div className="absolute inset-0 rounded-full border border-neutral-600/30 m-1" />
+              <img src="/Arutha.png" alt="Arutha Logo" className="w-full h-full rounded-full object-cover" />
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-xl font-black tracking-[0.2em] text-neutral-200">ARUTHA</span>
               {session && (
-                <span className="text-[10px] font-bold text-harta uppercase tracking-[0.2em] mt-1 line-clamp-1 max-w-[120px] md:max-w-none">
+                <span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest mt-1">
                   {userName}
                 </span>
               )}
             </div>
           </button>
 
-          {/* Center Nav Pills - Desktop Only */}
+          {/* Navigation Links */}
           {session && (
-            <div className="hidden sm:flex items-center gap-2 p-1.5 bg-white/5 rounded-full border border-white/10">
-              <NavPill active={currentPage === 'DASHBOARD'} onClick={() => onNavigate('DASHBOARD')} icon={<LayoutGrid className="w-5 h-5" />} label="Home" />
-              <NavPill active={currentPage === 'PROFILE'} onClick={() => onNavigate('PROFILE')} icon={<Contact2 className="w-5 h-5" />} label="Profile" />
-              <NavPill active={false} onClick={() => {}} icon={<Map className="w-5 h-5" />} label="Quests" />
-              <NavPill active={currentPage === 'SETTINGS'} onClick={() => onNavigate('SETTINGS')} icon={<User className="w-5 h-5" />} label="Settings" />
+            <div className="flex flex-col gap-2 w-full">
+              <SidebarPill active={currentPage === 'DASHBOARD'} onClick={() => onNavigate('DASHBOARD')} icon={<LayoutGrid className="w-4 h-4" />} label="Home" />
+              <SidebarPill active={currentPage === 'PROFILE'} onClick={() => onNavigate('PROFILE')} icon={<Contact2 className="w-4 h-4" />} label="Profile" />
+              <SidebarPill active={false} onClick={() => {}} icon={<Map className="w-4 h-4" />} label="Quests" />
+              <SidebarPill active={currentPage === 'SETTINGS'} onClick={() => onNavigate('SETTINGS')} icon={<User className="w-4 h-4" />} label="Settings" />
               {session.user.email === 'aruthtale@gmail.com' && (
-                <NavPill active={currentPage === 'ADMIN'} onClick={() => onNavigate('ADMIN')} icon={<ShieldAlert className="w-5 h-5 text-jiwa" />} label="Admin" />
+                <SidebarPill active={currentPage === 'ADMIN'} onClick={() => onNavigate('ADMIN')} icon={<ShieldAlert className="w-4 h-4 text-jiwa" />} label="Admin" />
               )}
             </div>
           )}
+        </div>
 
-          {/* Right: Avatar / Login */}
-          <div className="flex items-center gap-3 shrink-0">
-            {session ? (
-              <button
-                onClick={() => onNavigate('PROFILE')}
-                className="w-10 h-10 rounded-full bg-gradient-to-tr from-jiwa to-ilmu p-[2px] hover:scale-110 transition-transform hidden sm:block"
-              >
-                <div className="w-full h-full rounded-full bg-rpg-black flex items-center justify-center text-sm font-black text-neutral-200">
-                  {session.user.email?.[0].toUpperCase()}
-                </div>
+        {/* Bottom Section: Rank & Icons */}
+        {session && stats && (
+          <div className="px-6 space-y-6">
+            <div className="glass-panel p-4 border border-white/5 bg-gradient-to-b from-white/5 to-transparent text-center">
+              <p className="text-[9px] font-black tracking-[0.2em] text-neutral-500 uppercase mb-2">Current Rank</p>
+              <h3 className="text-lg font-black tracking-widest text-neutral-200">
+                {currentRank}
+              </h3>
+            </div>
+            
+            <div className="flex justify-center items-center gap-4">
+              <button className="p-2 text-neutral-500 hover:text-neutral-200 transition-colors relative group">
+                <Mail className="w-5 h-5" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-jiwa rounded-full animate-pulse" />
               </button>
-            ) : (
-              <div className="flex items-center gap-2">
-                <button onClick={() => onNavigate('LOGIN')} className="hidden sm:block px-5 py-2 text-sm font-bold text-neutral-400 hover:text-white">
-                  Login
-                </button>
-                <button onClick={() => onNavigate('REGISTER')} className="px-5 py-2 sm:px-6 sm:py-2.5 text-xs sm:text-sm font-black bg-white text-black rounded-full hover:scale-105 transition-all shadow-lg">
-                  Register
-                </button>
-              </div>
-            )}
+            </div>
           </div>
+        )}
+      </nav>
+
+      {/* Top Navbar - Mobile Only */}
+      <nav className="md:hidden fixed top-0 left-0 right-0 z-50 bg-rpg-black/90 backdrop-blur-xl border-b border-white/5">
+        <div className="px-4 h-16 flex items-center justify-between">
+          <button onClick={() => onNavigate('LANDING')} className="flex items-center gap-2">
+            <img src="/Arutha.png" alt="Arutha Logo" className="w-8 h-8 rounded-lg object-cover" />
+            <div className="flex flex-col items-start leading-none text-left">
+              <span className="text-base font-black tracking-tighter text-neutral-200">ARUTHA</span>
+              {session && (
+                <span className="text-[9px] font-black text-jiwa uppercase tracking-widest mt-0.5 line-clamp-1 max-w-[120px]">
+                  {userName}
+                </span>
+              )}
+            </div>
+          </button>
+          {!session && (
+            <div className="flex gap-2">
+              <button onClick={() => onNavigate('LOGIN')} className="px-4 py-1.5 text-xs font-bold text-neutral-400">Login</button>
+              <button onClick={() => onNavigate('REGISTER')} className="px-4 py-1.5 text-xs font-black bg-white text-black rounded-full">Register</button>
+            </div>
+          )}
         </div>
       </nav>
 
@@ -88,14 +115,13 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
   );
 };
 
-const NavPill = ({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) => (
+const SidebarPill = ({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) => (
   <button
     onClick={onClick}
     className={cn(
-      'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all',
-      active ? 'bg-white text-black shadow-lg shadow-white/10' : 'text-neutral-400 hover:text-white hover:bg-white/10'
+      'flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-black tracking-widest uppercase transition-all w-full text-left',
+      active ? 'bg-white/10 text-white border border-white/10' : 'text-neutral-500 hover:text-neutral-300 hover:bg-white/5 border border-transparent'
     )}
-    title={label}
   >
     {icon}
     <span>{label}</span>
