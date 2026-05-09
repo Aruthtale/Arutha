@@ -42,18 +42,26 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
           </button>
 
           {/* Navigation Links */}
-          {session && (
-            <div className="flex flex-col gap-2 w-full">
-              <SidebarPill active={currentPage === 'DASHBOARD'} onClick={() => onNavigate('DASHBOARD')} icon={<LayoutGrid className="w-4 h-4" />} label="Home" />
-              <SidebarPill active={currentPage === 'LEADERBOARD'} onClick={() => onNavigate('LEADERBOARD')} icon={<Trophy className="w-4 h-4 text-harta" />} label="Hall of Fame" />
-              <SidebarPill active={currentPage === 'PROFILE'} onClick={() => onNavigate('PROFILE')} icon={<Contact2 className="w-4 h-4" />} label="Profile" />
-              <SidebarPill active={false} onClick={() => {}} icon={<Map className="w-4 h-4" />} label="Quests" />
-              <SidebarPill active={currentPage === 'SETTINGS'} onClick={() => onNavigate('SETTINGS')} icon={<User className="w-4 h-4" />} label="Settings" />
-              {isAdmin(session.user.email) && (
-                <SidebarPill active={currentPage === 'ADMIN'} onClick={() => onNavigate('ADMIN')} icon={<ShieldAlert className="w-4 h-4 text-jiwa" />} label="Admin" />
-              )}
-            </div>
-          )}
+          <div className="flex flex-col gap-2 w-full">
+            {session ? (
+              <>
+                <SidebarPill active={currentPage === 'DASHBOARD'} onClick={() => onNavigate('DASHBOARD')} icon={<LayoutGrid className="w-4 h-4" />} label="Home" />
+                <SidebarPill active={currentPage === 'LEADERBOARD'} onClick={() => onNavigate('LEADERBOARD')} icon={<Trophy className="w-4 h-4 text-harta" />} label="Hall of Fame" />
+                <SidebarPill active={currentPage === 'PROFILE'} onClick={() => onNavigate('PROFILE')} icon={<Contact2 className="w-4 h-4" />} label="Profile" />
+                <SidebarPill active={false} onClick={() => {}} icon={<Map className="w-4 h-4" />} label="Quests" />
+                <SidebarPill active={currentPage === 'SETTINGS'} onClick={() => onNavigate('SETTINGS')} icon={<User className="w-4 h-4" />} label="Settings" />
+                {isAdmin(session.user.email) && (
+                  <SidebarPill active={currentPage === 'ADMIN'} onClick={() => onNavigate('ADMIN')} icon={<ShieldAlert className="w-4 h-4 text-jiwa" />} label="Admin" />
+                )}
+              </>
+            ) : (
+              <>
+                <SidebarPill active={currentPage === 'LANDING'} onClick={() => onNavigate('LANDING')} icon={<LayoutGrid className="w-4 h-4" />} label="Landing" />
+                <SidebarPill active={currentPage === 'LEADERBOARD'} onClick={() => onNavigate('LEADERBOARD')} icon={<Trophy className="w-4 h-4 text-harta" />} label="Hall of Fame" />
+                <SidebarPill active={currentPage === 'LOGIN'} onClick={() => onNavigate('LOGIN')} icon={<User className="w-4 h-4" />} label="Login" />
+              </>
+            )}
+          </div>
         </div>
 
         {/* Bottom Section: Rank & Icons */}
@@ -103,19 +111,27 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
       </nav>
 
       {/* Bottom Navigation - Mobile Only */}
-      {session && (
-        <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-rpg-black/90 backdrop-blur-2xl border-t border-white/10 px-4 pb-[env(safe-area-inset-bottom)] pt-2">
-          <div className="flex items-center justify-around py-2">
-            <MobileNavPill active={currentPage === 'DASHBOARD'} onClick={() => onNavigate('DASHBOARD')} icon={<LayoutGrid />} label="Home" />
-            <MobileNavPill active={currentPage === 'LEADERBOARD'} onClick={() => onNavigate('LEADERBOARD')} icon={<Trophy className="text-harta" />} label="Hall" />
-            <MobileNavPill active={currentPage === 'PROFILE'} onClick={() => onNavigate('PROFILE')} icon={<Contact2 />} label="Profile" />
-            <MobileNavPill active={currentPage === 'SETTINGS'} onClick={() => onNavigate('SETTINGS')} icon={<User />} label="Settings" />
-            {isAdmin(session.user.email) && (
-              <MobileNavPill active={currentPage === 'ADMIN'} onClick={() => onNavigate('ADMIN')} icon={<ShieldAlert className="text-jiwa" />} label="Admin" />
-            )}
-          </div>
-        </nav>
-      )}
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-rpg-black/90 backdrop-blur-2xl border-t border-white/10 px-4 pb-[env(safe-area-inset-bottom)] pt-2">
+        <div className="flex items-center justify-around py-2">
+          {session ? (
+            <>
+              <MobileNavPill active={currentPage === 'DASHBOARD'} onClick={() => onNavigate('DASHBOARD')} icon={<LayoutGrid />} label="Home" />
+              <MobileNavPill active={currentPage === 'LEADERBOARD'} onClick={() => onNavigate('LEADERBOARD')} icon={<Trophy className="text-harta" />} label="Hall" />
+              <MobileNavPill active={currentPage === 'PROFILE'} onClick={() => onNavigate('PROFILE')} icon={<Contact2 />} label="Profile" />
+              <MobileNavPill active={currentPage === 'SETTINGS'} onClick={() => onNavigate('SETTINGS')} icon={<User />} label="Settings" />
+              {isAdmin(session.user.email) && (
+                <MobileNavPill active={currentPage === 'ADMIN'} onClick={() => onNavigate('ADMIN')} icon={<ShieldAlert className="text-jiwa" />} label="Admin" />
+              )}
+            </>
+          ) : (
+            <>
+              <MobileNavPill active={currentPage === 'LANDING'} onClick={() => onNavigate('LANDING')} icon={<LayoutGrid />} label="Landing" />
+              <MobileNavPill active={currentPage === 'LEADERBOARD'} onClick={() => onNavigate('LEADERBOARD')} icon={<Trophy className="text-harta" />} label="Hall" />
+              <MobileNavPill active={currentPage === 'LOGIN'} onClick={() => onNavigate('LOGIN')} icon={<User />} label="Login" />
+            </>
+          )}
+        </div>
+      </nav>
     </>
   );
 };
