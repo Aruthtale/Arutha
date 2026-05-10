@@ -15,6 +15,7 @@ import { Star } from 'lucide-react';
 import { isAdmin } from './lib/config';
 import { SplashScreen } from './components/SplashScreen';
 import { useStore } from './store/useStore';
+import { PullToRefresh } from './components/PullToRefresh';
 import { PageSkeleton } from './components/Skeleton';
 
 // Lazy Load Pages for Performance
@@ -682,6 +683,12 @@ export default function App() {
     }
   };
 
+  const handleGlobalRefresh = async () => {
+    if (session) {
+      await initializeUserData(session);
+    }
+  };
+
   const handleProfileComplete = (data: { username: string; usia: number; gender: string }) => {
     setName(data.username);
     setUserContext({ usia: data.usia, gender: data.gender, username: data.username });
@@ -710,7 +717,8 @@ export default function App() {
         "transition-all duration-500 ease-out min-h-screen",
         !hideNavbar ? "md:pl-[280px] pb-24 md:pb-0" : ""
       )}>
-        <Suspense fallback={<PageSkeleton />}>
+        <PullToRefresh onRefresh={handleGlobalRefresh} disabled={page === 'SOUL_GUARD' || page === 'CODEX'}>
+          <Suspense fallback={<PageSkeleton />}>
           <AnimatePresence mode="wait">
             {page === 'LANDING' && (
               <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
@@ -796,6 +804,7 @@ export default function App() {
             )}
           </AnimatePresence>
         </Suspense>
+        </PullToRefresh>
       </div>
 
       {/* LEVEL UP MODAL */}

@@ -106,9 +106,20 @@ export async function analyzeCharacter(answers: OnboardingAnswer[], userContext?
   const aiClient = getClient();
   const qaBlock = answers.map((a, i) => `Pertanyaan ${i + 1}: "${a.question}"\nJawaban: "${a.answer}"`).join('\n\n');
   const validMBTI = ["INTJ", "INTP", "ENTJ", "ENTP", "INFJ", "INFP", "ENFJ", "ENFP", "ISTJ", "ISFJ", "ESTJ", "ESFJ", "ISTP", "ISFP", "ESTP", "ESFP"];
-  const prompt = `Kamu adalah AI psikolog dan game designer ARUTHA. Analisis data user dan berikan JSON. Max stats 50. JSON format: {personality_type, personality_title, personality_desc, stats, character_summary, starter_quest}.
-PENTING: personality_type HARUS secara eksak salah satu dari: ${validMBTI.join(', ')}. Jangan membuat tipe lain.
-Data: ${qaBlock}`;
+  const contextBlock = userContext ? `Data User: Nama: ${userContext.username}, Usia: ${userContext.usia}, Gender: ${userContext.gender}\n\n` : '';
+  const prompt = `Kamu adalah AI psikolog dan game designer ARUTHA. Analisis data user berikut dan berikan JSON. 
+Max stats adalah 50. PENTING: Jangan memberikan angka yang sama atau hampir sama untuk semua statistik. 
+Analisis setiap jawaban secara mendalam untuk menentukan bobot yang akurat pada 5 dimensi:
+- JIWA: Berikan skor tinggi jika jawaban mencerminkan ketenangan, spiritualitas, atau introspeksi.
+- RAGA: Berikan skor tinggi jika jawaban mencerminkan aktivitas fisik, energi, atau kesehatan.
+- HARTA: Berikan skor tinggi jika jawaban mencerminkan ambisi karir, materi, atau manajemen sumber daya.
+- ILMU: Berikan skor tinggi jika jawaban mencerminkan rasa ingin tahu, logika, atau belajar hal baru.
+- KARMA: Berikan skor tinggi jika jawaban mencerminkan empati, sosial, atau keinginan menolong.
+
+JSON format: {personality_type, personality_title, personality_desc, stats, character_summary, starter_quest}.
+PENTING: personality_type HARUS secara eksak salah satu dari: ${validMBTI.join(', ')}.
+${contextBlock}Data Jawaban User:
+${qaBlock}`;
 
   for (const modelName of MODELS_3X) {
     try {
