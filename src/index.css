@@ -24,7 +24,44 @@
   }
   
   body {
-    @apply bg-rpg-black text-white antialiased font-sans;
+    @apply bg-rpg-black text-white antialiased selection:bg-white selection:text-black;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Optimized Background System */
+  .bg-premium-glow {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: #050505;
+    overflow: hidden;
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  .bg-premium-glow::before {
+    content: '';
+    position: absolute;
+    top: -10%;
+    left: -10%;
+    width: 70%;
+    height: 70%;
+    background: radial-gradient(circle, rgba(147, 51, 234, 0.08) 0%, transparent 70%);
+    filter: blur(100px);
+    animation: pulse-slow 8s infinite alternate;
+    will-change: opacity;
+  }
+
+  .bg-premium-glow::after {
+    content: '';
+    position: absolute;
+    bottom: -10%;
+    right: -10%;
+    width: 80%;
+    height: 80%;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
+    filter: blur(120px);
+    will-change: transform;
   }
 
   /* Custom Scrollbar for Webkit */
@@ -80,13 +117,23 @@
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
   }
+
   .animate-shimmer {
-    animation: shimmer 3s linear infinite;
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.03) 25%,
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(255, 255, 255, 0.03) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite linear;
   }
+
   @keyframes spin-slow {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
   }
+
   .animate-spin-slow {
     animation: spin-slow 8s linear infinite;
   }

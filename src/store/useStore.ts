@@ -3,7 +3,7 @@ import { Session } from '@supabase/supabase-js';
 import { type Stats, type Quest, type CharacterAnalysis } from '../lib/gemini';
 import { type DecayResult } from '../lib/decaySystem';
 
-export type Page = 'LANDING' | 'LOGIN' | 'REGISTER' | 'COMPLETE_PROFILE' | 'ONBOARDING' | 'CHARACTER_REVEAL' | 'DASHBOARD' | 'SETTINGS' | 'PROFILE' | 'ADMIN' | 'LEADERBOARD' | 'CODEX' | 'MAIL';
+export type Page = 'LANDING' | 'LOGIN' | 'REGISTER' | 'COMPLETE_PROFILE' | 'ONBOARDING' | 'CHARACTER_REVEAL' | 'DASHBOARD' | 'SETTINGS' | 'PROFILE' | 'ADMIN' | 'LEADERBOARD' | 'CODEX' | 'MAIL' | 'SOUL_GUARD';
 
 interface AppState {
   // Navigation

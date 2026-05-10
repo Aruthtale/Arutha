@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { LayoutGrid, User, Map, ShieldAlert, Contact2, Mail, Trophy, Book, Settings } from 'lucide-react';
+import { LayoutGrid, User, Map, ShieldAlert, Contact2, Mail, Trophy, Book, Settings, Heart } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
 import { cn, getDimensionRank } from '../lib/utils';
 import { isAdmin } from '../lib/config';
@@ -21,6 +21,19 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
   const { dbUserId, unreadMailCount, setUnreadMailCount, mailToast, setMailToast, lastMailSeenAt } = useStore();
   const prevCountRef = useRef(-1);
   const isFirstPoll = useRef(true);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMobileMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Load lastMailSeenAt from localStorage on init
   useEffect(() => {
@@ -120,6 +133,7 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
               <SidebarPill active={currentPage === 'LEADERBOARD'} onClick={() => onNavigate('LEADERBOARD')} icon={<Trophy className="w-4 h-4 text-harta" />} label="Hall of Fame" />
               <SidebarPill active={currentPage === 'CODEX'} onClick={() => onNavigate('CODEX')} icon={<Book className="w-4 h-4 text-jiwa" />} label="Codex" />
               <SidebarPill active={currentPage === 'PROFILE'} onClick={() => onNavigate('PROFILE')} icon={<Contact2 className="w-4 h-4" />} label="Profile" />
+              <SidebarPill active={currentPage === 'SOUL_GUARD'} onClick={() => onNavigate('SOUL_GUARD')} icon={<Heart className="w-4 h-4 text-karma" />} label="Soul Guard" />
               <SidebarPill active={currentPage === 'SETTINGS'} onClick={() => onNavigate('SETTINGS')} icon={<User className="w-4 h-4" />} label="Settings" />
               {isAdmin(session.user.email) && (
                 <SidebarPill active={currentPage === 'ADMIN'} onClick={() => onNavigate('ADMIN')} icon={<ShieldAlert className="w-4 h-4 text-jiwa" />} label="Admin" />
@@ -184,13 +198,14 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
               )}
             </div>
           </button>
+          
           {session ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" ref={menuRef}>
               <button 
                 onClick={() => onNavigate('MAIL')}
                 className={cn(
                   "w-10 h-10 rounded-xl transition-all active:scale-90 flex items-center justify-center shadow-lg relative",
-                  currentPage === 'MAIL' ? "bg-jiwa text-black shadow-jiwa/20" : "text-neutral-400 bg-white/5 border border-white/10 hover:bg-white/10"
+                  currentPage === 'MAIL' ? "bg-jiwa text-black shadow-jiwa/20" : "text-neutral-400 bg-white/5 border border-white/10"
                 )}
               >
                 <Mail className="w-4 h-4" />
@@ -200,15 +215,60 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
                   </span>
                 )}
               </button>
-              <button 
-                onClick={() => onNavigate('SETTINGS')}
-                className={cn(
-                  "w-10 h-10 rounded-xl transition-all active:scale-90 flex items-center justify-center shadow-lg",
-                  currentPage === 'SETTINGS' ? "bg-jiwa text-black shadow-jiwa/20" : "text-neutral-400 bg-white/5 border border-white/10 hover:bg-white/10"
-                )}
-              >
-                <Settings className="w-4 h-4" />
-              </button>
+
+              <div className="relative">
+                <button 
+                  onClick={() => setShowMobileMenu(!showMobileMenu)}
+                  className={cn(
+                    "w-10 h-10 rounded-xl transition-all active:scale-90 flex items-center justify-center shadow-lg border",
+                    showMobileMenu ? "bg-white text-black border-white" : "text-neutral-400 bg-white/5 border-white/10"
+                  )}
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+
+                <AnimatePresence>
+                  {showMobileMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute top-full right-0 mt-3 w-56 bg-neutral-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-2 shadow-2xl shadow-black/50 overflow-hidden"
+                    >
+                      <div className="px-4 py-2 mb-1">
+                        <p className="text-[10px] font-black tracking-[0.2em] text-neutral-500 uppercase">Navigasi Lain</p>
+                      </div>
+                      <DropdownItem 
+                        active={currentPage === 'LEADERBOARD'} 
+                        onClick={() => { onNavigate('LEADERBOARD'); setShowMobileMenu(false); }} 
+                        icon={<Trophy className="w-4 h-4 text-harta" />} 
+                        label="Leaderboard" 
+                      />
+                      <DropdownItem 
+                        active={currentPage === 'SETTINGS'} 
+                        onClick={() => { onNavigate('SETTINGS'); setShowMobileMenu(false); }} 
+                        icon={<Settings className="w-4 h-4 text-neutral-400" />} 
+                        label="Pengaturan" 
+                      />
+                      {isAdmin(session.user.email) && (
+                        <DropdownItem 
+                          active={currentPage === 'ADMIN'} 
+                          onClick={() => { onNavigate('ADMIN'); setShowMobileMenu(false); }} 
+                          icon={<ShieldAlert className="w-4 h-4 text-jiwa" />} 
+                          label="Admin Console" 
+                        />
+                      )}
+                      <div className="h-px bg-white/5 my-2" />
+                      <button
+                        onClick={() => { supabase.auth.signOut(); setShowMobileMenu(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-neutral-500 hover:text-white transition-all rounded-xl font-bold text-xs"
+                      >
+                        Keluar Dimensi
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           ) : (
             <div className="flex gap-3">
@@ -221,16 +281,11 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
 
       {/* Bottom Navigation - Mobile Only */}
       {session && (
-        <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-rpg-black/90 backdrop-blur-2xl border-t border-white/10 px-4 pb-[env(safe-area-inset-bottom)] pt-2">
-          <div className="flex items-center justify-around py-2">
-            <MobileNavPill active={currentPage === 'DASHBOARD'} onClick={() => onNavigate('DASHBOARD')} icon={<LayoutGrid />} label="Home" />
-            <MobileNavPill active={currentPage === 'LEADERBOARD'} onClick={() => onNavigate('LEADERBOARD')} icon={<Trophy className="text-harta" />} label="Hall" />
-            <MobileNavPill active={currentPage === 'CODEX'} onClick={() => onNavigate('CODEX')} icon={<Book className="text-jiwa" />} label="Codex" />
-            <MobileNavPill active={currentPage === 'PROFILE'} onClick={() => onNavigate('PROFILE')} icon={<Contact2 />} label="Profile" />
-            {isAdmin(session.user.email) && (
-              <MobileNavPill active={currentPage === 'ADMIN'} onClick={() => onNavigate('ADMIN')} icon={<ShieldAlert className="text-jiwa" />} label="Admin" />
-            )}
-          </div>
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-rpg-black/80 backdrop-blur-3xl border-t border-white/10 px-2 pb-[calc(env(safe-area-inset-bottom)+8px)] pt-3 flex justify-around items-center shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+          <MobileNavPill active={currentPage === 'DASHBOARD'} onClick={() => onNavigate('DASHBOARD')} icon={<LayoutGrid />} label="Home" />
+          <MobileNavPill active={currentPage === 'CODEX'} onClick={() => onNavigate('CODEX')} icon={<Book className="text-jiwa" />} label="Codex" />
+          <MobileNavPill active={currentPage === 'PROFILE'} onClick={() => onNavigate('PROFILE')} icon={<Contact2 />} label="Profile" />
+          <MobileNavPill active={currentPage === 'SOUL_GUARD'} onClick={() => onNavigate('SOUL_GUARD')} icon={<Heart className="text-karma" />} label="Soul" />
         </nav>
       )}
 
@@ -292,5 +347,20 @@ const MobileNavPill = ({ active, onClick, icon, label }: { active: boolean; onCl
       "text-[9px] font-black uppercase tracking-widest transition-all",
       active ? "opacity-100" : "opacity-40"
     )}>{label}</span>
+  </button>
+);
+
+const DropdownItem = ({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) => (
+  <button
+    onClick={onClick}
+    className={cn(
+      "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-xs",
+      active ? "bg-white/10 text-white" : "text-neutral-400 hover:bg-white/5 hover:text-white"
+    )}
+  >
+    <div className={cn("transition-transform", active ? "scale-110" : "scale-100")}>
+      {icon}
+    </div>
+    {label}
   </button>
 );

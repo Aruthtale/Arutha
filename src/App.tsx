@@ -1,33 +1,37 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, Suspense, lazy } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from './lib/supabase';
 import { getLocalTimestamp, getTodayDate, isToday, isNewDay, extractDate } from './lib/dateUtils';
-import { TalentSelector } from './components/TalentSelector';
-import { TALENTS, type Talent } from './lib/talents';
-import { type CharacterAnalysis, generateDailyQuests, verifyQuestCompletion, generateRecoveryQuests, type Quest, type Stats, type Dimension } from './lib/gemini';
+import { TALENTS } from './lib/talents';
+import { generateDailyQuests, verifyQuestCompletion, generateRecoveryQuests, type CharacterAnalysis, type Quest, type Stats, type Dimension } from './lib/gemini';
 import { Navbar } from './components/Navbar';
-import { Landing } from './pages/Landing';
-import { Login } from './pages/Login';
-import { Register } from './pages/Register';
-import { Onboarding } from './pages/Onboarding';
-import { CharacterReveal } from './pages/CharacterReveal';
-import { Dashboard } from './pages/Dashboard';
-import { Settings } from './pages/Settings';
-import { Profile } from './pages/Profile';
-import { Admin } from './pages/Admin';
-import { CompleteGoogleProfile } from './pages/CompleteGoogleProfile';
-import { Codex } from './pages/Codex';
-import { checkAndApplyDecay, resetFatigue, type DecayResult } from './lib/decaySystem';
+import { TalentSelector } from './components/TalentSelector';
+import { checkAndApplyDecay, resetFatigue } from './lib/decaySystem';
 import { cn } from './lib/utils';
 import { Star } from 'lucide-react';
 import { isAdmin } from './lib/config';
-import { Leaderboard } from './pages/Leaderboard';
 import { SplashScreen } from './components/SplashScreen';
 import { useStore } from './store/useStore';
-import { Mail } from './pages/Mail';
+import { PageSkeleton } from './components/Skeleton';
+
+// Lazy Load Pages for Performance
+const Landing = lazy(() => import('./pages/Landing').then(m => ({ default: m.Landing })));
+const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));
+const Register = lazy(() => import('./pages/Register').then(m => ({ default: m.Register })));
+const Onboarding = lazy(() => import('./pages/Onboarding').then(m => ({ default: m.Onboarding })));
+const CharacterReveal = lazy(() => import('./pages/CharacterReveal').then(m => ({ default: m.CharacterReveal })));
+const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
+const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })));
+const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
+const Admin = lazy(() => import('./pages/Admin').then(m => ({ default: m.Admin })));
+const CompleteGoogleProfile = lazy(() => import('./pages/CompleteGoogleProfile').then(m => ({ default: m.CompleteGoogleProfile })));
+const Codex = lazy(() => import('./pages/Codex').then(m => ({ default: m.Codex })));
+const Leaderboard = lazy(() => import('./pages/Leaderboard').then(m => ({ default: m.Leaderboard })));
+const Mail = lazy(() => import('./pages/Mail').then(m => ({ default: m.Mail })));
+const MentalHealthChat = lazy(() => import('./pages/MentalHealthChat').then(m => ({ default: m.MentalHealthChat })));
 
 export default function App() {
   const {
@@ -679,21 +683,15 @@ export default function App() {
     }
   };
 
-  const hideNavbar = !session || page === 'ONBOARDING' || page === 'CHARACTER_REVEAL' || page === 'LOGIN' || page === 'REGISTER' || page === 'COMPLETE_PROFILE';
+  const hideNavbar = !session || page === 'ONBOARDING' || page === 'CHARACTER_REVEAL' || page === 'LOGIN' || page === 'REGISTER' || page === 'COMPLETE_PROFILE' || page === 'SOUL_GUARD';
 
   return (
     <div className="min-h-screen bg-rpg-black text-white selection:bg-white selection:text-black overflow-x-hidden">
       <SplashScreen isReady={isDataReady} />
       
-      {/* Performance Optimized Background Decor */}
-      <div className="fixed inset-0 -z-10 bg-rpg-black pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-full opacity-20">
-          <div className="absolute top-[-10%] left-[-10%] w-[70%] h-[70%] rounded-full bg-jiwa/10 blur-[150px] animate-pulse" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[80%] h-[80%] rounded-full bg-ilmu/10 blur-[180px]" />
-        </div>
-        {/* Subtle Noise Texture for Premium Feel */}
-        <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none bg-[url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')]" />
-      </div>
+      {/* Optimized Static Background */}
+      <div className="bg-premium-glow" />
+      <div className="noise-overlay" />
 
       {!hideNavbar && (
         <Navbar session={session} userName={name} onNavigate={(p) => setPage(p as any)} currentPage={page} stats={stats} />
@@ -703,85 +701,92 @@ export default function App() {
         "transition-all duration-500 ease-out min-h-screen",
         !hideNavbar ? "md:pl-[280px] pb-24 md:pb-0" : ""
       )}>
-        <AnimatePresence mode="wait">
-          {page === 'LANDING' && (
-            <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-              <Landing session={session} hasProfile={!!characterAnalysis} setPage={setPage} />
-            </motion.div>
-          )}
-          {page === 'LOGIN' && <Login onBack={() => setPage('LANDING')} />}
-          {page === 'REGISTER' && <Register onBack={() => setPage('LANDING')} />}
-          {page === 'COMPLETE_PROFILE' && dbUserId && (
-            <CompleteGoogleProfile
-              userId={dbUserId}
-              initialUsername={name}
-              onComplete={handleProfileComplete}
-            />
-          )}
-          {page === 'ONBOARDING' && <Onboarding onComplete={handleOnboardingComplete} userContext={userContext} />}
-          {page === 'CHARACTER_REVEAL' && characterAnalysis && (
-            <CharacterReveal analysis={characterAnalysis} onContinue={() => setPage('DASHBOARD')} />
-          )}
-          {page === 'DASHBOARD' && (
-            <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-              <Dashboard
-                session={session}
-                userId={dbUserId || ''}
-                name={name} level={level} xp={xp} stats={stats} quests={quests} analysis={characterAnalysis}
-                streak={streak}
-                lastStreakDate={lastStreakDate}
-                onClaimStreak={handleClaimStreak}
-                statHistory={statHistory}
-                completeQuest={completeQuest} handleLogout={() => supabase.auth.signOut()} addXp={addXp}
-                onReOnboard={() => setPage('ONBOARDING')} onRefreshQuests={refreshQuests} isRefreshing={isRefreshing}
-                lastEvolutionDate={lastEvolutionDate} refreshCount={refreshCount}
-                decayResult={decayResult}
-                onTakeRecovery={handleTakeRecovery}
-                setPage={setPage}
-                talents={talents}
-                onGenerateInitialQuests={generateInitialQuests}
+        <Suspense fallback={<PageSkeleton />}>
+          <AnimatePresence mode="wait">
+            {page === 'LANDING' && (
+              <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                <Landing session={session} hasProfile={!!characterAnalysis} setPage={setPage} />
+              </motion.div>
+            )}
+            {page === 'LOGIN' && <Login onBack={() => setPage('LANDING')} />}
+            {page === 'REGISTER' && <Register onBack={() => setPage('LANDING')} />}
+            {page === 'COMPLETE_PROFILE' && dbUserId && (
+              <CompleteGoogleProfile
+                userId={dbUserId}
+                initialUsername={name}
+                onComplete={handleProfileComplete}
               />
-            </motion.div>
-          )}
-          {page === 'SETTINGS' && session && (
-            <motion.div key="settings" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <Settings
-                userId={dbUserId || ''}
-                initialName={name}
-                email={session.user.email || ''}
-                nameChangeCount={nameChangeCount}
-                lastNameChange={lastNameChange}
-                onUpdateName={handleUpdateName}
-                onLogout={() => supabase.auth.signOut()}
+            )}
+            {page === 'ONBOARDING' && <Onboarding onComplete={handleOnboardingComplete} userContext={userContext} />}
+            {page === 'CHARACTER_REVEAL' && characterAnalysis && (
+              <CharacterReveal analysis={characterAnalysis} onContinue={() => setPage('DASHBOARD')} />
+            )}
+            {page === 'DASHBOARD' && (
+              <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                <Dashboard
+                  session={session}
+                  userId={dbUserId || ''}
+                  name={name} level={level} xp={xp} stats={stats} quests={quests} analysis={characterAnalysis}
+                  streak={streak}
+                  lastStreakDate={lastStreakDate}
+                  onClaimStreak={handleClaimStreak}
+                  statHistory={statHistory}
+                  completeQuest={completeQuest} handleLogout={() => supabase.auth.signOut()} addXp={addXp}
+                  onReOnboard={() => setPage('ONBOARDING')} onRefreshQuests={refreshQuests} isRefreshing={isRefreshing}
+                  lastEvolutionDate={lastEvolutionDate} refreshCount={refreshCount}
+                  decayResult={decayResult}
+                  onTakeRecovery={handleTakeRecovery}
+                  setPage={setPage}
+                  talents={talents}
+                  onGenerateInitialQuests={generateInitialQuests}
+                />
+              </motion.div>
+            )}
+            {page === 'SETTINGS' && session && (
+              <motion.div key="settings" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                <Settings
+                  userId={dbUserId || ''}
+                  initialName={name}
+                  email={session.user.email || ''}
+                  nameChangeCount={nameChangeCount}
+                  lastNameChange={lastNameChange}
+                  onUpdateName={handleUpdateName}
+                  onLogout={() => supabase.auth.signOut()}
+                  onBack={() => setPage('DASHBOARD')}
+                />
+              </motion.div>
+            )}
+            {page === 'PROFILE' && characterAnalysis && (
+              <Profile
+                name={name} level={level} xp={xp} stats={stats} analysis={characterAnalysis}
                 onBack={() => setPage('DASHBOARD')}
+                talents={talents}
               />
-            </motion.div>
-          )}
-          {page === 'PROFILE' && characterAnalysis && (
-            <Profile
-              name={name} level={level} xp={xp} stats={stats} analysis={characterAnalysis}
-              onBack={() => setPage('DASHBOARD')}
-              talents={talents}
-            />
-          )}
-          {page === 'LEADERBOARD' && (
-            <Leaderboard 
-              currentUserId={dbUserId || ''} 
-              onBack={() => setPage('DASHBOARD')} 
-            />
-          )}
-          {page === 'ADMIN' && isAdmin(session?.user.email) && (
-            <Admin onBack={() => setPage('DASHBOARD')} />
-          )}
-          {page === 'CODEX' && (
-            <Codex onBack={() => setPage('DASHBOARD')} />
-          )}
-          {page === 'MAIL' && (
-            <motion.div key="mail" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <Mail userId={dbUserId || ''} onBack={() => setPage('DASHBOARD')} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+            )}
+            {page === 'LEADERBOARD' && (
+              <Leaderboard 
+                currentUserId={dbUserId || ''} 
+                onBack={() => setPage('DASHBOARD')} 
+              />
+            )}
+            {page === 'ADMIN' && isAdmin(session?.user.email) && (
+              <Admin onBack={() => setPage('DASHBOARD')} />
+            )}
+            {page === 'CODEX' && (
+              <Codex onBack={() => setPage('DASHBOARD')} />
+            )}
+            {page === 'MAIL' && (
+              <motion.div key="mail" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                <Mail userId={dbUserId || ''} onBack={() => setPage('DASHBOARD')} />
+              </motion.div>
+            )}
+            {page === 'SOUL_GUARD' && (
+              <motion.div key="soulguard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                <MentalHealthChat userId={dbUserId || ''} username={name} onBack={() => setPage('DASHBOARD')} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </Suspense>
       </div>
 
       {/* LEVEL UP MODAL */}

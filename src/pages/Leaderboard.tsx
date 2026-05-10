@@ -91,10 +91,15 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, onBack,
   ];
 
   const getRankIcon = (index: number) => {
-    if (index === 0) return <Crown className="w-6 h-6 text-yellow-400 fill-yellow-400/20" />;
-    if (index === 1) return <Medal className="w-5 h-5 text-slate-300" />;
-    if (index === 2) return <Medal className="w-5 h-5 text-amber-600" />;
-    return <span className="text-xs font-black text-neutral-600">#{index + 1}</span>;
+    if (index === 0) return (
+      <div className="relative">
+        <Crown className="w-6 h-6 text-yellow-400 fill-yellow-400/40 animate-pulse" />
+        <div className="absolute inset-0 blur-lg bg-yellow-400/20" />
+      </div>
+    );
+    if (index === 1) return <Medal className="w-5 h-5 text-slate-300 fill-slate-300/20" />;
+    if (index === 2) return <Medal className="w-5 h-5 text-amber-600 fill-amber-600/20" />;
+    return <span className="text-xs font-black text-neutral-600 group-hover:text-neutral-400 transition-colors">#{index + 1}</span>;
   };
 
   return (
@@ -169,20 +174,37 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, onBack,
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
                   className={cn(
-                    "glass-panel p-5 flex items-center gap-5 border-l-4 group transition-all",
+                    "glass-panel p-5 flex items-center gap-5 border-l-4 group transition-all relative overflow-hidden",
                     entry.id === currentUserId ? "border-jiwa bg-jiwa/5" : "border-transparent",
-                    index < 3 ? "scale-[1.02] shadow-2xl" : ""
+                    index === 0 && "border-yellow-400 bg-yellow-400/[0.03] shadow-[0_20px_50px_rgba(250,204,21,0.05)] scale-[1.03]",
+                    index === 1 && "border-slate-300 bg-slate-300/[0.03] scale-[1.02]",
+                    index === 2 && "border-amber-600 bg-amber-600/[0.03] scale-[1.01]"
                   )}
                 >
-                  <div className="w-10 flex items-center justify-center shrink-0">
+                  {/* Highlight Glow for Top 1 */}
+                  {index === 0 && (
+                    <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-yellow-400/[0.05] to-transparent pointer-events-none" />
+                  )}
+
+                  <div className="w-10 flex items-center justify-center shrink-0 z-10">
                     {getRankIcon(index)}
                   </div>
 
-                  <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0 group-hover:border-jiwa/30 transition-all">
+                  <div className={cn(
+                    "w-12 h-12 rounded-xl bg-white/5 border flex items-center justify-center overflow-hidden shrink-0 transition-all z-10",
+                    index === 0 ? "border-yellow-400/50 shadow-[0_0_15px_rgba(250,204,21,0.2)]" : 
+                    index === 1 ? "border-slate-300/50" :
+                    index === 2 ? "border-amber-600/50" : "border-white/10 group-hover:border-jiwa/30"
+                  )}>
                     {entry.avatar_url ? (
                       <img src={entry.avatar_url} alt={entry.name} className="w-full h-full object-cover" />
                     ) : (
-                      <Sparkles className="w-5 h-5 text-neutral-700" />
+                      <Sparkles className={cn(
+                        "w-5 h-5",
+                        index === 0 ? "text-yellow-400" : 
+                        index === 1 ? "text-slate-300" :
+                        index === 2 ? "text-amber-600" : "text-neutral-700"
+                      )} />
                     )}
                   </div>
 

@@ -6,120 +6,49 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { TALENTS } from '../lib/talents';
+import codexData from '../data/codex.json';
+import archetypeData from '../data/archetypes.json';
+
+// Icon resolver — maps JSON string keys to React components
+const ICON_MAP: Record<string, React.ReactNode> = {
+  Brain: <Brain className="w-5 h-5" />,
+  Dumbbell: <Dumbbell className="w-5 h-5" />,
+  Coins: <Coins className="w-5 h-5" />,
+  BookOpen: <BookOpen className="w-5 h-5" />,
+  Users: <Users className="w-5 h-5" />,
+  Shield: <Shield className="w-5 h-5 text-jiwa" />,
+  Zap: <Zap className="w-5 h-5 text-amber-500" />,
+  TrendingUp: <TrendingUp className="w-5 h-5 text-jiwa" />,
+  Sparkles: <Sparkles className="w-5 h-5 text-purple-500" />,
+  AlertTriangle: <AlertTriangle className="w-5 h-5 text-raga" />,
+  RefreshCcw: <RefreshCcw className="w-5 h-5 text-ilmu" />,
+  Info: <Info className="w-5 h-5" />,
+};
+
+const resolveIcon = (key: string, className?: string) => {
+  const base = ICON_MAP[key];
+  if (!base) return <HelpCircle className="w-5 h-5" />;
+  if (className) return React.cloneElement(base as React.ReactElement<any>, { className });
+  return base;
+};
 
 interface CodexProps {
   onBack: () => void;
 }
 
 export const Codex: React.FC<CodexProps> = ({ onBack }) => {
-  const [activeCategory, setActiveCategory] = useState<'DIMENSI' | 'BAKAT' | 'HUKUM' | 'ARKETIPE'>('DIMENSI');
+  const [activeCategory, setActiveCategory] = useState<'DIMENSI' | 'BAKAT' | 'HUKUM' | 'ARKETIPE' | 'MISTIK'>('DIMENSI');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const DIMENSIONS = [
-    { 
-      id: 'JIWA', 
-      name: 'DIMENSI JIWA', 
-      desc: 'Berfokus pada kesehatan mental, ketenangan batin, dan kesadaran diri.',
-      examples: 'Meditasi, journaling, berdoa, atau sekadar diam tanpa gadget.',
-      icon: <Brain />, color: 'text-jiwa', bg: 'bg-jiwa/10', border: 'border-jiwa/20'
-    },
-    { 
-      id: 'RAGA', 
-      name: 'DIMENSI RAGA', 
-      desc: 'Berfokus pada kesehatan fisik, kekuatan tubuh, dan nutrisi.',
-      examples: 'Olahraga, makan sehat, minum air putih cukup, tidur teratur.',
-      icon: <Dumbbell />, color: 'text-raga', bg: 'bg-raga/10', border: 'border-raga/20'
-    },
-    { 
-      id: 'HARTA', 
-      name: 'DIMENSI HARTA', 
-      desc: 'Berfokus pada kemandirian finansial, manajemen aset, dan produktivitas ekonomi.',
-      examples: 'Mencatat pengeluaran, menabung, belajar investasi, mencari penghasilan tambahan.',
-      icon: <Coins />, color: 'text-harta', bg: 'bg-harta/10', border: 'border-harta/20'
-    },
-    { 
-      id: 'ILMU', 
-      name: 'DIMENSI ILMU', 
-      desc: 'Berfokus pada pengembangan intelektual, keterampilan baru, dan wawasan.',
-      examples: 'Membaca buku, kursus online, belajar bahasa baru, riset topik menarik.',
-      icon: <BookOpen />, color: 'text-ilmu', bg: 'bg-ilmu/10', border: 'border-ilmu/20'
-    },
-    { 
-      id: 'KARMA', 
-      name: 'DIMENSI KARMA', 
-      desc: 'Berfokus pada hubungan sosial, kontribusi masyarakat, dan kebaikan tanpa pamrih.',
-      examples: 'Membantu teman, sedekah, kerja bakti, memberikan pujian tulus.',
-      icon: <Users />, color: 'text-karma', bg: 'bg-karma/10', border: 'border-karma/20'
-    }
-  ];
-
-  const RULES = [
-    {
-      title: "Hukum Semesta & Fitur Utama",
-      desc: "Prinsip-prinsip dasar dan fitur utama yang mengatur perjalananmu di dunia Arutha.",
-      icon: <Shield className="w-5 h-5 text-jiwa" />
-    },
-    {
-      title: "Daily Refresh (1x Sehari)",
-      desc: "Setiap hari, kamu hanya mendapatkan satu kali kesempatan untuk me-refresh daftar misimu. Gunakan dengan bijak!",
-      icon: <Zap className="w-5 h-5 text-amber-500" />
-    },
-    {
-      title: "Sistem Progresi (XP)",
-      desc: "Setiap misi yang berhasil diverifikasi akan memberikan Experience Points (XP). Kumpulkan XP untuk naik level.",
-      icon: <TrendingUp className="w-5 h-5 text-jiwa" />
-    },
-    {
-      title: "Evolusi Karakter (30 Hari)",
-      desc: "Setiap 30 hari sekali, Arutha akan melakukan evaluasi mendalam terhadap progresmu. Ini adalah saat di mana arketipe kepribadianmu bisa berevolusi.",
-      icon: <Sparkles className="w-5 h-5 text-purple-500" />
-    },
-    {
-      title: "Bimbingan AI Arutha",
-      desc: "Gunakan fitur chat dengan AI Arutha untuk konsultasi mengenai progres, tips harian, atau sekadar motivasi saat kamu merasa jenuh.",
-      icon: <Brain className="w-5 h-5 text-blue-500" />
-    },
-    {
-      title: "Hukum Decay (Kelelahan)",
-      desc: "Jika kamu mengabaikan satu dimensi terlalu lama, statistik dimensi tersebut akan menurun secara otomatis.",
-      icon: <AlertTriangle className="w-5 h-5 text-raga" />
-    },
-    {
-      title: "Misi Pemulihan",
-      desc: "Gunakan Misi Pemulihan untuk mengembalikan statistik yang turun drastis akibat Decay.",
-      icon: <RefreshCcw className="w-5 h-5 text-ilmu" />
-    }
-  ];
-
-  const ARCHETYPES = [
-    // Analysts (Purple)
-    { title: "INTJ (The Architect)", color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20", desc: "Pemikir strategis dengan rencana untuk segalanya. Fokus pada efisiensi dan logika jangka panjang." },
-    { title: "INTP (The Logician)", color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20", desc: "Inovator kreatif dengan haus akan pengetahuan. Selalu menganalisis pola dan sistem." },
-    { title: "ENTJ (The Commander)", color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20", desc: "Pemimpin yang berani dan bertekad kuat. Ahli dalam mengorganisir sumber daya untuk mencapai visi." },
-    { title: "ENTP (The Debater)", color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20", desc: "Pemikir cerdas dan penasaran yang tidak bisa menahan tantangan intelektual. Pendobrak status quo." },
-    
-    // Diplomats (Green)
-    { title: "INFJ (The Advocate)", color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/20", desc: "Idealis yang mistis dan berprinsip. Memiliki misi untuk memberikan dampak positif bagi dunia." },
-    { title: "INFP (The Mediator)", color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/20", desc: "Orang yang puitis, baik hati, dan altruistik. Selalu setia pada nilai-nilai batiniah mereka." },
-    { title: "ENFJ (The Protagonist)", color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/20", desc: "Pemimpin yang karismatik dan inspiratif. Mampu memotivasi orang lain menuju visi bersama." },
-    { title: "ENFP (The Campaigner)", color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/20", desc: "Jiwa bebas yang antusias dan kreatif. Selalu menemukan alasan untuk tersenyum dalam segala situasi." },
-
-    // Sentinels (Blue)
-    { title: "ISTJ (The Logistician)", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20", desc: "Individu yang praktis dan mengutamakan fakta. Sangat bisa diandalkan dan menjunjung tinggi tradisi." },
-    { title: "ISFJ (The Defender)", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20", desc: "Pelindung yang sangat berdedikasi dan hangat. Selalu siap membela orang-orang yang mereka cintai." },
-    { title: "ESTJ (The Executive)", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20", desc: "Administrator yang tak tertandingi. Sangat ahli dalam mengelola hal-hal dan orang-orang secara tertib." },
-    { title: "ESFJ (The Consul)", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20", desc: "Orang yang sangat peduli dan sosial. Berfokus pada menciptakan harmoni di lingkungan mereka." },
-
-    // Explorers (Yellow)
-    { title: "ISTP (The Virtuoso)", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20", desc: "Eksperimen yang berani dan praktis. Ahli dalam menggunakan segala jenis alat dan teknik." },
-    { title: "ISFP (The Adventurer)", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20", desc: "Artis yang fleksibel dan menawan. Selalu siap untuk menjelajahi dan mencoba hal-hal baru." },
-    { title: "ESTP (The Entrepreneur)", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20", desc: "Orang yang cerdas, energik, dan sangat perseptif. Menikmati hidup di tepi jurang bahaya." },
-    { title: "ESFP (The Entertainer)", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20", desc: "Orang yang spontan, energik, dan antusias. Membuat hidup terasa seperti pesta yang tak berakhir." }
-  ];
+  const DIMENSIONS = codexData.dimensions;
+  const RULES = codexData.rules;
+  const MYSTIC_ITEMS = codexData.mysticItems;
+  const ARCHETYPES = archetypeData;
 
   const categories = [
     { id: 'DIMENSI', label: 'Sistem Dimensi', icon: <Brain className="w-4 h-4" /> },
-    { id: 'BAKAT', label: 'Katalog Bakat', icon: <Sparkles className="w-4 h-4" /> },
+    { id: 'MISTIK', label: 'Mistik & Soul', icon: <Sparkles className="w-4 h-4" /> },
+    { id: 'BAKAT', label: 'Katalog Bakat', icon: <Book className="w-4 h-4" /> },
     { id: 'ARKETIPE', label: 'Daftar Arketipe', icon: <Users className="w-4 h-4" /> },
     { id: 'HUKUM', label: 'Hukum Semesta', icon: <Shield className="w-4 h-4" /> }
   ];
@@ -210,7 +139,7 @@ export const Codex: React.FC<CodexProps> = ({ onBack }) => {
                     <div className="space-y-4">
                       <div className="flex items-center gap-4">
                         <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shadow-lg", dim.bg, dim.color)}>
-                          {React.cloneElement(dim.icon as React.ReactElement<any>, { className: 'w-6 h-6' })}
+                          {resolveIcon(dim.iconKey, 'w-6 h-6')}
                         </div>
                         <h3 className={cn("text-xl font-black italic", dim.color)}>{dim.name}</h3>
                       </div>
@@ -323,7 +252,7 @@ export const Codex: React.FC<CodexProps> = ({ onBack }) => {
                     i === 0 && "md:col-span-2 bg-gradient-to-r from-jiwa/10 to-transparent"
                   )}>
                     <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                      {rule.icon}
+                      {resolveIcon(rule.iconKey)}
                     </div>
                     <div className="space-y-3">
                       <h3 className="text-xl font-black italic text-white leading-tight">{rule.title}</h3>
@@ -338,6 +267,30 @@ export const Codex: React.FC<CodexProps> = ({ onBack }) => {
                     "Membantumu menjadi versi terbaik dari dirimu sendiri melalui disiplin yang menyenangkan."
                   </p>
                 </div>
+              </motion.div>
+            )}
+
+            {activeCategory === 'MISTIK' && (
+              <motion.div
+                key="mistik"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                {MYSTIC_ITEMS.map((item, i) => (
+                  <div key={i} className={cn("glass-panel p-8 border transition-all hover:bg-white/[0.02]", item.border, item.bg)}>
+                    <div className="flex items-start gap-6">
+                      <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg", item.bg, item.color)}>
+                        {resolveIcon(item.iconKey)}
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className={cn("text-xl font-black italic tracking-tight", item.color)}>{item.title}</h3>
+                        <p className="text-neutral-300 leading-relaxed font-medium">{item.desc}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </motion.div>
             )}
           </AnimatePresence>

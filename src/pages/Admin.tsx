@@ -347,121 +347,216 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
           <StatCard icon={<AlertTriangle className="text-karma" />} label="Reports" value={0} />
         </div>
 
-        {/* User Table */}
-        <div className="glass-panel overflow-hidden border-white/5">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500">
-                  <th className="px-6 py-4">Player</th>
-                  <th className="px-6 py-4">Profile</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Cooldown</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                <AnimatePresence>
-                  {filteredUsers.map((user) => (
-                    <motion.tr 
-                      layout
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      key={user.id} 
-                      className="group hover:bg-white/[0.02] transition-colors"
-                    >
-                      <td className="px-6 py-5">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-jiwa/20 to-ilmu/20 flex items-center justify-center font-black text-jiwa shrink-0">
-                            {user.username?.[0].toUpperCase() || '?'}
+        {/* User List */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-2">
+            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-neutral-500">Player Registry</h2>
+            <span className="text-[10px] font-bold text-jiwa bg-jiwa/10 px-3 py-1 rounded-full uppercase tracking-widest">
+              {filteredUsers.length} Players
+            </span>
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block glass-panel overflow-hidden border-white/5">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500">
+                    <th className="px-6 py-4">Player</th>
+                    <th className="px-6 py-4">Profile</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4">Cooldown</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  <AnimatePresence>
+                    {filteredUsers.map((user) => (
+                      <motion.tr 
+                        layout
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        key={user.id} 
+                        className="group hover:bg-white/[0.02] transition-colors"
+                      >
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-jiwa/20 to-ilmu/20 flex items-center justify-center font-black text-jiwa shrink-0">
+                              {user.username?.[0].toUpperCase() || '?'}
+                            </div>
+                            <div>
+                              <p className="font-bold text-sm text-white line-clamp-1">{user.username || 'Anonymous'}</p>
+                              <p className="text-[10px] text-neutral-500 font-medium line-clamp-1">{user.email}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-bold text-sm text-white line-clamp-1">{user.username || 'Anonymous'}</p>
-                            <p className="text-[10px] text-neutral-500 font-medium line-clamp-1">{user.email}</p>
+                        </td>
+                        <td className="px-6 py-5">
+                          {user.usia ? (
+                            <div className="flex flex-col">
+                              <span className="text-xs font-bold text-white capitalize">{user.gender || 'Unknown'}</span>
+                              <span className="text-[10px] text-neutral-500">{user.usia} Tahun</span>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-neutral-600 italic">No Data</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-3">
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter">LVL</span>
+                              <span className="font-black text-white italic">{user.level}</span>
+                            </div>
+                            <div className="w-px h-6 bg-white/10" />
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter">XP</span>
+                              <span className="font-bold text-harta text-xs">{user.xp}</span>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        {user.usia ? (
-                          <div className="flex flex-col">
-                            <span className="text-xs font-bold text-white capitalize">{user.gender || 'Unknown'}</span>
-                            <span className="text-[10px] text-neutral-500">{user.usia} Tahun</span>
+                        </td>
+                        <td className="px-6 py-5">
+                          {user.last_name_change ? (
+                            <div className="flex flex-col gap-1">
+                              <span className="px-2 py-0.5 bg-red-500/10 text-red-500 text-[8px] font-black rounded uppercase w-fit">Locked</span>
+                              <span className="text-[9px] text-neutral-500 font-mono italic">
+                                {new Date(user.last_name_change).toLocaleDateString()}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="px-2 py-0.5 bg-raga/10 text-raga text-[8px] font-black rounded uppercase w-fit">Available</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-5 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <AdminButton 
+                              icon={<Eye className="w-3.5 h-3.5" />} 
+                              label="View" 
+                              onClick={() => handleViewProfile(user)}
+                              variant="info"
+                            />
+                            <AdminButton 
+                              icon={<MailIcon className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-mail' && "animate-spin")} />} 
+                              label="Mail" 
+                              onClick={() => handleSendMail(user.id, user.username || user.email)}
+                              variant="info"
+                            />
+                            <AdminButton 
+                              icon={<Gift className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-reward' && "animate-spin")} />} 
+                              label="+XP" 
+                              onClick={() => handleGiveReward(user.supabase_id, user.xp, user.level)}
+                              variant="success"
+                            />
+                            <AdminButton 
+                              icon={<RotateCcw className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-reset-lvl' && "animate-spin")} />} 
+                              label="Reset" 
+                              onClick={() => handleResetLevel(user.supabase_id)}
+                              variant="danger"
+                            />
+                            <AdminButton 
+                              icon={<ArrowUpCircle className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-lvl' && "animate-spin")} />} 
+                              label="+LVL" 
+                              onClick={() => handleLevelUp(user.supabase_id, user.level)}
+                              variant="warning"
+                            />
+                            <AdminButton 
+                              icon={<Trash2 className={cn("w-3.5 h-3.5", actionLoading === user.id + '-delete' && "animate-spin")} />} 
+                              label="Del" 
+                              onClick={() => handleDeleteUser(user.id, user.supabase_id)}
+                              variant="danger"
+                            />
                           </div>
-                        ) : (
-                          <span className="text-[10px] text-neutral-600 italic">No Data</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="flex items-center gap-3">
-                          <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter">LVL</span>
-                            <span className="font-black text-white italic">{user.level}</span>
-                          </div>
-                          <div className="w-px h-6 bg-white/10" />
-                          <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter">XP</span>
-                            <span className="font-bold text-harta text-xs">{user.xp}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        {user.last_name_change ? (
-                          <div className="flex flex-col gap-1">
-                            <span className="px-2 py-0.5 bg-red-500/10 text-red-500 text-[8px] font-black rounded uppercase w-fit">Locked</span>
-                            <span className="text-[9px] text-neutral-500 font-mono italic">
-                              {new Date(user.last_name_change).toLocaleDateString()}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="px-2 py-0.5 bg-raga/10 text-raga text-[8px] font-black rounded uppercase w-fit">Available</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-5 text-right">
-                        <div className="flex flex-wrap items-center justify-end gap-2">
-                          <AdminButton 
-                            icon={<Eye className="w-3.5 h-3.5" />} 
-                            label="View" 
-                            onClick={() => handleViewProfile(user)}
-                            variant="info"
-                          />
-                          <AdminButton 
-                            icon={<MailIcon className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-mail' && "animate-spin")} />} 
-                            label="Mail" 
-                            onClick={() => handleSendMail(user.id, user.username || user.email)}
-                            variant="info"
-                          />
-                          <AdminButton 
-                            icon={<Gift className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-reward' && "animate-spin")} />} 
-                            label="+XP" 
-                            onClick={() => handleGiveReward(user.supabase_id, user.xp, user.level)}
-                            variant="success"
-                          />
-                          <AdminButton 
-                            icon={<RotateCcw className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-reset-lvl' && "animate-spin")} />} 
-                            label="Reset" 
-                            onClick={() => handleResetLevel(user.supabase_id)}
-                            variant="danger"
-                          />
-                          <AdminButton 
-                            icon={<ArrowUpCircle className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-lvl' && "animate-spin")} />} 
-                            label="+LVL" 
-                            onClick={() => handleLevelUp(user.supabase_id, user.level)}
-                            variant="warning"
-                          />
-                          <AdminButton 
-                            icon={<Trash2 className={cn("w-3.5 h-3.5", actionLoading === user.id + '-delete' && "animate-spin")} />} 
-                            label="Del" 
-                            onClick={() => handleDeleteUser(user.id, user.supabase_id)}
-                            variant="danger"
-                          />
-                        </div>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </AnimatePresence>
-              </tbody>
-            </table>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-4">
+            <AnimatePresence>
+              {filteredUsers.map((user, index) => (
+                <motion.div
+                  key={user.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="bg-rpg-card border border-white/5 rounded-3xl p-5 space-y-5"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-jiwa/20 to-ilmu/20 flex items-center justify-center font-black text-jiwa shrink-0">
+                        {user.username?.[0].toUpperCase() || '?'}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-sm text-white truncate">{user.username || 'Anonymous'}</p>
+                        <p className="text-[10px] text-neutral-500 font-medium truncate">{user.email}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter block">LVL</span>
+                      <span className="font-black text-white italic text-lg leading-none">{user.level}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 py-4 border-y border-white/5">
+                    <div>
+                      <span className="text-[9px] font-black text-neutral-600 uppercase tracking-widest block mb-1">XP Points</span>
+                      <span className="text-xs font-bold text-harta">{user.xp} XP</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[9px] font-black text-neutral-600 uppercase tracking-widest block mb-1">Status</span>
+                      {user.last_name_change ? (
+                        <span className="text-[9px] text-red-400 font-bold uppercase italic">Cooldown Active</span>
+                      ) : (
+                        <span className="text-[9px] text-raga font-bold uppercase italic">Verified</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <AdminButton 
+                      icon={<Eye className="w-3.5 h-3.5" />} 
+                      label="View" 
+                      onClick={() => handleViewProfile(user)}
+                      variant="info"
+                    />
+                    <AdminButton 
+                      icon={<MailIcon className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-mail' && "animate-spin")} />} 
+                      label="Mail" 
+                      onClick={() => handleSendMail(user.id, user.username || user.email)}
+                      variant="info"
+                    />
+                    <AdminButton 
+                      icon={<Gift className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-reward' && "animate-spin")} />} 
+                      label="+XP" 
+                      onClick={() => handleGiveReward(user.supabase_id, user.xp, user.level)}
+                      variant="success"
+                    />
+                    <AdminButton 
+                      icon={<ArrowUpCircle className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-lvl' && "animate-spin")} />} 
+                      label="+LVL" 
+                      onClick={() => handleLevelUp(user.supabase_id, user.level)}
+                      variant="warning"
+                    />
+                    <AdminButton 
+                      icon={<RotateCcw className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-reset-lvl' && "animate-spin")} />} 
+                      label="Reset" 
+                      onClick={() => handleResetLevel(user.supabase_id)}
+                      variant="danger"
+                    />
+                    <AdminButton 
+                      icon={<Trash2 className={cn("w-3.5 h-3.5", actionLoading === user.id + '-delete' && "animate-spin")} />} 
+                      label="Del" 
+                      onClick={() => handleDeleteUser(user.id, user.supabase_id)}
+                      variant="danger"
+                    />
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         </div>
 
@@ -661,12 +756,12 @@ const AdminButton = ({ icon, label, onClick, variant }: { icon: React.ReactNode,
     <button 
       onClick={onClick}
       className={cn(
-        "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tight transition-all active:scale-95",
+        "flex items-center justify-center gap-1.5 px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tight transition-all active:scale-95",
         variantStyles[variant]
       )}
     >
       {icon}
-      <span className="hidden sm:inline">{label}</span>
+      <span className="sm:inline">{label}</span>
     </button>
   );
 };

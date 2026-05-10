@@ -12,6 +12,8 @@
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "isolatedModules": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
     "moduleDetection": "force",
     "allowJs": true,
     "jsx": "react-jsx",

@@ -1,0 +1,23 @@
+{
+  "dimensions": [
+    { "id": "JIWA", "name": "DIMENSI JIWA", "desc": "Berfokus pada kesehatan mental, ketenangan batin, dan kesadaran diri.", "examples": "Meditasi, journaling, berdoa, atau sekadar diam tanpa gadget.", "iconKey": "Brain", "color": "text-jiwa", "bg": "bg-jiwa/10", "border": "border-jiwa/20" },
+    { "id": "RAGA", "name": "DIMENSI RAGA", "desc": "Berfokus pada kesehatan fisik, kekuatan tubuh, dan nutrisi.", "examples": "Olahraga, makan sehat, minum air putih cukup, tidur teratur.", "iconKey": "Dumbbell", "color": "text-raga", "bg": "bg-raga/10", "border": "border-raga/20" },
+    { "id": "HARTA", "name": "DIMENSI HARTA", "desc": "Berfokus pada kemandirian finansial, manajemen aset, dan produktivitas ekonomi.", "examples": "Mencatat pengeluaran, menabung, belajar investasi, mencari penghasilan tambahan.", "iconKey": "Coins", "color": "text-harta", "bg": "bg-harta/10", "border": "border-harta/20" },
+    { "id": "ILMU", "name": "DIMENSI ILMU", "desc": "Berfokus pada pengembangan intelektual, keterampilan baru, dan wawasan.", "examples": "Membaca buku, kursus online, belajar bahasa baru, riset topik menarik.", "iconKey": "BookOpen", "color": "text-ilmu", "bg": "bg-ilmu/10", "border": "border-ilmu/20" },
+    { "id": "KARMA", "name": "DIMENSI KARMA", "desc": "Berfokus pada hubungan sosial, kontribusi masyarakat, dan kebaikan tanpa pamrih.", "examples": "Membantu teman, sedekah, kerja bakti, memberikan pujian tulus.", "iconKey": "Users", "color": "text-karma", "bg": "bg-karma/10", "border": "border-karma/20" }
+  ],
+  "rules": [
+    { "title": "Hukum Semesta & Fitur Utama", "desc": "Prinsip-prinsip dasar dan fitur utama yang mengatur perjalananmu di dunia Arutha.", "iconKey": "Shield" },
+    { "title": "Daily Refresh (1x Sehari)", "desc": "Setiap hari, kamu hanya mendapatkan satu kali kesempatan untuk me-refresh daftar misimu. Gunakan dengan bijak!", "iconKey": "Zap" },
+    { "title": "Sistem Progresi (XP)", "desc": "Setiap misi yang berhasil diverifikasi akan memberikan Experience Points (XP). Kumpulkan XP untuk naik level.", "iconKey": "TrendingUp" },
+    { "title": "Evolusi Karakter (30 Hari)", "desc": "Setiap 30 hari sekali, Arutha akan melakukan evaluasi mendalam terhadap progresmu. Ini adalah saat di mana arketipe kepribadianmu bisa berevolusi.", "iconKey": "Sparkles" },
+    { "title": "Bimbingan AI Arutha", "desc": "Gunakan fitur chat dengan AI Arutha untuk konsultasi mengenai progres, tips harian, atau sekadar motivasi saat kamu merasa jenuh.", "iconKey": "Brain" },
+    { "title": "Hukum Decay (Kelelahan)", "desc": "Jika kamu mengabaikan satu dimensi terlalu lama, statistik dimensi tersebut akan menurun secara otomatis.", "iconKey": "AlertTriangle" },
+    { "title": "Misi Pemulihan", "desc": "Gunakan Misi Pemulihan untuk mengembalikan statistik yang turun drastis akibat Decay.", "iconKey": "RefreshCcw" }
+  ],
+  "mysticItems": [
+    { "title": "Soul Guard (Guardian of the Mind)", "desc": "Entitas AI yang mendampingimu dalam menjaga kesehatan mental. Soul Guard bekerja dalam 3 fase: Context Scope, Brainstorming, dan Supportive Companion.", "iconKey": "Brain", "bg": "bg-jiwa/10", "border": "border-jiwa/20", "color": "text-jiwa" },
+    { "title": "Tarot of the Soul", "desc": "22 kartu Major Arcana yang digunakan sebagai cermin psikologis. Setiap kartu mewakili arketipe perjalanan hidup dan memberikan perspektif baru saat kamu bimbang.", "iconKey": "Sparkles", "bg": "bg-harta/10", "border": "border-harta/20", "color": "text-harta" },
+    { "title": "Echoes of Insight", "desc": "Sistem analisis mental Arutha yang memproses pola emosi dalam percakapan untuk memberikan laporan statistik 'Jiwa' yang akurat.", "iconKey": "Info", "bg": "bg-ilmu/10", "border": "border-ilmu/20", "color": "text-ilmu" }
+  ]
+}
