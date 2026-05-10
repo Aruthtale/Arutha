@@ -119,12 +119,21 @@ export async function analyzeCharacter(answers: OnboardingAnswer[], userContext?
         jsonStr = jsonStr.split('```')[1].replace(/^json/, '').trim();
       }
       const result = JSON.parse(jsonStr);
-      if (result.stats) {
-        Object.keys(result.stats).forEach(key => {
-          const k = key as keyof Stats;
-          result.stats[k] = Math.min(50, result.stats[k]);
-        });
-      }
+      
+      // Safety Fallbacks: Garansi tidak ada data null yang masuk ke Supabase
+      result.personality_type = result.personality_type || 'Unknown';
+      result.personality_title = result.personality_title || 'The Wanderer';
+      result.personality_desc = result.personality_desc || 'Karakter dalam pencarian jati diri.';
+      result.character_summary = result.character_summary || 'Karakter belum sepenuhnya terbaca oleh sistem.';
+      
+      result.stats = {
+        JIWA: Math.min(50, Number(result.stats?.JIWA) || 30),
+        RAGA: Math.min(50, Number(result.stats?.RAGA) || 30),
+        HARTA: Math.min(50, Number(result.stats?.HARTA) || 30),
+        ILMU: Math.min(50, Number(result.stats?.ILMU) || 30),
+        KARMA: Math.min(50, Number(result.stats?.KARMA) || 30),
+      };
+
       return result;
     } catch (e: any) {
       continue; 
