@@ -68,9 +68,18 @@ interface AppState {
 }
 
 export const useStore = create<AppState>((set) => ({
-  // Navigation
-  page: 'LANDING',
-  setPage: (page) => set((state) => ({ page: typeof page === 'function' ? page(state.page) : page })),
+  // Navigation (persist to sessionStorage)
+  page: (() => {
+    const saved = sessionStorage.getItem('arutha_page');
+    const validPages: Page[] = ['DASHBOARD', 'SETTINGS', 'PROFILE', 'ADMIN', 'LEADERBOARD', 'CODEX', 'MAIL', 'SOUL_GUARD'];
+    if (saved && validPages.includes(saved as Page)) return saved as Page;
+    return 'LANDING';
+  })(),
+  setPage: (page) => set((state) => {
+    const next = typeof page === 'function' ? page(state.page) : page;
+    sessionStorage.setItem('arutha_page', next);
+    return { page: next };
+  }),
 
   // Auth & User
   session: null,

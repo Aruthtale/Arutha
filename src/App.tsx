@@ -307,7 +307,7 @@ export default function App() {
           fetchStatHistory(userData.id);
 
           setPage(prev => {
-            const entryPages = ['LANDING', 'LOGIN', 'REGISTER', 'ONBOARDING', 'CHARACTER_REVEAL', 'CODEX'];
+            const entryPages = ['LANDING', 'LOGIN', 'REGISTER', 'ONBOARDING', 'CHARACTER_REVEAL', 'COMPLETE_PROFILE'];
             if (entryPages.includes(prev)) return 'DASHBOARD';
             return prev;
           });
@@ -423,20 +423,29 @@ export default function App() {
         let profileDate = new Date().toISOString();
 
         if (existingProfiles && existingProfiles.length > 0) {
-          const { data: updated } = await supabase
+          const { data: updated, error: updateErr } = await supabase
             .from('character_profile')
             .update(profilePayload)
             .eq('id', existingProfiles[0].id)
             .select();
+          if (updateErr) {
+            console.error('character_profile UPDATE failed:', updateErr);
+            alert(`Gagal menyimpan profil karakter: ${updateErr.message}`);
+          }
           if (updated?.[0]) profileDate = updated[0].created_at;
         } else {
-          const { data: inserted } = await supabase
+          const { data: inserted, error: insertErr } = await supabase
             .from('character_profile')
             .insert({
               id: crypto.randomUUID(),
               ...profilePayload
             })
             .select();
+          if (insertErr) {
+            console.error('character_profile INSERT failed:', insertErr);
+            console.error('Payload was:', profilePayload);
+            alert(`Gagal menyimpan profil karakter: ${insertErr.message}. Cek RLS policy di Supabase.`);
+          }
           if (inserted?.[0]) profileDate = inserted[0].created_at;
         }
 
