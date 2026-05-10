@@ -437,7 +437,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                             <AdminButton 
                               icon={<MailIcon className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-mail' && "animate-spin")} />} 
                               label="Mail" 
-                              onClick={() => handleSendMail(user.id, user.username || user.email)}
+                              onClick={() => handleSendMail(user.supabase_id, user.username || user.email)}
                               variant="info"
                             />
                             <AdminButton 
@@ -526,7 +526,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                     <AdminButton 
                       icon={<MailIcon className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-mail' && "animate-spin")} />} 
                       label="Mail" 
-                      onClick={() => handleSendMail(user.id, user.username || user.email)}
+                      onClick={() => handleSendMail(user.supabase_id, user.username || user.email)}
                       variant="info"
                     />
                     <AdminButton 

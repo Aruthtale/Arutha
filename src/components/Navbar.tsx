@@ -63,13 +63,12 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
       // Gunakan tanggal registrasi ATAU 3 hari lalu (yang mana lebih baru)
       const minDate = userCreatedAt && userCreatedAt > cutoff ? userCreatedAt : cutoff;
 
-      // 1. Pesan personal yang belum dibaca (dan masih dalam 3 hari)
+      // 1. Pesan personal yang belum dibaca (apapun tanggalnya)
       const { count: personalCount } = await supabase
         .from('arutha_mail')
         .select('id', { count: 'exact', head: true })
-        .eq('user_id', dbUserId)
-        .eq('is_read', false)
-        .gte('created_at', minDate);
+        .eq('user_id', session?.user.id)
+        .eq('is_read', false);
       
       // 2. Pesan global yang lebih baru dari terakhir user buka Kotak Surat
       const seenAt = useStore.getState().lastMailSeenAt || localStorage.getItem(`arutha_mail_seen_${dbUserId}`);

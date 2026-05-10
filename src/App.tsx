@@ -794,7 +794,11 @@ export default function App() {
             )}
             {page === 'MAIL' && (
               <motion.div key="mail" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <Mail userId={dbUserId || ''} onBack={() => setPage('DASHBOARD')} />
+                <Mail 
+                  userId={dbUserId || ''} 
+                  supabaseId={session?.user.id || ''}
+                  onBack={() => setPage('DASHBOARD')} 
+                />
               </motion.div>
             )}
             {page === 'SOUL_GUARD' && (

@@ -1,62 +1,79 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Mail as MailIcon, ArrowLeft, Megaphone, Clock } from 'lucide-react';
+import { Mail as MailIcon, ArrowLeft, Megaphone, Clock, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { useStore } from '../store/useStore';
 
-export const Mail = ({ userId, onBack }: { userId: string, onBack: () => void }) => {
+export const Mail = ({ userId, supabaseId, onBack }: { userId: string, supabaseId: string, onBack: () => void }) => {
   const [mails, setMails] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { setUnreadMailCount, setLastMailSeenAt } = useStore();
 
   useEffect(() => {
-    cleanupOldMails();
-    fetchMails();
-  }, []);
+    if (userId) {
+      cleanupOldMails();
+      fetchMails();
+    }
+  }, [userId]);
 
-  // Auto-delete mail yang sudah lebih dari 3 hari
   const cleanupOldMails = async () => {
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-    
-    await supabase
-      .from('arutha_mail')
-      .delete()
-      .lt('created_at', threeDaysAgo.toISOString());
+    try {
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      await supabase
+        .from('arutha_mail')
+        .delete()
+        .lt('created_at', threeDaysAgo.toISOString());
+    } catch (err) {
+      console.warn('Cleanup old mails failed:', err);
+    }
   };
 
   const fetchMails = async () => {
     setLoading(true);
+    setError(null);
+    try {
+      // 1. Ambil tanggal registrasi user
+      const { data: userData } = await supabase
+        .from('arutha_user')
+        .select('created_at')
+        .eq('id', userId)
+        .single();
+      
+      const userCreatedAt = userData?.created_at;
 
-    // Ambil tanggal registrasi user untuk filter
-    const { data: userData } = await supabase
-      .from('arutha_user')
-      .select('created_at')
-      .eq('id', userId)
-      .single();
+      // 2. Ambil Pesan Personal (Gunakan supabaseId untuk RLS)
+      const { data: personalMail, error: pError } = await supabase
+        .from('arutha_mail')
+        .select('*')
+        .eq('user_id', supabaseId);
+      
+      if (pError) throw pError;
 
-    const userCreatedAt = userData?.created_at;
+      // 3. Ambil Pesan Global (Pengumuman)
+      let globalQuery = supabase
+        .from('arutha_mail')
+        .select('*')
+        .is('user_id', null);
+      
+      if (userCreatedAt) {
+        globalQuery = globalQuery.gte('created_at', userCreatedAt);
+      }
+      
+      const { data: globalMail, error: gError } = await globalQuery;
+      if (gError) throw gError;
 
-    // Query mail: hanya yang dikirim SETELAH user mendaftar
-    let query = supabase
-      .from('arutha_mail')
-      .select('*')
-      .or(`user_id.is.null,user_id.eq.${userId}`)
-      .order('created_at', { ascending: false });
-    
-    // Filter: akun baru tidak bisa lihat mail lama
-    if (userCreatedAt) {
-      query = query.gte('created_at', userCreatedAt);
-    }
+      // 4. Gabungkan dan urutkan
+      const allMails = [...(personalMail || []), ...(globalMail || [])].sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
 
-    const { data, error } = await query;
-
-    if (data && !error) {
-      setMails(data);
+      setMails(allMails);
       
       // Otomatis tandai semua pesan personal sebagai terbaca
-      const unreadPersonal = data.filter(m => m.user_id && !m.is_read);
+      const unreadPersonal = allMails.filter(m => m.user_id && !m.is_read);
       if (unreadPersonal.length > 0) {
         const ids = unreadPersonal.map(m => m.id);
         await supabase
@@ -72,11 +89,14 @@ export const Mail = ({ userId, onBack }: { userId: string, onBack: () => void })
       localStorage.setItem(`arutha_mail_seen_${userId}`, now);
       setLastMailSeenAt(now);
       setUnreadMailCount(0);
+    } catch (err: any) {
+      console.error('Fetch mail error:', err);
+      setError(err.message || 'Gagal memuat pesan');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  // Hitung sisa waktu sebelum mail expired
   const getTimeLeft = (createdAt: string) => {
     const expiry = new Date(createdAt);
     expiry.setDate(expiry.getDate() + 3);
@@ -104,6 +124,14 @@ export const Mail = ({ userId, onBack }: { userId: string, onBack: () => void })
 
       {loading ? (
         <div className="text-center text-neutral-500 py-20 animate-pulse font-bold tracking-widest">MEMUAT PESAN...</div>
+      ) : error ? (
+        <div className="text-center text-red-500 py-20 glass-panel rounded-3xl border border-red-500/10">
+          <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <p className="font-bold tracking-widest uppercase">{error}</p>
+          <button onClick={fetchMails} className="mt-4 text-xs font-black text-white bg-white/5 px-6 py-2 rounded-full hover:bg-white/10 transition-all">
+            COBA LAGI
+          </button>
+        </div>
       ) : mails.length === 0 ? (
         <div className="text-center text-neutral-500 py-20 glass-panel rounded-3xl border border-white/5">
           <MailIcon className="w-12 h-12 mx-auto mb-4 opacity-20" />
