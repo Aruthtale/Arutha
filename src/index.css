@@ -13,10 +13,10 @@
   /* Dimensi Colors */
   /* Dimensi Colors - Premium RPG Palette */
   --color-jiwa: #C084FC;   /* Purple/Soul */
-  --color-raga: #4ADE80;   /* Green/Body */
+  --color-raga: #F43F5E;   /* Rose/Body */
   --color-harta: #FACC15;  /* Gold/Wealth */
   --color-ilmu: #3B82F6;   /* Blue/Wisdom */
-  --color-karma: #F43F5E;  /* Rose/Karma */
+  --color-karma: #4ADE80;  /* Green/Karma */
 }
 
 @layer base {

@@ -427,10 +427,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       labelFormatter={(label) => new Date(label).toLocaleDateString()}
                     />
                     <Line type="monotone" dataKey="jiwa" stroke="#C084FC" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="raga" stroke="#4ADE80" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="raga" stroke="#F43F5E" strokeWidth={2} dot={false} />
                     <Line type="monotone" dataKey="harta" stroke="#FACC15" strokeWidth={2} dot={false} />
                     <Line type="monotone" dataKey="ilmu" stroke="#3B82F6" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="karma" stroke="#F43F5E" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="karma" stroke="#4ADE80" strokeWidth={2} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (

@@ -5,21 +5,21 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 export function getDimensionRank(value: number): string {
-  if (value < 20) return "NEOPHYTE"; // Baru mulai
-  if (value < 40) return "INITIATE"; // Tahap awal
-  if (value < 60) return "ADEPT";    // Mahir
-  if (value < 80) return "MASTER";   // Ahli
-  if (value < 100) return "ASCENDED"; // Melebihi batas
-  return "DIVINE";                   // Dewata
+  if (value < 20) return "NEOPHYTE"; 
+  if (value < 40) return "INITIATE"; 
+  if (value < 60) return "ADEPT";    
+  if (value < 80) return "MASTER";   
+  if (value < 100) return "ASCENDED";
+  return "DIVINE";                   
 }
 
 export function getDimensionColor(dim: string): string {
   const colors: Record<string, string> = {
     JIWA: '#C084FC',
-    RAGA: '#4ADE80',
+    RAGA: '#F43F5E',
     HARTA: '#FACC15',
     ILMU: '#3B82F6',
-    KARMA: '#F43F5E',
+    KARMA: '#4ADE80',
   };
   return colors[dim.toUpperCase()] || '#C084FC';
 }
