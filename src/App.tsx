@@ -18,21 +18,42 @@ import { useStore } from './store/useStore';
 import { PullToRefresh } from './components/PullToRefresh';
 import { PageSkeleton } from './components/Skeleton';
 
+// Helper to reload page if a dynamically imported module fails (e.g. after a new deployment)
+const lazyWithRetry = (componentImport: () => Promise<any>) =>
+  lazy(async () => {
+    const pageHasAlreadyBeenForceRefreshed = JSON.parse(
+      window.sessionStorage.getItem('page-has-been-force-refreshed') || 'false'
+    );
+    try {
+      const component = await componentImport();
+      window.sessionStorage.setItem('page-has-been-force-refreshed', 'false');
+      return component;
+    } catch (error) {
+      if (!pageHasAlreadyBeenForceRefreshed) {
+        window.sessionStorage.setItem('page-has-been-force-refreshed', 'true');
+        window.location.reload();
+        // Return a dummy promise to keep React suspense happy while reloading
+        return new Promise(() => {});
+      }
+      throw error;
+    }
+  });
+
 // Lazy Load Pages for Performance
-const Landing = lazy(() => import('./pages/Landing').then(m => ({ default: m.Landing })));
-const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));
-const Register = lazy(() => import('./pages/Register').then(m => ({ default: m.Register })));
-const Onboarding = lazy(() => import('./pages/Onboarding').then(m => ({ default: m.Onboarding })));
-const CharacterReveal = lazy(() => import('./pages/CharacterReveal').then(m => ({ default: m.CharacterReveal })));
-const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
-const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })));
-const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
-const Admin = lazy(() => import('./pages/Admin').then(m => ({ default: m.Admin })));
-const CompleteGoogleProfile = lazy(() => import('./pages/CompleteGoogleProfile').then(m => ({ default: m.CompleteGoogleProfile })));
-const Codex = lazy(() => import('./pages/Codex').then(m => ({ default: m.Codex })));
-const Leaderboard = lazy(() => import('./pages/Leaderboard').then(m => ({ default: m.Leaderboard })));
-const Mail = lazy(() => import('./pages/Mail').then(m => ({ default: m.Mail })));
-const MentalHealthChat = lazy(() => import('./pages/MentalHealthChat').then(m => ({ default: m.MentalHealthChat })));
+const Landing = lazyWithRetry(() => import('./pages/Landing').then(m => ({ default: m.Landing })));
+const Login = lazyWithRetry(() => import('./pages/Login').then(m => ({ default: m.Login })));
+const Register = lazyWithRetry(() => import('./pages/Register').then(m => ({ default: m.Register })));
+const Onboarding = lazyWithRetry(() => import('./pages/Onboarding').then(m => ({ default: m.Onboarding })));
+const CharacterReveal = lazyWithRetry(() => import('./pages/CharacterReveal').then(m => ({ default: m.CharacterReveal })));
+const Dashboard = lazyWithRetry(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
+const Settings = lazyWithRetry(() => import('./pages/Settings').then(m => ({ default: m.Settings })));
+const Profile = lazyWithRetry(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
+const Admin = lazyWithRetry(() => import('./pages/Admin').then(m => ({ default: m.Admin })));
+const CompleteGoogleProfile = lazyWithRetry(() => import('./pages/CompleteGoogleProfile').then(m => ({ default: m.CompleteGoogleProfile })));
+const Codex = lazyWithRetry(() => import('./pages/Codex').then(m => ({ default: m.Codex })));
+const Leaderboard = lazyWithRetry(() => import('./pages/Leaderboard').then(m => ({ default: m.Leaderboard })));
+const Mail = lazyWithRetry(() => import('./pages/Mail').then(m => ({ default: m.Mail })));
+const MentalHealthChat = lazyWithRetry(() => import('./pages/MentalHealthChat').then(m => ({ default: m.MentalHealthChat })));
 
 export default function App() {
   const {
@@ -476,6 +497,9 @@ export default function App() {
       const recQuests = await generateRecoveryQuests(decayResult.fatigueDays);
       setQuests(recQuests);
       await supabase.from('arutha_user').update({ active_quests: recQuests }).eq('id', dbUserId);
+      
+      // Sembunyikan banner setelah misi diambil agar tidak bisa dispam
+      setDecayResult(prev => prev ? { ...prev, status: 'ok' } : null);
     } catch (err) {
       console.error("Take recovery error:", err);
     } finally {

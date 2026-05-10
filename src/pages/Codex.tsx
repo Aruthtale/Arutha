@@ -167,10 +167,17 @@ export const Codex: React.FC<CodexProps> = ({ onBack }) => {
                     <Book className="w-32 h-32 rotate-12" />
                   </div>
                   <div className="relative z-10 max-w-2xl mx-auto text-center space-y-4">
-                    <p className="text-[10px] font-black text-jiwa uppercase tracking-[0.5em]">Misi Arutha</p>
+                    <p className="text-[10px] font-black text-jiwa uppercase tracking-[0.5em]">Katalog Bakat</p>
                     <h3 className="text-2xl md:text-3xl font-black italic text-white leading-tight">
-                      "Membantumu menjadi versi terbaik dari dirimu sendiri melalui disiplin yang menyenangkan."
+                      Sistem Bakat (Talents)
                     </h3>
+                    <p className="text-sm md:text-base text-neutral-300 font-medium leading-relaxed">
+                      Bakat adalah anugerah pasif yang memberikan keuntungan permanen untuk progres dimensimu. <br/><br/>
+                      <span className="text-amber-400 font-black tracking-widest uppercase text-[11px] drop-shadow-md">Bagaimana Cara Mendapatkannya?</span><br/>
+                      <span className="inline-block mt-2">
+                        Bakat dapat diperoleh dengan <strong>menyelesaikan Misi Spesial</strong>, <strong>menjaga Streak Harian</strong>, atau sebagai <strong>drop langka (Gacha)</strong> saat melakukan refleksi dengan Soul Guard. Semakin aktif dirimu, semakin besar peluang memicu *Awakening* Bakat Legendary!
+                      </span>
+                    </p>
                   </div>
                 </div>
 
