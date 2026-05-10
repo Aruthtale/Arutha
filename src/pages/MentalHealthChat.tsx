@@ -163,8 +163,8 @@ export const MentalHealthChat: React.FC<MentalHealthChatProps> = ({ userId, user
       // Save to Supabase (best-effort)
       try {
         await supabase.from('chat_logs').insert([
-          { user_id: userId, role: 'user', content: userMessage },
-          { user_id: userId, role: 'assistant', content: response }
+          { user_id: userId, role: 'user', content: userMessage, category: 'soulguard' },
+          { user_id: userId, role: 'assistant', content: response, category: 'soulguard' }
         ]);
       } catch { /* silent fail for chat logs */ }
 

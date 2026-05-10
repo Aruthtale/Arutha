@@ -1,10 +1,55 @@
 {
   "dimensions": [
-    { "id": "JIWA", "name": "DIMENSI JIWA", "desc": "Berfokus pada kesehatan mental, ketenangan batin, dan kesadaran diri.", "examples": "Meditasi, journaling, berdoa, atau sekadar diam tanpa gadget.", "iconKey": "Brain", "color": "text-jiwa", "bg": "bg-jiwa/10", "border": "border-jiwa/20" },
-    { "id": "RAGA", "name": "DIMENSI RAGA", "desc": "Berfokus pada kesehatan fisik, kekuatan tubuh, dan nutrisi.", "examples": "Olahraga, makan sehat, minum air putih cukup, tidur teratur.", "iconKey": "Dumbbell", "color": "text-raga", "bg": "bg-raga/10", "border": "border-raga/20" },
-    { "id": "HARTA", "name": "DIMENSI HARTA", "desc": "Berfokus pada kemandirian finansial, manajemen aset, dan produktivitas ekonomi.", "examples": "Mencatat pengeluaran, menabung, belajar investasi, mencari penghasilan tambahan.", "iconKey": "Coins", "color": "text-harta", "bg": "bg-harta/10", "border": "border-harta/20" },
-    { "id": "ILMU", "name": "DIMENSI ILMU", "desc": "Berfokus pada pengembangan intelektual, keterampilan baru, dan wawasan.", "examples": "Membaca buku, kursus online, belajar bahasa baru, riset topik menarik.", "iconKey": "BookOpen", "color": "text-ilmu", "bg": "bg-ilmu/10", "border": "border-ilmu/20" },
-    { "id": "KARMA", "name": "DIMENSI KARMA", "desc": "Berfokus pada hubungan sosial, kontribusi masyarakat, dan kebaikan tanpa pamrih.", "examples": "Membantu teman, sedekah, kerja bakti, memberikan pujian tulus.", "iconKey": "Users", "color": "text-karma", "bg": "bg-karma/10", "border": "border-karma/20" }
+    { 
+      "id": "JIWA", 
+      "name": "DIMENSI JIWA", 
+      "desc": "Pusat kesadaran dan ketenangan batin. Jiwa yang kuat memungkinkanmu tetap tenang di bawah tekanan dan memiliki intuisi yang tajam.", 
+      "examples": "Deep work tanpa gangguan, journaling harian, meditasi 10 menit, atau melakukan hobi yang menenangkan pikiran.", 
+      "iconKey": "Brain", 
+      "color": "text-jiwa", 
+      "bg": "bg-jiwa/10", 
+      "border": "border-jiwa/20" 
+    },
+    { 
+      "id": "RAGA", 
+      "name": "DIMENSI RAGA", 
+      "desc": "Kendaraan fisikmu di dunia fana. Raga yang prima memberikan energi untuk menaklukkan hari dan ketahanan terhadap penyakit.", 
+      "examples": "Latihan beban, jalan kaki 10rb langkah, tidur sebelum jam 11 malam, dan membatasi konsumsi gula.", 
+      "iconKey": "Dumbbell", 
+      "color": "text-raga", 
+      "bg": "bg-raga/10", 
+      "border": "border-raga/20" 
+    },
+    { 
+      "id": "HARTA", 
+      "name": "DIMENSI HARTA", 
+      "desc": "Simbol kemandirian dan manajemen sumber daya. Harta bukan hanya tentang angka, tapi tentang kebebasan memilih jalan hidup.", 
+      "examples": "Mencatat setiap pengeluaran, menabung 20% penghasilan, riset investasi, atau mencari side hustle yang produktif.", 
+      "iconKey": "Coins", 
+      "color": "text-harta", 
+      "bg": "bg-harta/10", 
+      "border": "border-harta/20" 
+    },
+    { 
+      "id": "ILMU", 
+      "name": "DIMENSI ILMU", 
+      "desc": "Senjata intelektual untuk memahami semesta. Ilmu memperluas cakrawala dan memberikan solusi atas masalah yang rumit.", 
+      "examples": "Membaca 10 halaman buku, mengikuti kursus online, mempraktikkan skill baru, atau mendalami literasi finansial.", 
+      "iconKey": "BookOpen", 
+      "color": "text-ilmu", 
+      "bg": "bg-ilmu/10", 
+      "border": "border-ilmu/20" 
+    },
+    { 
+      "id": "KARMA", 
+      "name": "DIMENSI KARMA", 
+      "desc": "Jejak kebaikanmu di hati orang lain. Karma yang tinggi membuka pintu peluang dari tempat-tempat yang tidak terduga.", 
+      "examples": "Menyapa orang asing, membantu teman tanpa diminta, berdonasi, atau sekadar memberikan apresiasi tulus pada orang lain.", 
+      "iconKey": "Users", 
+      "color": "text-karma", 
+      "bg": "bg-karma/10", 
+      "border": "border-karma/20" 
+    }
   ],
   "rules": [
     { "title": "Hukum Semesta & Fitur Utama", "desc": "Prinsip-prinsip dasar dan fitur utama yang mengatur perjalananmu di dunia Arutha.", "iconKey": "Shield" },

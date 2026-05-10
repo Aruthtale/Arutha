@@ -32,6 +32,7 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ userId, username, st
             .from('chat_logs')
             .select('role, content')
             .eq('user_id', userId)
+            .eq('category', 'arbiter')
             .order('created_at', { ascending: true })
             .limit(20);
 
@@ -89,7 +90,8 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ userId, username, st
       const { error: userError } = await supabase.from('chat_logs').insert({ 
         user_id: userId, 
         role: 'user', 
-        content: userMessage 
+        content: userMessage,
+        category: 'arbiter'
       });
       
       if (userError) console.warn('User message sync failed:', userError.message);
@@ -97,7 +99,8 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ userId, username, st
       const { error: aiError } = await supabase.from('chat_logs').insert({ 
         user_id: userId, 
         role: 'assistant', 
-        content: response 
+        content: response,
+        category: 'arbiter'
       });
 
       if (aiError) console.warn('AI message sync failed:', aiError.message);
