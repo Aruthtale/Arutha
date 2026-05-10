@@ -105,7 +105,10 @@ export interface CharacterAnalysis {
 export async function analyzeCharacter(answers: OnboardingAnswer[], userContext?: { usia?: number; gender?: string; username?: string }): Promise<CharacterAnalysis> {
   const aiClient = getClient();
   const qaBlock = answers.map((a, i) => `Pertanyaan ${i + 1}: "${a.question}"\nJawaban: "${a.answer}"`).join('\n\n');
-  const prompt = `Kamu adalah AI psikolog dan game designer ARUTHA. Analisis data user dan berikan JSON. Max stats 50. JSON format: {personality_type, personality_title, personality_desc, stats, character_summary, starter_quest}. Data: ${qaBlock}`;
+  const validMBTI = ["INTJ", "INTP", "ENTJ", "ENTP", "INFJ", "INFP", "ENFJ", "ENFP", "ISTJ", "ISFJ", "ESTJ", "ESFJ", "ISTP", "ISFP", "ESTP", "ESFP"];
+  const prompt = `Kamu adalah AI psikolog dan game designer ARUTHA. Analisis data user dan berikan JSON. Max stats 50. JSON format: {personality_type, personality_title, personality_desc, stats, character_summary, starter_quest}.
+PENTING: personality_type HARUS secara eksak salah satu dari: ${validMBTI.join(', ')}. Jangan membuat tipe lain.
+Data: ${qaBlock}`;
 
   for (const modelName of MODELS_3X) {
     try {
@@ -121,8 +124,14 @@ export async function analyzeCharacter(answers: OnboardingAnswer[], userContext?
       const result = JSON.parse(jsonStr);
       
       // Safety Fallbacks: Garansi tidak ada data null yang masuk ke Supabase
-      result.personality_type = result.personality_type || 'Unknown';
-      result.personality_title = result.personality_title || 'The Wanderer';
+      result.personality_type = result.personality_type || 'INFJ';
+      if (!validMBTI.includes(result.personality_type.toUpperCase())) {
+        result.personality_type = 'INFJ'; // Fallback aman
+      } else {
+        result.personality_type = result.personality_type.toUpperCase();
+      }
+      
+      result.personality_title = result.personality_title || 'The Advocate';
       result.personality_desc = result.personality_desc || 'Karakter dalam pencarian jati diri.';
       result.character_summary = result.character_summary || 'Karakter belum sepenuhnya terbaca oleh sistem.';
       
