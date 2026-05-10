@@ -173,11 +173,24 @@ export const MentalHealthChat: React.FC<MentalHealthChatProps> = ({ userId, user
         analyzeMentalState(
           finalMessages.map(m => ({ role: m.role, content: m.content })),
           username
-        ).then(result => {
+        ).then(async (result) => {
           if (result) {
             setAnalysis(result);
             localStorage.setItem(`arutha_soulguard_analysis_${userId}`, JSON.stringify(result));
             console.log('[SoulGuard Internal Analysis]', JSON.stringify(result, null, 2));
+            
+            // Save to dimension_reflections
+            try {
+              await supabase.from('dimension_reflections').insert({
+                id: crypto.randomUUID(),
+                user_id: userId,
+                dimension: 'JIWA',
+                reflection_text: `Kondisi Batin: ${result.dominantCondition} - Pola: ${result.primaryPattern}`,
+                created_at: new Date().toISOString()
+              });
+            } catch (refErr) {
+              console.error('[Dimension Reflection Error]', refErr);
+            }
           }
         }).catch(err => {
           console.warn('[SoulGuard Analysis Error]', err);

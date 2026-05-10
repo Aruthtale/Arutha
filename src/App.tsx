@@ -603,6 +603,23 @@ export default function App() {
         setQuests(updatedQuests);
         addXp(quest.xp, quest.stat, updatedQuests);
 
+        if (dbUserId) {
+          try {
+            await supabase.from('quest_logs').insert({
+              id: crypto.randomUUID(),
+              user_id: dbUserId,
+              title: quest.title,
+              description: quest.desc,
+              stat_type: quest.stat,
+              xp_gained: quest.xp,
+              user_note: note,
+              completed_at: new Date().toISOString()
+            });
+          } catch (err) {
+            console.error("Gagal menyimpan ke quest_logs:", err);
+          }
+        }
+
         // RESET FATIGUE
         if (dbUserId) {
           await resetFatigue(dbUserId);
