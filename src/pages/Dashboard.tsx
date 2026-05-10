@@ -165,42 +165,67 @@ export const Dashboard: React.FC<DashboardProps> = ({
     <div className="min-h-screen text-white pb-24 pt-32 md:pt-20">
       <DecayStatusBanner />
 
-      {/* SUB-HEADER BAR */}
-      <div className="fixed top-16 md:top-0 left-0 md:left-[280px] right-0 z-40 bg-rpg-black/80 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 h-14 flex items-center gap-3 md:gap-4 overflow-x-auto hide-scrollbar">
-          <div className="flex items-center gap-2.5 px-3 md:px-4 py-1.5 bg-white/10 rounded-full border border-white/10 shrink-0">
-            <LayoutDashboard className="w-4 h-4 text-white" />
-            <span className="hidden sm:inline text-xs font-black text-neutral-200 tracking-widest uppercase">Pusat Misi</span>
-          </div>
-          <div className="hidden sm:block w-px h-6 bg-white/10" />
-
-          <div className="flex-1 flex items-center gap-2 md:gap-4 px-3 md:px-4 bg-white/5 rounded-2xl border border-white/5 h-10 group min-w-[120px]">
-            <Star className="w-4 h-4 text-harta fill-harta/20 shrink-0" />
-            <div className="flex-1 h-1.5 bg-rpg-black rounded-full overflow-hidden">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${(xp / (level * 1000)) * 100}%` }}
-                className="h-full bg-gradient-to-r from-jiwa to-ilmu animate-shimmer" />
+      {/* SUB-HEADER HUD */}
+      <div className="fixed top-16 md:top-0 left-0 md:left-[280px] right-0 z-40">
+        {/* Subtle top border glow */}
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+        
+        <div className="bg-rpg-black/70 backdrop-blur-2xl border-b border-white/5 shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+          <div className="max-w-7xl mx-auto px-4 md:px-8 py-2.5 md:py-3 flex items-center justify-between gap-3 md:gap-6 overflow-x-auto hide-scrollbar">
+            
+            {/* Title Badge */}
+            <div className="flex items-center gap-2 px-4 py-2 md:py-2.5 bg-gradient-to-br from-white/10 to-transparent rounded-2xl border border-white/10 shrink-0 shadow-inner">
+              <LayoutDashboard className="w-4 h-4 text-jiwa" />
+              <span className="text-[10px] md:text-xs font-black text-white tracking-[0.2em] uppercase">Pusat Misi</span>
             </div>
-            <span className="text-[10px] font-black text-neutral-500 font-mono shrink-0">{xp} / {level * 1000}</span>
-          </div>
 
-          <motion.button
-            whileHover={!claimed ? { scale: 1.05 } : {}}
-            whileTap={!claimed ? { scale: 0.95 } : {}}
-            onClick={() => !claimed && onClaimStreak()}
-            disabled={claimed}
-            className={cn(
-              "flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 rounded-full border transition-all shrink-0",
-              claimed
-                ? "bg-harta/10 border-harta/20 text-harta opacity-60"
-                : "bg-harta text-black border-harta shadow-[0_0_15px_rgba(255,193,7,0.3)] animate-pulse"
-            )}
-          >
-            <Zap className={cn("w-4 h-4", claimed ? "fill-harta" : "fill-black")} />
-            <span className="text-xs font-black tracking-tighter uppercase">
-              {streak} <span className="hidden sm:inline">Streak</span>
-              {!claimed && <span className="ml-1 text-[8px] animate-bounce">!</span>}
-            </span>
-          </motion.button>
+            {/* Level & XP Bar */}
+            <div className="flex-1 flex items-center min-w-[200px] max-w-xl bg-white/[0.03] p-1.5 md:p-2 rounded-2xl border border-white/5 shadow-inner group">
+              <div className="flex items-center justify-center w-9 h-9 md:w-10 md:h-10 bg-rpg-black rounded-xl border border-white/10 shrink-0 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-harta/20 to-ilmu/20 opacity-50 group-hover:opacity-100 transition-opacity" />
+                <span className="relative text-xs md:text-sm font-black text-white">L{level}</span>
+              </div>
+              <div className="flex-1 px-3 md:px-4">
+                <div className="flex justify-between items-end mb-1 md:mb-1.5">
+                  <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Experience</span>
+                  <span className="text-[9px] md:text-[10px] font-black text-harta font-mono tracking-tighter">{xp} / {level * 1000}</span>
+                </div>
+                <div className="h-1.5 md:h-2 w-full bg-rpg-black rounded-full overflow-hidden border border-white/5">
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${(xp / (level * 1000)) * 100}%` }}
+                    className="h-full bg-gradient-to-r from-jiwa via-harta to-ilmu relative">
+                    <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                  </motion.div>
+                </div>
+              </div>
+            </div>
+
+            {/* Streak Button */}
+            <motion.button
+              whileHover={!claimed ? { scale: 1.05 } : {}}
+              whileTap={!claimed ? { scale: 0.95 } : {}}
+              onClick={() => !claimed && onClaimStreak()}
+              disabled={claimed}
+              className={cn(
+                "flex items-center gap-2.5 px-4 py-2 md:py-2.5 rounded-2xl border transition-all shrink-0 relative overflow-hidden",
+                claimed
+                  ? "bg-white/5 border-white/10 opacity-70 cursor-default"
+                  : "bg-gradient-to-br from-harta to-amber-600 text-black border-harta/50 shadow-[0_0_20px_rgba(255,193,7,0.4)] cursor-pointer"
+              )}
+            >
+              {!claimed && <div className="absolute inset-0 bg-white/20 animate-shimmer" />}
+              <Zap className={cn("w-4 h-4 md:w-5 md:h-5 relative z-10", claimed ? "text-harta opacity-50" : "fill-black")} />
+              <div className="flex flex-col items-start relative z-10">
+                <span className={cn("text-[8px] md:text-[9px] font-black tracking-widest uppercase", claimed ? "text-neutral-500" : "text-black/70")}>
+                  {claimed ? "Terklaim" : "Klaim"}
+                </span>
+                <span className={cn("text-xs md:text-sm font-black tracking-tighter leading-none", claimed ? "text-white" : "text-black")}>
+                  {streak} Streak
+                </span>
+              </div>
+              {!claimed && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-white animate-ping" />}
+            </motion.button>
+
+          </div>
         </div>
       </div>
 
