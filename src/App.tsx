@@ -470,7 +470,7 @@ export default function App() {
 
 
   const handleTakeRecovery = async () => {
-    if (!dbUserId || !decayResult) return;
+    if (!dbUserId || !decayResult || isRefreshing) return;
     setIsRefreshing(true);
     try {
       const recQuests = await generateRecoveryQuests(decayResult.fatigueDays);

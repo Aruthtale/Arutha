@@ -144,9 +144,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="flex items-center gap-3 pt-2">
               <button
                 onClick={onTakeRecovery}
-                className="flex-1 py-3 bg-white text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-lg"
+                disabled={isRefreshing}
+                className="flex-1 py-3 bg-white text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Ambil Misi
+                {isRefreshing ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    MEMPROSES...
+                  </>
+                ) : 'Ambil Misi'}
               </button>
             </div>
           </div>

@@ -221,7 +221,7 @@ export async function verifyQuestCompletion(questTitle: string, questDesc: strin
 
 export async function generateRecoveryQuests(fatigueDays: number): Promise<Quest[]> {
   const aiClient = getClient();
-  const prompt = `Hasilkan 3 misi pemulihan ringan untuk user yang absen ${fatigueDays} hari. JSON format: [{id, title, desc, stat, xp: 150}].`;
+  const prompt = `Hasilkan 3 misi pemulihan ringan (berbeda dari biasanya) untuk user yang absen ${fatigueDays} hari. Gunakan variasi tema kegiatan (fisik, mental, atau sosial). Seed: ${Date.now()}. JSON format: [{id, title, desc, stat, xp: 150}].`;
 
   for (const modelName of MODELS_3X) {
     try {
