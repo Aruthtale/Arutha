@@ -42,7 +42,7 @@
 
   .bg-premium-glow::before {
     content: '';
-    position: absolute;
+    position: fixed;
     top: -10%;
     left: -10%;
     width: 70%;
@@ -55,7 +55,7 @@
 
   .bg-premium-glow::after {
     content: '';
-    position: absolute;
+    position: fixed;
     bottom: -10%;
     right: -10%;
     width: 80%;
@@ -63,6 +63,18 @@
     background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
     filter: blur(120px);
     will-change: transform;
+  }
+
+  .noise-overlay {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 50;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+    filter: contrast(150%) brightness(1000%);
   }
 
   /* Custom Scrollbar for Webkit */
@@ -86,6 +98,21 @@
   }
 }
 
+@layer utilities {
+  .text-shadow-glow {
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  }
+  
+  .glass-panel {
+    @apply bg-rpg-card border border-rpg-border rounded-[24px] backdrop-blur-md;
+  }
+
+  /* Responsive Max Widths for Zoom */
+  .container-responsive {
+    @apply w-full max-w-[90vw] md:max-w-7xl mx-auto;
+  }
+}
+
 .stat-bar-container {
   @apply h-2 w-full bg-rpg-border rounded-full overflow-hidden;
 }
@@ -94,8 +121,14 @@
   @apply h-full transition-all duration-1000 ease-out;
 }
 
-.glass-panel {
-  @apply bg-rpg-card border border-rpg-border rounded-[24px] backdrop-blur-md;
+/* Fix for overlapping elements during zoom */
+* {
+  box-sizing: border-box;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
 }
 
 .neo-blur {

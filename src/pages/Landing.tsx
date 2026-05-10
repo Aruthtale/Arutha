@@ -81,32 +81,32 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative z-10 max-w-5xl mx-auto"
+          className="relative z-10 w-full max-w-6xl mx-auto px-4"
         >
-          <h1 className="text-6xl sm:text-8xl md:text-[12rem] lg:text-[15rem] font-serif font-bold tracking-tighter leading-[0.75] mb-6 select-none uppercase">
+          <h1 className="text-5xl sm:text-7xl md:text-[10rem] lg:text-[12rem] font-serif font-bold tracking-tighter leading-none mb-4 select-none uppercase break-words">
             Arutha
           </h1>
-          <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-serif italic text-neutral-300 mb-10 tracking-tight">
-            Your Life, <span className="text-white underline decoration-jiwa/50 decoration-4 underline-offset-[8px] md:underline-offset-[12px]">Legendary.</span>
+          <h2 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-serif italic text-neutral-300 mb-8 tracking-tight">
+            Your Life, <span className="text-white underline decoration-jiwa/50 decoration-2 md:decoration-4 underline-offset-[4px] md:underline-offset-[8px]">Legendary.</span>
           </h2>
 
-          <p className="max-w-2xl mx-auto text-xl sm:text-2xl md:text-3xl text-neutral-400 font-light leading-relaxed mb-12 md:mb-14 italic font-serif px-4">
+          <p className="max-w-xl mx-auto text-lg sm:text-xl md:text-2xl text-neutral-400 font-light leading-relaxed mb-10 md:mb-12 italic font-serif px-2">
             "Satu-satunya permainan yang benar-benar berharga adalah <span className="text-white/90 font-medium border-b border-white/20">hidupmu sendiri.</span>"
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 md:gap-8">
             <button
               onClick={handleCtaClick}
-              className="w-full sm:w-auto px-16 py-6 bg-white text-black font-black rounded-full hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4 group shadow-[0_0_60px_rgba(255,255,255,0.15)]"
+              className="w-full sm:w-auto px-10 md:px-16 py-4 md:py-6 bg-white text-black font-black rounded-full hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4 group shadow-[0_0_60px_rgba(255,255,255,0.15)] text-sm md:text-base"
             >
               {(session && hasProfile) ? 'KE DASHBOARD' : 'MULAI PETUALANGAN'} 
-              <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-5 h-5 md:w-6 md:h-6 group-hover:translate-x-1 transition-transform" />
             </button>
             <button 
               onClick={scrollToLeaderboard}
               className="group relative py-2"
             >
-              <span className="text-sm font-black tracking-[0.4em] uppercase text-neutral-400 group-hover:text-white transition-colors">
+              <span className="text-[10px] md:text-sm font-black tracking-[0.3em] md:tracking-[0.4em] uppercase text-neutral-400 group-hover:text-white transition-colors">
                 Global Ranking
               </span>
               <div className="absolute -bottom-1 left-0 w-0 h-[1px] bg-white group-hover:w-full transition-all duration-300" />

@@ -103,7 +103,7 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
   return (
     <>
       {/* Desktop Left Sidebar */}
-      <nav className="hidden md:flex fixed top-0 left-0 bottom-0 w-[280px] z-50 bg-rpg-black/95 border-r border-white/5 flex-col justify-between py-8">
+      <nav className="hidden md:flex fixed top-0 left-0 bottom-0 w-[280px] z-50 bg-rpg-black/95 border-r border-white/5 flex-col justify-between py-8 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
         
         <div className="flex flex-col items-center w-full px-6">
           {/* Logo Section */}

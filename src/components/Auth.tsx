@@ -68,12 +68,12 @@ export const Auth: React.FC<{ initialIsRegister?: boolean }> = ({ initialIsRegis
   };
 
   return (
-    <div className="w-full max-w-md p-8 glass-panel border border-rpg-border shadow-[0_0_50px_rgba(255,255,255,0.05)] transition-all duration-300">
-      <div className="mb-8 text-center">
-        <h2 className="text-4xl font-black text-white mb-2 tracking-tight italic">
-          {isRegister ? 'JOIN GUILD' : 'WELCOME BACK'}
+    <div className="w-full max-w-md mx-auto p-6 md:p-8 glass-panel border border-rpg-border shadow-[0_0_50px_rgba(255,255,255,0.05)] transition-all duration-300">
+      <div className="mb-6 md:mb-8 text-center">
+        <h2 className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tight italic uppercase">
+          {isRegister ? 'Join Guild' : 'Welcome Back'}
         </h2>
-        <p className="text-neutral-400 font-medium text-sm tracking-widest uppercase">
+        <p className="text-neutral-400 font-medium text-[10px] md:text-xs tracking-[0.2em] uppercase">
           {isRegister ? 'Create your character' : 'Sign in to your account'}
         </p>
       </div>
@@ -86,7 +86,7 @@ export const Auth: React.FC<{ initialIsRegister?: boolean }> = ({ initialIsRegis
               type="text"
               placeholder="Username"
               required
-              className="w-full pl-12 pr-4 py-4 bg-rpg-black/50 border border-rpg-border focus:border-white rounded-2xl outline-none transition-all text-white placeholder:text-neutral-600"
+              className="w-full pl-12 pr-4 py-3 md:py-4 bg-rpg-black/50 border border-rpg-border focus:border-white rounded-xl md:rounded-2xl outline-none transition-all text-white placeholder:text-neutral-600 text-sm md:text-base"
               value={formData.username}
               onChange={(e) => setFormData({ ...formData, username: e.target.value })}
             />
@@ -99,7 +99,7 @@ export const Auth: React.FC<{ initialIsRegister?: boolean }> = ({ initialIsRegis
             type="email"
             placeholder="Email Address"
             required
-            className="w-full pl-12 pr-4 py-4 bg-rpg-black/50 border border-rpg-border focus:border-white rounded-2xl outline-none transition-all text-white placeholder:text-neutral-600"
+            className="w-full pl-12 pr-4 py-3 md:py-4 bg-rpg-black/50 border border-rpg-border focus:border-white rounded-xl md:rounded-2xl outline-none transition-all text-white placeholder:text-neutral-600 text-sm md:text-base"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           />
@@ -111,21 +111,21 @@ export const Auth: React.FC<{ initialIsRegister?: boolean }> = ({ initialIsRegis
             type="password"
             placeholder="Password"
             required
-            className="w-full pl-12 pr-4 py-4 bg-rpg-black/50 border border-rpg-border focus:border-white rounded-2xl outline-none transition-all text-white placeholder:text-neutral-600"
+            className="w-full pl-12 pr-4 py-3 md:py-4 bg-rpg-black/50 border border-rpg-border focus:border-white rounded-xl md:rounded-2xl outline-none transition-all text-white placeholder:text-neutral-600 text-sm md:text-base"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
           />
         </div>
 
         {isRegister && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 md:gap-4">
             <div className="relative group">
               <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-white transition-colors" />
               <input
                 type="number"
                 placeholder="Usia"
                 required
-                className="w-full pl-12 pr-4 py-4 bg-rpg-black/50 border border-rpg-border focus:border-white rounded-2xl outline-none transition-all text-white placeholder:text-neutral-600"
+                className="w-full pl-12 pr-4 py-3 md:py-4 bg-rpg-black/50 border border-rpg-border focus:border-white rounded-xl md:rounded-2xl outline-none transition-all text-white placeholder:text-neutral-600 text-sm md:text-base"
                 value={formData.usia}
                 onChange={(e) => setFormData({ ...formData, usia: e.target.value })}
               />
@@ -133,7 +133,7 @@ export const Auth: React.FC<{ initialIsRegister?: boolean }> = ({ initialIsRegis
             <div className="relative group">
               <VenusAndMars className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-white transition-colors" />
               <select
-                className="w-full pl-12 pr-4 py-4 bg-rpg-black/50 border border-rpg-border focus:border-white rounded-2xl outline-none transition-all text-white appearance-none"
+                className="w-full pl-12 pr-4 py-3 md:py-4 bg-rpg-black/50 border border-rpg-border focus:border-white rounded-xl md:rounded-2xl outline-none transition-all text-white appearance-none text-sm md:text-base"
                 value={formData.gender}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
               >
@@ -148,29 +148,29 @@ export const Auth: React.FC<{ initialIsRegister?: boolean }> = ({ initialIsRegis
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-4 bg-white hover:bg-neutral-200 text-black font-black rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full py-3 md:py-4 bg-white hover:bg-neutral-200 text-black font-black rounded-xl md:rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 text-sm md:text-base"
         >
           {isRegister ? <UserPlus className="w-5 h-5" /> : <LogIn className="w-5 h-5" />}
           {loading ? 'Processing...' : (isRegister ? 'CREATE CHARACTER' : 'ENTER WORLD')}
         </button>
       </form>
 
-      <div className="my-8 flex items-center gap-4">
+      <div className="my-6 md:my-8 flex items-center gap-4">
         <div className="h-px flex-1 bg-rpg-border" />
-        <span className="text-xs font-bold text-neutral-600 uppercase tracking-widest">OR</span>
+        <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-widest">OR</span>
         <div className="h-px flex-1 bg-rpg-border" />
       </div>
 
       <button
         onClick={handleGoogleLogin}
         disabled={loading}
-        className="w-full flex items-center justify-center gap-4 px-6 py-4 bg-white/10 text-white font-black rounded-2xl border border-white/20 hover:border-white hover:bg-white/20 transition-all active:scale-[0.98] shadow-lg shadow-black/20 group"
+        className="w-full flex items-center justify-center gap-3 md:gap-4 px-4 md:px-6 py-3 md:py-4 bg-white/10 text-white font-black rounded-xl md:rounded-2xl border border-white/20 hover:border-white hover:bg-white/20 transition-all active:scale-[0.98] shadow-lg shadow-black/20 group text-sm md:text-base"
       >
-        <Chrome className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+        <Chrome className="w-5 h-5 md:w-6 md:h-6 text-white group-hover:scale-110 transition-transform" />
         <span className="tracking-wide">CONTINUE WITH GOOGLE</span>
       </button>
 
-      <p className="mt-8 text-center text-sm font-medium text-neutral-500">
+      <p className="mt-6 md:mt-8 text-center text-xs md:text-sm font-medium text-neutral-500">
         {isRegister ? 'Already have an account?' : "Don't have an account?"}{' '}
         <button
           onClick={() => setIsRegister(!isRegister)}

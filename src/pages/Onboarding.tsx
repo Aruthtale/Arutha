@@ -187,7 +187,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext 
 
   // --- Question Screen ---
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-rpg-black relative overflow-hidden pt-24">
+    <div className="min-h-screen flex flex-col items-center justify-start md:justify-center p-6 bg-rpg-black relative overflow-y-auto overflow-x-hidden pt-32 pb-20 md:pt-24 md:pb-0">
       {/* Subtle background glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-jiwa/5 blur-[120px] rounded-full pointer-events-none" />
 
