@@ -11,11 +11,12 @@
   --color-rpg-border: #222222;
   
   /* Dimensi Colors */
-  --color-jiwa: #C084FC; /* Purple */
-  --color-raga: #4ADE80; /* Green */
-  --color-harta: #FACC15; /* Yellow */
-  --color-ilmu: #60A5FA; /* Blue */
-  --color-karma: #F87171; /* Red */
+  /* Dimensi Colors - Premium RPG Palette */
+  --color-jiwa: #C084FC;   /* Purple/Soul */
+  --color-raga: #4ADE80;   /* Green/Body */
+  --color-harta: #FACC15;  /* Gold/Wealth */
+  --color-ilmu: #3B82F6;   /* Blue/Wisdom */
+  --color-karma: #F43F5E;  /* Rose/Karma */
 }
 
 @layer base {
