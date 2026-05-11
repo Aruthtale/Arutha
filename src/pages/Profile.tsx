@@ -309,6 +309,9 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
               </div>
               <button className="w-full py-4 border-2 border-dashed border-neutral-800 rounded-[24px] text-xs font-black text-neutral-500 tracking-widest hover:border-neutral-700 hover:text-neutral-300 transition-all uppercase">
                 Unlock More
+              </button>
+            </section>
+
             {/* MEMORY ARCHIVE */}
             <section className="glass-panel p-6 space-y-4">
               <div className="flex items-center gap-2 text-neutral-400 mb-6">
