@@ -3,8 +3,10 @@ import { motion } from 'framer-motion';
 import { 
   ArrowLeft, Shield, Star, Zap, Award, Target, TrendingUp, Heart, Brain, Dumbbell, Coins, BookOpen, Users, Clock, History, Medal, Sparkles
 } from 'lucide-react';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
 import { cn, getDimensionRank } from '../lib/utils';
 import { TALENTS } from '../lib/talents';
+import { supabase } from '../lib/supabase';
 
 interface Stats {
   JIWA: number; RAGA: number; HARTA: number; ILMU: number; KARMA: number;
@@ -18,9 +20,27 @@ interface ProfileProps {
   analysis: any;
   onBack: () => void;
   talents: string[];
+  statHistory?: any[];
 }
 
-export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analysis, onBack, talents }) => {
+export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analysis, onBack, talents, statHistory }) => {
+  const [reflections, setReflections] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    const fetchReflections = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase
+        .from('dimension_reflections')
+        .select('reflection_text, created_at')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      if (data) setReflections(data);
+    };
+    fetchReflections();
+  }, []);
+
   const achievements = [
     { title: "Langkah Pertama", desc: "Menyelesaikan quest perdana", icon: <Zap className="w-4 h-4" />, color: "bg-jiwa/20 text-jiwa" },
     { title: "Integritas Tinggi", desc: "Lulus verifikasi AI 5 kali berturut-turut", icon: <Shield className="w-4 h-4" />, color: "bg-raga/20 text-raga" },
@@ -220,6 +240,47 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
                 </div>
               )}
             </section>
+
+            {/* STAT EVOLUTION CHART */}
+            <section className="glass-panel p-8 md:p-10 space-y-8">
+              <div className="flex items-center gap-3">
+                <TrendingUp className="w-6 h-6 text-neutral-400" />
+                <h3 className="text-xs font-black tracking-[0.3em] text-neutral-400 uppercase">EVOLUSI STATISTIK (30 Hari Terakhir)</h3>
+              </div>
+              <div className="w-full h-[250px] bg-white/[0.02] rounded-2xl border border-white/5 p-4">
+                {statHistory && statHistory.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%" debounce={200}>
+                    <LineChart data={statHistory}>
+                      <XAxis 
+                        dataKey="created_at" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 'bold' }}
+                        tickFormatter={(val) => {
+                          const date = new Date(val);
+                          return `${date.getDate()}/${date.getMonth() + 1}`;
+                        }}
+                      />
+                      <YAxis hide domain={['dataMin - 10', 'dataMax + 10']} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                        itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                        labelStyle={{ display: 'none' }}
+                      />
+                      <Line type="monotone" dataKey="jiwa" stroke="#A855F7" strokeWidth={3} dot={{ r: 4, fill: '#A855F7' }} activeDot={{ r: 6 }} name="JIWA" />
+                      <Line type="monotone" dataKey="raga" stroke="#22C55E" strokeWidth={3} dot={{ r: 4, fill: '#22C55E' }} activeDot={{ r: 6 }} name="RAGA" />
+                      <Line type="monotone" dataKey="harta" stroke="#F59E0B" strokeWidth={3} dot={{ r: 4, fill: '#F59E0B' }} activeDot={{ r: 6 }} name="HARTA" />
+                      <Line type="monotone" dataKey="ilmu" stroke="#3B82F6" strokeWidth={3} dot={{ r: 4, fill: '#3B82F6' }} activeDot={{ r: 6 }} name="ILMU" />
+                      <Line type="monotone" dataKey="karma" stroke="#EC4899" strokeWidth={3} dot={{ r: 4, fill: '#EC4899' }} activeDot={{ r: 6 }} name="KARMA" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-xs font-black text-neutral-600 tracking-widest uppercase">
+                    Belum Ada Data Historis
+                  </div>
+                )}
+              </div>
+            </section>
           </div>
 
           {/* SIDEBAR: ACHIEVEMENTS & HISTORY */}
@@ -248,30 +309,34 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
               </div>
               <button className="w-full py-4 border-2 border-dashed border-neutral-800 rounded-[24px] text-xs font-black text-neutral-500 tracking-widest hover:border-neutral-700 hover:text-neutral-300 transition-all uppercase">
                 Unlock More
-              </button>
-            </section>
-
-            {/* QUICK HISTORY */}
-            <section className="glass-panel p-6 space-y-4 opacity-60">
-              <div className="flex items-center gap-2 text-neutral-400">
+            {/* MEMORY ARCHIVE */}
+            <section className="glass-panel p-6 space-y-4">
+              <div className="flex items-center gap-2 text-neutral-400 mb-6">
                 <History className="w-5 h-5" />
-                <span className="text-xs font-black tracking-widest uppercase">Legacy Pulse</span>
+                <span className="text-xs font-black tracking-widest uppercase">Memory Archive</span>
               </div>
-              <div className="space-y-4">
-                <div className="flex gap-3">
-                  <div className="w-1.5 h-10 bg-jiwa/30 rounded-full" />
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-neutral-400">Quest Terakhir Selesai</p>
-                    <p className="text-sm font-black italic text-neutral-200 mt-1">Meditasi Cahaya Bintang</p>
+              <div className="space-y-6">
+                {reflections.length > 0 ? reflections.map((ref, i) => (
+                  <div key={i} className="flex gap-4 group">
+                    <div className="w-1.5 min-h-[40px] bg-jiwa/30 rounded-full group-hover:bg-jiwa transition-colors" />
+                    <div className="flex-1">
+                      <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
+                        {new Date(ref.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                      <p className="text-xs font-bold text-neutral-300 mt-1.5 leading-relaxed">
+                        "{ref.reflection_text}"
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex gap-3 opacity-50">
-                  <div className="w-1.5 h-10 bg-neutral-700 rounded-full" />
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-neutral-400">Evolusi Terakhir</p>
-                    <p className="text-sm font-black italic text-neutral-200 mt-1">30 hari yang lalu</p>
+                )) : (
+                  <div className="flex gap-3 opacity-50">
+                    <div className="w-1.5 h-10 bg-neutral-700 rounded-full" />
+                    <div className="flex-1">
+                      <p className="text-xs font-bold text-neutral-400">Belum ada ingatan</p>
+                      <p className="text-[10px] text-neutral-500 mt-1">Bicara dengan Soul Guard untuk mencatat jurnal.</p>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </section>
           </div>
@@ -280,3 +345,4 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
     </div>
   );
 };
+

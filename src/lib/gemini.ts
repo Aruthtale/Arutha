@@ -170,10 +170,11 @@ ${qaBlock}`;
   };
 }
 
-export async function generateDailyQuests(stats: Stats, moodContext?: string): Promise<Quest[]> {
+export async function generateDailyQuests(stats: Stats, moodContext?: string, isBurnout?: boolean): Promise<Quest[]> {
   const aiClient = getClient();
   const moodPrompt = moodContext ? `\nMood User: "${moodContext}".` : '';
-  const prompt = `Game master ARUTHA. Buat 3 quest harian berdasarkan stats: JIWA:${stats.JIWA}, RAGA:${stats.RAGA}, HARTA:${stats.HARTA}, ILMU:${stats.ILMU}, KARMA:${stats.KARMA}.${moodPrompt} JSON format: [{id, title, desc, stat, xp: 150}].`;
+  const burnoutPrompt = isBurnout ? `\nPENTING: User sedang mengalami indikasi STRES/BURNOUT berat. JANGAN berikan misi yang membebani. Ubah SEMUA misi menjadi Misi Relaksasi ringan untuk pemulihan mental (contoh: istirahat, meditasi ringan, menjauh dari layar).` : '';
+  const prompt = `Game master ARUTHA. Buat 3 quest harian berdasarkan stats: JIWA:${stats.JIWA}, RAGA:${stats.RAGA}, HARTA:${stats.HARTA}, ILMU:${stats.ILMU}, KARMA:${stats.KARMA}.${moodPrompt}${burnoutPrompt} JSON format: [{id, title, desc, stat, xp: 150}].`;
 
   for (const modelName of MODELS_3X) {
     try {
@@ -196,15 +197,35 @@ export async function generateDailyQuests(stats: Stats, moodContext?: string): P
   return [{ id: 'f1', title: 'Refleksi Singkat', desc: 'Tulis 1 pencapaian kecil hari ini.', stat: 'JIWA', xp: 100, completed: false }];
 }
 
-export async function verifyQuestCompletion(questTitle: string, questDesc: string, userNote: string): Promise<{ success: boolean; feedback: string }> {
+export async function verifyQuestCompletion(
+  questTitle: string, 
+  questDesc: string, 
+  userNote: string,
+  imageBase64?: string,
+  imageMimeType?: string
+): Promise<{ success: boolean; feedback: string }> {
   const aiClient = getClient();
-  const prompt = `Validator Mentor Arutha. Verifikasi misi: "${questTitle}". Bukti: "${userNote}". Output JSON {success, feedback}.`;
+  let promptText = `Validator Mentor Arutha. Verifikasi misi: "${questTitle}". Bukti catatan: "${userNote}".`;
+  if (imageBase64) {
+    promptText += ` Terdapat lampiran foto bukti.`;
+  }
+  promptText += ` Output JSON {success: boolean, feedback: string}.`;
+
+  const parts: any[] = [{ text: promptText }];
+  if (imageBase64 && imageMimeType) {
+    parts.push({
+      inlineData: {
+        data: imageBase64,
+        mimeType: imageMimeType
+      }
+    });
+  }
 
   for (const modelName of MODELS_3X) {
     try {
       const response = await aiClient.models.generateContent({
         model: modelName,
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        contents: [{ role: 'user', parts }],
       });
       const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
       let jsonStr = text.trim();
@@ -316,7 +337,7 @@ export async function chatWithSoulGuard(
 
     STRATEGI FASE:
     - Fase 1 (Pesan 1-3): Membangun Konteks. Dengarkan, validasi perasaan, dan ajukan pertanyaan lembut.
-    - Fase 2 (Pesan 4-8): Eksplorasi. Bantu user melihat pola emosi atau "Bayangan" dalam diri mereka. Gunakan kartu Tarot [TAROT:card_id] HANYA jika sangat relevan.
+    - Fase 2 (Pesan 4-8): Eksplorasi. Bantu user melihat pola emosi atau "Bayangan" dalam diri mereka. Gunakan kartu Tarot [TAROT:card_id] HANYA jika sangat relevan, tarot cukup sekali di tampilkan.
     - Fase 3 (Pesan 9+): Pendamping Jiwa. Berikan dukungan moral penuh dan afirmasi spiritual.
   `;
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LogOut, Sparkles, Star, LayoutDashboard, User, Users, Map, Brain, Dumbbell, Coins, BookOpen, TrendingUp, Clock, Target, ArrowRight, Shield, RefreshCw, Loader2, AlertCircle, Zap, Contact2, ShieldAlert
+  LogOut, Sparkles, Star, LayoutDashboard, User, Users, Map, Brain, Dumbbell, Coins, BookOpen, TrendingUp, Clock, Target, ArrowRight, Shield, RefreshCw, Loader2, AlertCircle, Zap, Contact2, ShieldAlert, ImagePlus, X
 } from 'lucide-react';
 import { cn, getDimensionRank, getDimensionColor, getRankGlow } from '../lib/utils';
 import { supabase } from '../lib/supabase';
@@ -30,7 +30,7 @@ interface DashboardProps {
   lastStreakDate: string | null;
   onClaimStreak: () => void;
   statHistory: any[];
-  completeQuest: (id: string, note: string) => Promise<{ success: boolean; feedback: string }>;
+  completeQuest: (id: string, note: string, photoBase64?: string, photoMimeType?: string) => Promise<{ success: boolean; feedback: string }>;
   handleLogout: () => void;
   addXp: (amount: number, stat?: Dimension) => void;
   onReOnboard: () => void;
@@ -67,9 +67,30 @@ export const Dashboard: React.FC<DashboardProps> = ({
     { subject: 'KARMA', A: stats.KARMA },
   ], [stats]);
   const [userNote, setUserNote] = useState('');
+  const [photoData, setPhotoData] = useState<{ base64: string, mimeType: string } | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationFeedback, setVerificationFeedback] = useState<{ success: boolean, text: string } | null>(null);
   const [showMoodModal, setShowMoodModal] = useState(false);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Ukuran foto maksimal 5MB.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        const mimeType = result.split(';')[0].split(':')[1];
+        const base64 = result.split(',')[1];
+        setPhotoData({ base64, mimeType });
+        setPhotoPreview(result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -80,16 +101,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }, []);
 
   const handleQuestSubmit = async (id: string) => {
-    if (!userNote.trim()) return;
+    if (!userNote.trim() && !photoData) return;
     setIsVerifying(true);
     setVerificationFeedback(null);
     try {
-      const res = await completeQuest(id, userNote);
+      const res = await completeQuest(id, userNote, photoData?.base64, photoData?.mimeType);
       setVerificationFeedback({ success: res.success, text: res.feedback });
       if (res.success) {
         setTimeout(() => {
           setActiveQuestInput(null);
           setUserNote('');
+          setPhotoData(null);
+          setPhotoPreview(null);
           setVerificationFeedback(null);
         }, 2000);
       }
@@ -506,9 +529,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <p className="text-xs text-neutral-400 mt-2 leading-relaxed">AI akan menganalisis catatanmu untuk memverifikasi kejujuran progresmu di dimensi ini.</p>
               </div>
               <textarea value={userNote} onChange={e => setUserNote(e.target.value)}
-                placeholder="Ceritakan pengalamanmu menyelesaikan misi ini... (Contoh: 'Saya sudah makan sayur bayam dan merasa lebih segar!')"
-                className="w-full h-40 p-6 bg-rpg-black border border-rpg-border rounded-2xl focus:border-jiwa outline-none text-white resize-none text-sm shadow-inner" />
-              <p className="text-[10px] text-neutral-500 italic text-center">Tip: Ceritakan minimal satu kalimat agar Mentor Arutha bisa memverifikasi progresmu.</p>
+                placeholder="Ceritakan pengalamanmu menyelesaikan misi ini... (Opsional jika melampirkan foto)"
+                className="w-full h-32 p-4 bg-rpg-black border border-rpg-border rounded-2xl focus:border-jiwa outline-none text-white resize-none text-sm shadow-inner" />
+              
+              <div className="flex flex-col gap-3">
+                {photoPreview ? (
+                  <div className="relative w-full h-32 rounded-xl overflow-hidden border border-white/10 group">
+                    <img src={photoPreview} alt="Bukti" className="w-full h-full object-cover" />
+                    <button onClick={() => { setPhotoPreview(null); setPhotoData(null); }} className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-red-500 rounded-lg backdrop-blur-sm transition-colors text-white">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="w-full py-4 border-2 border-dashed border-white/10 hover:border-jiwa/50 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors bg-white/5 group">
+                    <ImagePlus className="w-6 h-6 text-neutral-500 group-hover:text-jiwa" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-neutral-200">Lampirkan Foto (Opsional)</span>
+                    <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                  </label>
+                )}
+              </div>
+              
+              <p className="text-[10px] text-neutral-500 italic text-center">Tip: Sertakan foto jika kesulitan mendeskripsikan dengan kata-kata agar lebih meyakinkan AI.</p>
               {verificationFeedback && (
                 <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                   className={cn('p-4 rounded-xl text-xs font-bold flex items-center gap-3',
@@ -518,11 +559,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </motion.div>
               )}
               <div className="flex gap-4">
-                <button onClick={() => { setActiveQuestInput(null); setUserNote(''); setVerificationFeedback(null); }}
+                <button onClick={() => { setActiveQuestInput(null); setUserNote(''); setPhotoData(null); setPhotoPreview(null); setVerificationFeedback(null); }}
                   disabled={isVerifying} className="flex-1 py-4 bg-neutral-900 border border-neutral-800 rounded-2xl text-[10px] font-black tracking-widest hover:bg-neutral-800 transition-all">
                   BATAL
                 </button>
-                <button onClick={() => handleQuestSubmit(activeQuestInput!)} disabled={isVerifying || userNote.length < 5}
+                <button onClick={() => handleQuestSubmit(activeQuestInput!)} disabled={isVerifying || (!userNote.trim() && !photoData)}
                   className="flex-1 py-4 bg-white text-black rounded-2xl text-[10px] font-black tracking-widest hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-40 transition-all shadow-xl shadow-white/10">
                   {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : 'KIRIM BUKTI'}
                 </button>

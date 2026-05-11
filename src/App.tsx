@@ -251,6 +251,33 @@ export default function App() {
           return;
         }
 
+        const checkIsBurnout = async (uid: string): Promise<boolean> => {
+          try {
+            const { data } = await supabase
+              .from('dimension_reflections')
+              .select('reflection_text')
+              .eq('user_id', uid)
+              .order('created_at', { ascending: false })
+              .limit(3);
+            
+            if (!data || data.length < 2) return false;
+
+            const burnoutKeywords = ['stres', 'depresi', 'burnout', 'lelah', 'tertekan', 'cemas', 'berat', 'panik', 'kewalahan'];
+            let burnoutCount = 0;
+
+            data.forEach(ref => {
+              const text = ref.reflection_text.toLowerCase();
+              if (burnoutKeywords.some(kw => text.includes(kw))) {
+                burnoutCount++;
+              }
+            });
+
+            return burnoutCount >= 2;
+          } catch (err) {
+            return false;
+          }
+        };
+
         const { data: profiles } = await supabase
           .from('character_profile')
           .select('*')
@@ -299,7 +326,8 @@ export default function App() {
               lastUpdate: userData.last_quest_update,
               today: getTodayDate()
             });
-            const aiQuests = await generateDailyQuests(loadedStats);
+            const isBurnout = await checkIsBurnout(userData.id);
+            const aiQuests = await generateDailyQuests(loadedStats, undefined, isBurnout);
             setQuests(aiQuests);
             setRefreshCount(0);
             refreshLockRef.current = false;
@@ -361,11 +389,12 @@ export default function App() {
     }
   };
 
-  const syncProgress = async (newLevel: number, newXp: number, newStats: Stats, updatedQuests?: Quest[]) => {
+  const syncProgress = async (newLevel: number, newXp: number, newStats: Stats, updatedQuests?: Quest[], newTalents?: string[]) => {
     if (!session || !dbUserId) return;
     try {
       const updateData: any = { level: newLevel, xp: newXp };
       if (updatedQuests) updateData.active_quests = updatedQuests;
+      if (newTalents) updateData.talents = newTalents;
       await supabase.from('arutha_user').update(updateData).eq('supabase_id', session.user.id);
 
       const { data: profiles } = await supabase.from('character_profile').select('id').eq('user_id', dbUserId).order('created_at', { ascending: false }).limit(1);
@@ -423,32 +452,45 @@ export default function App() {
       const userData = users?.[0];
 
       if (userData) {
-        const { data: existingProfiles } = await supabase
+        const { data: altProfiles } = await supabase
           .from('character_profile')
-          .select('id')
+          .select('*')
           .eq('user_id', userData.id)
+          .order('created_at', { ascending: false })
           .limit(1);
+        const latestProfileData = altProfiles?.[0];
 
-        const profilePayload = {
-          user_id: userData.id,
-          personality_type: analysis.personality_type,
-          personality_title: analysis.personality_title,
-          personality_desc: analysis.personality_desc,
-          character_summary: analysis.character_summary,
-          jiwa: analysis.stats.JIWA,
-          raga: analysis.stats.RAGA,
-          harta: analysis.stats.HARTA,
-          ilmu: analysis.stats.ILMU,
-          karma: analysis.stats.KARMA,
-        };
+        let profilePayload: any;
+        if (latestProfileData) {
+          profilePayload = {
+            jiwa: analysis.stats.JIWA,
+            raga: analysis.stats.RAGA,
+            harta: analysis.stats.HARTA,
+            ilmu: analysis.stats.ILMU,
+            karma: analysis.stats.KARMA,
+          };
+        } else {
+          profilePayload = {
+            user_id: userData.id,
+            personality_type: analysis.personality_type,
+            personality_title: analysis.personality_title,
+            personality_desc: analysis.personality_desc,
+            character_summary: analysis.character_summary,
+            jiwa: analysis.stats.JIWA,
+            raga: analysis.stats.RAGA,
+            harta: analysis.stats.HARTA,
+            ilmu: analysis.stats.ILMU,
+            karma: analysis.stats.KARMA,
+          };
+        }
 
         let profileDate = new Date().toISOString();
 
-        if (existingProfiles && existingProfiles.length > 0) {
+        if (latestProfileData) {
           const { data: updated, error: updateErr } = await supabase
             .from('character_profile')
             .update(profilePayload)
-            .eq('id', existingProfiles[0].id)
+            .eq('id', latestProfileData.id)
             .select();
           if (updateErr) {
             console.error('character_profile UPDATE failed:', updateErr);
@@ -465,7 +507,6 @@ export default function App() {
             .select();
           if (insertErr) {
             console.error('character_profile INSERT failed:', insertErr);
-            console.error('Payload was:', profilePayload);
             alert(`Gagal menyimpan profil karakter: ${insertErr.message}. Cek RLS policy di Supabase.`);
           }
           if (inserted?.[0]) profileDate = inserted[0].created_at;
@@ -473,7 +514,22 @@ export default function App() {
 
         setLastEvolutionDate(profileDate);
 
-        const aiQuests = await generateDailyQuests(analysis.stats);
+        // checkIsBurnout needs dbUserId which is userData.id
+        let isBurnout = false;
+        try {
+          const { data } = await supabase.from('dimension_reflections').select('reflection_text').eq('user_id', userData.id).order('created_at', { ascending: false }).limit(3);
+          if (data && data.length >= 2) {
+            let burnoutCount = 0;
+            data.forEach(ref => {
+              if (['stres', 'depresi', 'burnout', 'lelah', 'tertekan', 'cemas', 'berat'].some(kw => ref.reflection_text.toLowerCase().includes(kw))) {
+                burnoutCount++;
+              }
+            });
+            isBurnout = burnoutCount >= 2;
+          }
+        } catch(e) {}
+
+        const aiQuests = await generateDailyQuests(analysis.stats, undefined, isBurnout);
         setQuests(aiQuests);
 
         await supabase
@@ -536,10 +592,20 @@ export default function App() {
     let nextXp = xp + finalXpAmount;
     let nextStats = { ...stats };
 
+    let nextTalents: string[] | undefined;
+
     // 3. Hitung Kenaikan Level
     if (nextXp >= level * 1000) {
       nextXp = nextXp - (level * 1000);
       nextLevel = level + 1;
+      
+      const unownedTalents = TALENTS.filter(t => !talents.includes(t.id));
+      if (unownedTalents.length > 0) {
+        const randomTalent = unownedTalents[Math.floor(Math.random() * unownedTalents.length)];
+        nextTalents = [...talents, randomTalent.id];
+        setTalents(nextTalents);
+      }
+
       setLevelUpStage(1); // Mulai dari animasi level up
       setShowLevelUp(true);
     }
@@ -556,7 +622,7 @@ export default function App() {
     }
 
     setLevel(nextLevel); setXp(nextXp); setStats(nextStats);
-    syncProgress(nextLevel, nextXp, nextStats, updatedQuests);
+    syncProgress(nextLevel, nextXp, nextStats, updatedQuests, nextTalents);
   };
 
   const handleUpdateName = async (newName: string) => {
@@ -617,11 +683,11 @@ export default function App() {
     }
   };
 
-  const completeQuest = async (id: string, note: string): Promise<{ success: boolean; feedback: string }> => {
+  const completeQuest = async (id: string, note: string, photoBase64?: string, photoMimeType?: string): Promise<{ success: boolean; feedback: string }> => {
     const quest = quests.find(q => q.id === id);
     if (quest && !quest.completed) {
       // AI Verification
-      const verification = await verifyQuestCompletion(quest.title, quest.desc, note);
+      const verification = await verifyQuestCompletion(quest.title, quest.desc, note, photoBase64, photoMimeType);
       if (verification.success) {
         const updatedQuests = quests.map(q => q.id === id ? { ...q, completed: true } : q);
         setQuests(updatedQuests);
@@ -659,7 +725,19 @@ export default function App() {
     if (!dbUserId) return;
     setIsRefreshing(true);
     try {
-      const aiQuests = await generateDailyQuests(stats, mood);
+      let isBurnout = false;
+      const { data } = await supabase.from('dimension_reflections').select('reflection_text').eq('user_id', dbUserId).order('created_at', { ascending: false }).limit(3);
+      if (data && data.length >= 2) {
+        let burnoutCount = 0;
+        data.forEach(ref => {
+          if (['stres', 'depresi', 'burnout', 'lelah', 'tertekan', 'cemas', 'berat'].some(kw => ref.reflection_text.toLowerCase().includes(kw))) {
+            burnoutCount++;
+          }
+        });
+        isBurnout = burnoutCount >= 2;
+      }
+
+      const aiQuests = await generateDailyQuests(stats, mood, isBurnout);
       setQuests(aiQuests);
 
       await supabase.from('arutha_user').update({
@@ -683,7 +761,19 @@ export default function App() {
     // Langsung set refreshCount agar UI ter-disable seketika
     setRefreshCount(1);
     try {
-      const aiQuests = await generateDailyQuests(stats);
+      let isBurnout = false;
+      const { data } = await supabase.from('dimension_reflections').select('reflection_text').eq('user_id', dbUserId).order('created_at', { ascending: false }).limit(3);
+      if (data && data.length >= 2) {
+        let burnoutCount = 0;
+        data.forEach(ref => {
+          if (['stres', 'depresi', 'burnout', 'lelah', 'tertekan', 'cemas', 'berat'].some(kw => ref.reflection_text.toLowerCase().includes(kw))) {
+            burnoutCount++;
+          }
+        });
+        isBurnout = burnoutCount >= 2;
+      }
+
+      const aiQuests = await generateDailyQuests(stats, undefined, isBurnout);
       setQuests(aiQuests);
 
       await supabase.from('arutha_user').update({
@@ -819,6 +909,7 @@ export default function App() {
                 name={name} level={level} xp={xp} stats={stats} analysis={characterAnalysis}
                 onBack={() => setPage('DASHBOARD')}
                 talents={talents}
+                statHistory={statHistory}
               />
             )}
             {page === 'LEADERBOARD' && (

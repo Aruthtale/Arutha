@@ -121,16 +121,16 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ userId, username, st
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed inset-x-4 bottom-24 top-20 sm:absolute sm:inset-auto sm:bottom-20 sm:right-0 sm:w-[500px] sm:h-[650px] glass-panel border-white/10 shadow-2xl flex flex-col overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] z-[100]"
+            className="fixed inset-x-4 bottom-24 top-20 sm:absolute sm:inset-auto sm:bottom-20 sm:right-0 sm:w-[400px] sm:h-[550px] glass-panel border-white/10 shadow-2xl flex flex-col overflow-hidden rounded-[2rem] sm:rounded-3xl z-[100]"
           >
             {/* Header */}
-            <div className="p-7 border-b border-white/5 bg-white/5 flex justify-between items-center">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-jiwa to-ilmu flex items-center justify-center shadow-lg shadow-jiwa/20">
-                  <Sparkles className="w-6 h-6 text-white" />
+            <div className="p-5 border-b border-white/5 bg-white/5 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-jiwa to-ilmu flex items-center justify-center shadow-lg shadow-jiwa/20">
+                  <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-serif font-bold text-xl text-white tracking-tight">The Arbiter</h3>
+                  <h3 className="font-serif font-bold text-lg text-white tracking-tight">The Arbiter</h3>
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                     <span className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em]">Watching over you</span>
@@ -143,11 +143,11 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ userId, username, st
             </div>
 
             {/* Messages */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-5 space-y-5 scrollbar-hide">
               {messages.map((msg, i) => (
                 <div key={i} className={cn("flex flex-col", msg.role === 'user' ? "items-end" : "items-start")}>
                   <div className={cn(
-                    "max-w-[95%] p-4 sm:p-6 rounded-2xl sm:rounded-3xl text-sm sm:text-base md:text-lg leading-relaxed shadow-sm transition-all",
+                    "max-w-[90%] p-3 sm:p-4 rounded-2xl text-xs sm:text-sm leading-relaxed shadow-sm transition-all",
                     msg.role === 'user' 
                       ? "bg-white text-black rounded-tr-none font-bold" 
                       : "bg-white/10 border border-white/10 text-white rounded-tl-none font-medium"
@@ -171,7 +171,7 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ userId, username, st
             </div>
 
             {/* Input */}
-            <div className="p-6 border-t border-white/5 bg-white/5">
+            <div className="p-4 border-t border-white/5 bg-white/5">
               <div className="relative">
                 <input
                   type="text"
@@ -179,7 +179,7 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ userId, username, st
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                   placeholder="Bisikkan sesuatu..."
-                  className="w-full bg-white/5 border border-white/10 rounded-full py-4 pl-6 pr-14 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-white/30 transition-all"
+                  className="w-full bg-white/5 border border-white/10 rounded-full py-3 pl-5 pr-12 text-xs text-white placeholder:text-neutral-600 focus:outline-none focus:border-white/30 transition-all"
                 />
                 <button
                   onClick={handleSend}
