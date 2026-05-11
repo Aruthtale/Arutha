@@ -245,9 +245,15 @@ export default function App() {
         setRefreshCount(refreshNewDay ? 0 : (userData.refresh_count || 0));
         if (refreshNewDay) refreshLockRef.current = false;
 
-        setUserContext({ usia: userData.usia, gender: userData.gender, username: displayName });
+        setUserContext({ 
+          usia: userData.usia, 
+          gender: userData.gender, 
+          username: userData.username || displayName,
+          birthDate: userData.birth_date,
+          zodiac: userData.zodiac 
+        });
 
-        if (!userData.usia || !userData.gender) {
+        if (!userData.usia || !userData.gender || !userData.birth_date) {
           setPage('COMPLETE_PROFILE');
           return;
         }
@@ -821,14 +827,10 @@ export default function App() {
     }
   };
 
-  const handleProfileComplete = (data: { username: string; usia: number; gender: string }) => {
+  const handleProfileComplete = (data: { username: string; usia: number; gender: string; birthDate: string; zodiac: string }) => {
     setName(data.username);
-    setUserContext({ usia: data.usia, gender: data.gender, username: data.username });
-    if (characterAnalysis) {
-      setPage('DASHBOARD');
-    } else {
-      setPage('ONBOARDING');
-    }
+    setUserContext({ usia: data.usia, gender: data.gender, username: data.username, birthDate: data.birthDate, zodiac: data.zodiac });
+    setPage('ONBOARDING');
   };
 
   const hideNavbar = !session || page === 'ONBOARDING' || page === 'CHARACTER_REVEAL' || page === 'LOGIN' || page === 'REGISTER' || page === 'COMPLETE_PROFILE' || page === 'SOUL_GUARD';
@@ -912,6 +914,8 @@ export default function App() {
                 onBack={() => setPage('DASHBOARD')}
                 talents={talents}
                 statHistory={statHistory}
+                zodiac={userContext.zodiac}
+                usia={userContext.usia}
               />
             )}
             {page === 'LEADERBOARD' && (

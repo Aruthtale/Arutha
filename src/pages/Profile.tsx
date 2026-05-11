@@ -7,6 +7,7 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'rec
 import { cn, getDimensionRank } from '../lib/utils';
 import { TALENTS } from '../lib/talents';
 import { supabase } from '../lib/supabase';
+import { ZODIACS } from '../lib/zodiacs';
 
 interface Stats {
   JIWA: number; RAGA: number; HARTA: number; ILMU: number; KARMA: number;
@@ -21,10 +22,16 @@ interface ProfileProps {
   onBack: () => void;
   talents: string[];
   statHistory?: any[];
+  zodiac?: string;
+  usia?: number;
 }
 
-export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analysis, onBack, talents, statHistory }) => {
+export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analysis, onBack, talents, statHistory, zodiac, usia }) => {
   const [reflections, setReflections] = React.useState<any[]>([]);
+  
+  const zodiacInfo = React.useMemo(() => {
+    return ZODIACS.find(z => z.name === zodiac);
+  }, [zodiac]);
 
   React.useEffect(() => {
     const fetchReflections = async () => {
@@ -100,15 +107,32 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
             </div>
 
             <div className="text-center md:text-left space-y-4 flex-1">
-              <div className="space-y-1">
-                <div className="flex flex-col md:flex-row items-center md:items-end gap-3">
-                  <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-neutral-200 italic">
-                    {name.toUpperCase()}
-                  </h1>
-                  <div className="px-4 py-1.5 bg-jiwa text-black text-[10px] font-black rounded-lg uppercase tracking-widest mb-1.5">
-                    {analysis?.personality_type || "TRAVELLER"}
+              <div className="space-y-4">
+                <div className="flex flex-col md:flex-row items-center md:items-end gap-3 md:gap-5">
+                  <h3 className="text-3xl md:text-5xl font-black italic tracking-tighter text-white uppercase leading-none">{name}</h3>
+                  {zodiacInfo && (
+                    <div className={cn(
+                      "flex items-center gap-2 px-4 py-1.5 rounded-full border bg-white/5 backdrop-blur-md",
+                      zodiacInfo.element === 'FIRE' ? 'border-red-500/20 text-red-400' :
+                      zodiacInfo.element === 'EARTH' ? 'border-green-500/20 text-green-400' :
+                      zodiacInfo.element === 'AIR' ? 'border-blue-500/20 text-blue-400' :
+                      'border-purple-500/20 text-purple-400'
+                    )}>
+                      <span className="text-lg">{zodiacInfo.icon}</span>
+                      <span className="text-[10px] font-black tracking-widest uppercase">{zodiacInfo.name}</span>
+                    </div>
+                  )}
+                  <div className="px-4 py-1.5 bg-jiwa text-white text-[10px] font-black rounded-full tracking-widest uppercase shadow-lg shadow-jiwa/20">
+                    MASTER OF {Object.entries(stats).sort((a,b) => b[1]-a[1])[0][0]}
                   </div>
                 </div>
+
+                {usia && (
+                  <p className="text-sm font-bold text-neutral-500 uppercase tracking-[0.2em]">
+                    {usia} Years Old • <span className="text-neutral-400">{analysis?.personality_type || "TRAVELLER"}</span>
+                  </p>
+                )}
+
                 <p className="text-jiwa/80 font-black italic text-xl md:text-2xl tracking-tight">
                   {analysis?.personality_title || "The Unwritten Legend"}
                 </p>

@@ -8,6 +8,7 @@ import { cn } from '../lib/utils';
 import { TALENTS } from '../lib/talents';
 import codexData from '../data/codex.json';
 import archetypeData from '../data/archetypes.json';
+import { ZODIACS } from '../lib/zodiacs';
 
 // Icon resolver — maps JSON string keys to React components
 const ICON_MAP: Record<string, React.ReactNode> = {
@@ -37,7 +38,7 @@ interface CodexProps {
 }
 
 export const Codex: React.FC<CodexProps> = ({ onBack }) => {
-  const [activeCategory, setActiveCategory] = useState<'DIMENSI' | 'BAKAT' | 'HUKUM' | 'ARKETIPE' | 'MISTIK'>('DIMENSI');
+  const [activeCategory, setActiveCategory] = useState<'DIMENSI' | 'BAKAT' | 'HUKUM' | 'ARKETIPE' | 'MISTIK' | 'ZODIAK'>('DIMENSI');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const DIMENSIONS = codexData.dimensions;
@@ -50,6 +51,7 @@ export const Codex: React.FC<CodexProps> = ({ onBack }) => {
     { id: 'MISTIK', label: 'Mistik & Soul', icon: <Sparkles className="w-4 h-4" /> },
     { id: 'BAKAT', label: 'Katalog Bakat', icon: <Book className="w-4 h-4" /> },
     { id: 'ARKETIPE', label: 'Daftar Arketipe', icon: <Users className="w-4 h-4" /> },
+    { id: 'ZODIAK', label: 'Rasi Bintang', icon: <Star className="w-4 h-4 text-amber-400" /> },
     { id: 'HUKUM', label: 'Hukum Semesta', icon: <Shield className="w-4 h-4" /> }
   ];
 
@@ -298,6 +300,84 @@ export const Codex: React.FC<CodexProps> = ({ onBack }) => {
                     </div>
                   </div>
                 ))}
+              </motion.div>
+            )}
+
+            {activeCategory === 'ZODIAK' && (
+              <motion.div
+                key="zodiak"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="space-y-8"
+              >
+                <div className="glass-panel p-8 md:p-12 bg-gradient-to-br from-amber-500/10 via-transparent to-purple-500/10 border-white/10 text-center relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20" />
+                  <div className="relative z-10 space-y-4 max-w-2xl mx-auto">
+                    <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-500/30">
+                      <Star className="w-10 h-10 text-amber-400" />
+                    </div>
+                    <h3 className="text-2xl md:text-3xl font-black italic">Sistem Rasi Bintang</h3>
+                    <p className="text-sm md:text-base text-neutral-400 leading-relaxed font-medium">
+                      Takdirmu tertulis di antara bintang-bintang. Setiap Zodiak membawa elemen alam dan <span className="text-white font-black italic">Blessing</span> unik yang mempercepat pertumbuhan dimensimu.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {ZODIACS.map((z) => (
+                    <div key={z.id} className="glass-panel p-8 border border-white/5 hover:border-white/20 transition-all group overflow-hidden relative">
+                      <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-10 transition-opacity">
+                        <span className="text-8xl font-black">{z.icon}</span>
+                      </div>
+                      
+                      <div className="relative z-10 space-y-6">
+                        <div className="flex items-center gap-4">
+                          <div className={cn(
+                            "w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-lg border border-white/10",
+                            z.element === 'FIRE' ? 'bg-red-500/20 text-red-400' :
+                            z.element === 'EARTH' ? 'bg-green-500/20 text-green-400' :
+                            z.element === 'AIR' ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-purple-500/20 text-purple-400'
+                          )}>
+                            {z.icon}
+                          </div>
+                          <div>
+                            <h4 className="text-xl font-black italic tracking-tight">{z.name}</h4>
+                            <div className="flex items-center gap-2">
+                              <span className={cn(
+                                "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border",
+                                z.element === 'FIRE' ? 'border-red-500/30 text-red-400' :
+                                z.element === 'EARTH' ? 'border-green-500/30 text-green-400' :
+                                z.element === 'AIR' ? 'border-blue-500/30 text-blue-400' :
+                                'border-purple-500/30 text-purple-400'
+                              )}>
+                                {z.element}
+                              </span>
+                              <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-widest">
+                                {z.startDay}/{z.startMonth} - {z.endDay}/{z.endMonth}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <p className="text-sm text-neutral-400 leading-relaxed font-medium">
+                          {z.description}
+                        </p>
+
+                        <div className="pt-6 border-t border-white/5 space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Zap className="w-3 h-3 text-amber-500" />
+                            <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Divine Blessing: {z.buff}</span>
+                          </div>
+                          <p className="text-xs font-bold text-white/70 italic bg-white/5 p-3 rounded-xl border border-white/5">
+                            "{z.rpgEffect}"
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

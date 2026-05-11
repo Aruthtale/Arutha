@@ -1,0 +1,134 @@
+[
+  {
+    "id": "aries",
+    "name": "Aries",
+    "element": "FIRE",
+    "icon": "♈",
+    "startMonth": 3, "startDay": 21,
+    "endMonth": 4, "endDay": 19,
+    "description": "Pribadi yang penuh semangat, berani, dan kompetitif. Aries adalah pionir alami dalam setiap pertualangan.",
+    "buff": "Vanguard Spirit",
+    "rpgEffect": "+10% XP Gain untuk aktivitas fisik (RAGA)."
+  },
+  {
+    "id": "taurus",
+    "name": "Taurus",
+    "element": "EARTH",
+    "icon": "♉",
+    "startMonth": 4, "startDay": 20,
+    "endMonth": 5, "endDay": 20,
+    "description": "Sabar, setia, dan menyukai keindahan. Taurus memiliki ketekunan yang luar biasa dalam membangun fondasi hidup.",
+    "buff": "Solid Foundation",
+    "rpgEffect": "+10% XP Gain untuk pengelolaan keuangan (HARTA)."
+  },
+  {
+    "id": "gemini",
+    "name": "Gemini",
+    "element": "AIR",
+    "icon": "♊",
+    "startMonth": 5, "startDay": 21,
+    "endMonth": 6, "endDay": 20,
+    "description": "Cerdas, adaptif, dan komunikatif. Gemini haus akan informasi dan pertukaran ide yang dinamis.",
+    "buff": "Dual Mind",
+    "rpgEffect": "+10% XP Gain untuk pembelajaran (ILMU)."
+  },
+  {
+    "id": "cancer",
+    "name": "Cancer",
+    "element": "WATER",
+    "icon": "♋",
+    "startMonth": 6, "startDay": 21,
+    "endMonth": 7, "endDay": 22,
+    "description": "Empati, protektif, dan intuitif. Cancer memiliki kedalaman emosi yang menjadi kekuatan utamanya.",
+    "buff": "Emotional Guard",
+    "rpgEffect": "+10% XP Gain untuk kesehatan mental (JIWA)."
+  },
+  {
+    "id": "leo",
+    "name": "Leo",
+    "element": "FIRE",
+    "icon": "♌",
+    "startMonth": 7, "startDay": 23,
+    "endMonth": 8, "endDay": 22,
+    "description": "Karismatik, bangga, dan kreatif. Leo dilahirkan untuk bersinar dan memimpin dengan hati yang besar.",
+    "buff": "Solar Radiance",
+    "rpgEffect": "+10% XP Gain untuk aktivitas kepemimpinan (KARMA)."
+  },
+  {
+    "id": "virgo",
+    "name": "Virgo",
+    "element": "EARTH",
+    "icon": "♍",
+    "startMonth": 8, "startDay": 23,
+    "endMonth": 9, "endDay": 22,
+    "description": "Analitis, perfeksionis, dan rendah hati. Virgo melihat detail yang dilewatkan orang lain.",
+    "buff": "Perfect Analysis",
+    "rpgEffect": "+10% XP Gain untuk produktivitas (HARTA)."
+  },
+  {
+    "id": "libra",
+    "name": "Libra",
+    "element": "AIR",
+    "icon": "♎",
+    "startMonth": 9, "startDay": 23,
+    "endMonth": 10, "endDay": 22,
+    "description": "Diplomatis, adil, dan artistik. Libra selalu mencari harmoni dalam setiap aspek kehidupan.",
+    "buff": "Harmonic Balance",
+    "rpgEffect": "+10% XP Gain untuk hubungan sosial (KARMA)."
+  },
+  {
+    "id": "scorpio",
+    "name": "Scorpio",
+    "element": "WATER",
+    "icon": "♏",
+    "startMonth": 10, "startDay": 23,
+    "endMonth": 11, "endDay": 21,
+    "description": "Intens, misterius, dan penuh tekad. Scorpio memiliki kekuatan transformasi yang tak tertandingi.",
+    "buff": "Deep Transformation",
+    "rpgEffect": "+10% XP Gain untuk ketahanan mental (JIWA)."
+  },
+  {
+    "id": "sagittarius",
+    "name": "Sagittarius",
+    "element": "FIRE",
+    "icon": "♐",
+    "startMonth": 11, "startDay": 22,
+    "endMonth": 12, "endDay": 21,
+    "description": "Optimis, jujur, dan berjiwa petualang. Sagittarius selalu mencari makna yang lebih tinggi.",
+    "buff": "Eternal Explorer",
+    "rpgEffect": "+10% XP Gain untuk eksplorasi diri (ILMU)."
+  },
+  {
+    "id": "capricorn",
+    "name": "Capricorn",
+    "element": "EARTH",
+    "icon": "♑",
+    "startMonth": 12, "startDay": 22,
+    "endMonth": 1, "endDay": 19,
+    "description": "Disiplin, ambisius, dan bertanggung jawab. Capricorn mendaki gunung tertinggi dengan kesabaran.",
+    "buff": "Peak Ambition",
+    "rpgEffect": "+10% XP Gain untuk pencapaian karir (HARTA)."
+  },
+  {
+    "id": "aquarius",
+    "name": "Aquarius",
+    "element": "AIR",
+    "icon": "♒",
+    "startMonth": 1, "startDay": 20,
+    "endMonth": 2, "endDay": 18,
+    "description": "Progresif, orisinal, dan kemanusiaan. Aquarius melihat masa depan sebelum orang lain menyadarinya.",
+    "buff": "Future Vision",
+    "rpgEffect": "+10% XP Gain untuk inovasi (ILMU)."
+  },
+  {
+    "id": "pisces",
+    "name": "Pisces",
+    "element": "WATER",
+    "icon": "♓",
+    "startMonth": 2, "startDay": 19,
+    "endMonth": 3, "endDay": 20,
+    "description": "Imajinatif, sensitif, dan bijaksana. Pisces berenang di antara mimpi dan realitas.",
+    "buff": "Dream Weaver",
+    "rpgEffect": "+10% XP Gain untuk kreativitas jiwa (JIWA)."
+  }
+]

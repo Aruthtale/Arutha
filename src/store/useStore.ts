@@ -18,7 +18,7 @@ interface AppState {
   xp: number;
   streak: number;
   lastStreakDate: string | null;
-  userContext: { usia?: number; gender?: string; username?: string };
+  userContext: { usia?: number; gender?: string; username?: string; birthDate?: string; zodiac?: string };
   nameChangeCount: number;
   lastNameChange: string | null;
   talents: string[];
@@ -30,7 +30,7 @@ interface AppState {
   setXp: (xp: number | ((prev: number) => number)) => void;
   setStreak: (streak: number | ((prev: number) => number)) => void;
   setLastStreakDate: (date: string | null | ((prev: string | null) => string | null)) => void;
-  setUserContext: (context: { usia?: number; gender?: string; username?: string } | ((prev: { usia?: number; gender?: string; username?: string }) => { usia?: number; gender?: string; username?: string })) => void;
+  setUserContext: (context: { usia?: number; gender?: string; username?: string; birthDate?: string; zodiac?: string } | ((prev: { usia?: number; gender?: string; username?: string; birthDate?: string; zodiac?: string }) => { usia?: number; gender?: string; username?: string; birthDate?: string; zodiac?: string })) => void;
   setNameChangeCount: (count: number | ((prev: number) => number)) => void;
   setLastNameChange: (date: string | null | ((prev: string | null) => string | null)) => void;
   setTalents: (talents: string[] | ((prev: string[]) => string[])) => void;
