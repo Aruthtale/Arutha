@@ -41,19 +41,19 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
     fetchReflections();
   }, []);
 
-  const achievements = [
+  const achievements = React.useMemo(() => [
     { title: "Langkah Pertama", desc: "Menyelesaikan quest perdana", icon: <Zap className="w-4 h-4" />, color: "bg-jiwa/20 text-jiwa" },
     { title: "Integritas Tinggi", desc: "Lulus verifikasi AI 5 kali berturut-turut", icon: <Shield className="w-4 h-4" />, color: "bg-raga/20 text-raga" },
     { title: "Pelajar Tekun", desc: "Mencapai level 70 di dimensi ILMU", icon: <BookOpen className="w-4 h-4" />, color: "bg-ilmu/20 text-ilmu" },
-  ];
+  ], []);
 
-  const RPG_ATTRIBUTES = [
+  const RPG_ATTRIBUTES = React.useMemo(() => [
     { label: 'Spirit', dim: 'JIWA', val: stats.JIWA, icon: <Brain />, color: 'text-jiwa', bg: 'bg-jiwa/10' },
     { label: 'Vitality', dim: 'RAGA', val: stats.RAGA, icon: <Dumbbell />, color: 'text-raga', bg: 'bg-raga/10' },
     { label: 'Fortune', dim: 'HARTA', val: stats.HARTA, icon: <Coins />, color: 'text-harta', bg: 'bg-harta/10' },
     { label: 'Wisdom', dim: 'ILMU', val: stats.ILMU, icon: <BookOpen />, color: 'text-ilmu', bg: 'bg-ilmu/10' },
     { label: 'Empathy', dim: 'KARMA', val: stats.KARMA, icon: <Users />, color: 'text-karma', bg: 'bg-karma/10' },
-  ];
+  ], [stats]);
 
   const IconBox = ({ icon, className, size = "w-4 h-4" }: { icon: React.ReactElement, className?: string, size?: string }) => (
     <div className={cn("p-2 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110", className)}>
@@ -78,8 +78,15 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
         </header>
 
         {/* HERO PROFILE CARD */}
-        <section className="relative overflow-hidden rounded-[40px] bg-gradient-to-br from-rpg-card to-rpg-black border border-white/5 p-8 md:p-12 shadow-2xl">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-jiwa/5 blur-[120px] rounded-full -mr-32 -mt-32" />
+        <section className="relative overflow-hidden rounded-[40px] bg-gradient-to-br from-rpg-card to-rpg-black border border-white/5 p-8 md:p-12 shadow-2xl group">
+          {/* Dynamic Aura Background */}
+          <div className={cn(
+            "absolute top-0 right-0 w-[500px] h-[500px] blur-[150px] rounded-full -mr-32 -mt-32 transition-colors duration-1000",
+            stats.JIWA >= 70 ? "bg-jiwa/20" : 
+            stats.ILMU >= 70 ? "bg-ilmu/20" : 
+            stats.RAGA >= 70 ? "bg-raga/20" : "bg-white/5"
+          )} />
+          <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-ilmu/5 blur-[120px] rounded-full opacity-50" />
           
           <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-10">
             {/* AVATAR SYSTEM */}

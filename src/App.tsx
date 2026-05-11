@@ -2,7 +2,8 @@ import React, { useEffect, useRef, Suspense, lazy } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, LazyMotion, domMax } from 'framer-motion';
+// loadFramerFeatures removed since we use domMax directly for stability in this step
 import { supabase } from './lib/supabase';
 import { getLocalTimestamp, getTodayDate, isToday, isNewDay, extractDate } from './lib/dateUtils';
 import { TALENTS } from './lib/talents';
@@ -833,6 +834,7 @@ export default function App() {
   const hideNavbar = !session || page === 'ONBOARDING' || page === 'CHARACTER_REVEAL' || page === 'LOGIN' || page === 'REGISTER' || page === 'COMPLETE_PROFILE' || page === 'SOUL_GUARD';
 
   return (
+    <LazyMotion features={domMax}>
     <div className="min-h-screen bg-rpg-black text-white selection:bg-white selection:text-black overflow-x-hidden">
       <SplashScreen isReady={isDataReady} />
       
@@ -1035,5 +1037,6 @@ export default function App() {
         )}
       </AnimatePresence>
     </div>
+    </LazyMotion>
   );
 }
