@@ -67,15 +67,23 @@ export const VerificationModal = ({
             </motion.div>
           )}
 
-          <button onClick={onSubmit} disabled={isVerifying || (!userNote.trim() && !photoPreview)}
-            className="w-full py-4 bg-rpg-primary text-rpg-primary-text rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl flex items-center justify-center gap-3">
-            {isVerifying ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                MENYINKRONKAN JIWA...
-              </>
-            ) : 'KIRIM LAPORAN'}
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button 
+              onClick={onClose}
+              className="px-8 py-4 bg-rpg-border/5 border border-rpg-border/50 text-rpg-text/40 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/30 transition-all"
+            >
+              KEMBALI
+            </button>
+            <button onClick={onSubmit} disabled={isVerifying || (!userNote.trim() && !photoPreview)}
+              className="flex-1 py-4 bg-rpg-primary text-rpg-primary-text rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl flex items-center justify-center gap-3">
+              {isVerifying ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  MENYINKRONKAN JIWA...
+                </>
+              ) : 'KIRIM LAPORAN'}
+            </button>
+          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>

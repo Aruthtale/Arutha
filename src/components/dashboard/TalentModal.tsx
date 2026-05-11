@@ -193,12 +193,19 @@ export const TalentModal = ({
 
           <div className="flex flex-col md:flex-row justify-center gap-4 pt-8">
             <button 
+              onClick={onClose}
+              className="px-8 py-4 bg-rpg-border/5 border border-rpg-border/50 text-rpg-text/40 rounded-2xl font-black italic tracking-widest hover:bg-white/10 transition-all order-3 md:order-1"
+            >
+              KEMBALI
+            </button>
+
+            <button 
               disabled={!selectedNewTalentId || (talents.length >= 3 && !replacingTalentId)}
               onClick={async () => {
                 await onSelectTalent(selectedNewTalentId!, replacingTalentId || undefined);
                 onClose();
               }}
-              className="flex-1 max-w-xs px-8 py-4 bg-rpg-primary text-rpg-primary-text rounded-2xl font-black italic tracking-widest hover:scale-105 active:scale-95 transition-all disabled:opacity-20 shadow-[0_0_15px_rgba(var(--rpg-primary-rgb),0.2)]"
+              className="flex-1 max-w-xs px-8 py-4 bg-rpg-primary text-rpg-primary-text rounded-2xl font-black italic tracking-widest hover:scale-105 active:scale-95 transition-all disabled:opacity-20 shadow-[0_0_15px_rgba(var(--rpg-primary-rgb),0.2)] order-1 md:order-2"
             >
               KONFIRMASI TAKDIR
             </button>
@@ -210,7 +217,7 @@ export const TalentModal = ({
                   onClose();
                 }
               }}
-              className="px-8 py-4 bg-rpg-border/5 border border-rpg-border/50 text-rpg-text/40 rounded-2xl font-black italic tracking-widest hover:bg-red-500/20 hover:text-red-500 hover:border-red-500/50 transition-all"
+              className="px-8 py-4 bg-rpg-border/5 border border-rpg-border/50 text-rpg-text/40 rounded-2xl font-black italic tracking-widest hover:bg-red-500/20 hover:text-red-500 hover:border-red-500/50 transition-all order-2 md:order-3"
             >
               LEWATI PILIHAN
             </button>
