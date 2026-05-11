@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LogOut, Sparkles, Star, LayoutDashboard, User, Users, Map, Brain, Dumbbell, Coins, BookOpen, TrendingUp, Clock, Target, ArrowRight, Shield, RefreshCw, Loader2, AlertCircle, Zap, Contact2, ShieldAlert, ImagePlus, X
+  LogOut, Sparkles, Star, LayoutDashboard, User, Users, Map, Brain, Dumbbell, Coins, BookOpen, TrendingUp, Clock, Target, ArrowRight, Shield, RefreshCw, Loader2, AlertCircle, Zap, Contact2, ShieldAlert, ImagePlus, X, Calendar, Trophy, Globe
 } from 'lucide-react';
+import { useStore } from '../store/useStore';
 import { cn, getDimensionRank, getDimensionColor, getRankGlow } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
@@ -20,6 +21,14 @@ interface Stats {
 
 interface Quest {
   id: string; title: string; desc: string; stat: Dimension; xp: number; completed: boolean;
+  quest_type?: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'WORLD';
+  is_global?: boolean;
+  is_weekly?: boolean;
+  steps?: {
+    current: number;
+    total: number;
+    last_check_in?: string;
+  };
 }
 
 interface DashboardProps {
@@ -43,16 +52,35 @@ interface DashboardProps {
   onTakeRecovery: () => void;
   setPage: (page: any) => void;
   talents: string[];
+  onClaimGlobalQuest: (questId: string) => void;
+  availableWeeklyQuests: Quest[];
+  activeWeeklyQuests: Quest[];
+  onClaimWeeklyQuest: (id: string) => void;
+  talentChoicesAvailable: number;
+  onSelectTalent: (selectedId: string, replacedId?: string) => Promise<void>;
 }
 
 const EMOJIS = ['😡', '😔', '😐', '😊', '🤩'];
 
 export const Dashboard: React.FC<DashboardProps> = ({
-  session, userId, name, level, xp, stats, quests, analysis, streak, lastStreakDate, onClaimStreak, statHistory, completeQuest, handleLogout, onReOnboard, onRefreshQuests, onGenerateInitialQuests, isRefreshing, lastEvolutionDate, refreshCount, decayResult, onTakeRecovery, setPage, talents
+  session, userId, name, level, xp, stats, quests, analysis, streak, lastStreakDate, onClaimStreak, statHistory, completeQuest, handleLogout, onReOnboard, onRefreshQuests, onGenerateInitialQuests, isRefreshing, lastEvolutionDate, refreshCount, decayResult, onTakeRecovery, setPage, talents, onClaimGlobalQuest,
+  availableWeeklyQuests, activeWeeklyQuests, onClaimWeeklyQuest, talentChoicesAvailable, onSelectTalent
 }) => {
   const [isMounted, setIsMounted] = useState(false);
   const [isChartVisible, setIsChartVisible] = useState(false);
   const [activeQuestInput, setActiveQuestInput] = useState<string | null>(null);
+
+  const questFilter = useStore(state => state.questFilter);
+  const setQuestFilter = useStore(state => state.setQuestFilter);
+  const globalQuests = useStore(state => state.globalQuests);
+
+  const filteredQuests = quests.filter(q => {
+    if (questFilter === 'WORLD') return q.is_global;
+    if (q.is_global) return false; // Hide global quests from other tabs
+    return (q.quest_type || 'DAILY') === questFilter;
+  });
+
+  const activeGlobalQuests = globalQuests.filter(q => questFilter === 'WORLD' || q.is_global);
 
   const statsArray = Object.entries(stats).map(([name, val]) => ({ name, val }));
   const highestDim = statsArray.reduce((prev, current) => (prev.val > current.val) ? prev : current).name;
@@ -70,8 +98,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [photoData, setPhotoData] = useState<{ base64: string, mimeType: string } | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
+
   const [verificationFeedback, setVerificationFeedback] = useState<{ success: boolean, text: string } | null>(null);
   const [showMoodModal, setShowMoodModal] = useState(false);
+  const [showTalentModal, setShowTalentModal] = useState(false);
+  const [talentPool, setTalentPool] = useState<any[]>([]);
+  const [replacingTalentId, setReplacingTalentId] = useState<string | null>(null);
+  const [selectedNewTalentId, setSelectedNewTalentId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (talentChoicesAvailable > 0 && !showTalentModal) {
+      // Prepare 3 random talents that are NOT currently owned
+      const unowned = TALENTS.filter(t => !talents.includes(t.id));
+      const pool = [...unowned].sort(() => 0.5 - Math.random()).slice(0, 3);
+      setTalentPool(pool);
+      setShowTalentModal(true);
+      setReplacingTalentId(null);
+      setSelectedNewTalentId(null);
+    }
+  }, [talentChoicesAvailable, talents, showTalentModal]);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -214,7 +259,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <span className="text-[9px] md:text-[10px] font-black text-harta font-mono tracking-tighter">{xp} / {level * 1000}</span>
                 </div>
                 <div className="h-1.5 md:h-2 w-full bg-rpg-black rounded-full overflow-hidden border border-white/5">
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${(xp / (level * 1000)) * 100}%` }}
+                  <motion.div 
+                    initial={{ width: 0 }} 
+                    animate={{ width: `${Math.max(0, Math.min(100, (xp / (Math.max(1, level) * 1000)) * 100 || 0))}%` }}
                     className="h-full bg-gradient-to-r from-jiwa via-harta to-ilmu relative">
                     <div className="absolute inset-0 bg-white/20 animate-pulse" />
                   </motion.div>
@@ -291,7 +338,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="flex items-center justify-between px-2">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-white text-black rounded-xl shadow-lg"><Target className="w-5 h-5" /></div>
-                <h3 className="text-base md:text-lg font-black uppercase tracking-[0.2em]">Misi Hari Ini</h3>
+                <h3 className="text-base md:text-lg font-black uppercase tracking-[0.2em]">
+                  {questFilter === 'DAILY' && 'Ritual Harian'}
+                  {questFilter === 'WEEKLY' && 'Ujian Mingguan'}
+                  {questFilter === 'MONTHLY' && 'Kisah Bulanan'}
+                  {questFilter === 'WORLD' && 'Anomali Dunia'}
+                </h3>
               </div>
               <button onClick={onRefreshQuests} disabled={isRefreshing || refreshCount >= 1}
                 className={cn('flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-widest border transition-all',
@@ -301,12 +353,173 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </button>
             </div>
 
+            {/* QUEST FILTER TABS */}
+            <div className="flex p-1.5 bg-white/5 rounded-2xl border border-white/5 gap-1">
+              {[
+                { id: 'DAILY', label: 'Rites', sub: 'Harian', icon: Target },
+                { id: 'WEEKLY', label: 'Trials', sub: 'Mingguan', icon: Calendar },
+                { id: 'MONTHLY', label: 'Sagas', sub: 'Bulanan', icon: Trophy },
+                { id: 'WORLD', label: 'World', sub: 'Anomaly', icon: Globe },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setQuestFilter(tab.id as any)}
+                  className={cn(
+                    "flex-1 flex flex-col items-center justify-center py-3 rounded-xl transition-all border border-transparent",
+                    questFilter === tab.id 
+                      ? "bg-white text-black shadow-xl" 
+                      : "hover:bg-white/5 text-neutral-500 hover:text-white"
+                  )}
+                >
+                  <tab.icon className={cn("w-4 h-4 mb-1", questFilter === tab.id ? "text-black" : "text-neutral-500")} />
+                  <span className="text-[10px] font-black uppercase tracking-widest leading-none">{tab.label}</span>
+                  <span className={cn("text-[8px] font-medium uppercase tracking-tighter opacity-50 mt-1", questFilter === tab.id ? "text-black" : "text-neutral-500")}>
+                    {tab.sub}
+                  </span>
+                </button>
+              ))}
+            </div>
+
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
-              {quests.length > 0 ? (
-                quests.map((quest) => (
-                  <motion.div key={quest.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} whileHover={{ y: -5 }}
-                    className={cn("glass-panel p-6 md:p-8 border-l-4 group transition-all flex flex-col",
-                      quest.completed ? "opacity-60 grayscale border-neutral-600" : "border-jiwa hover:border-white shadow-xl hover:shadow-jiwa/5")}>
+              {questFilter === 'WORLD' ? (
+                activeGlobalQuests.length > 0 ? (
+                  activeGlobalQuests.map((quest) => (
+                    <motion.div key={quest.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                      className="group relative overflow-hidden rounded-[32px] bg-gradient-to-br from-amber-500/20 to-rpg-black border border-amber-500/30 p-8 shadow-2xl shadow-amber-500/5">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-3xl rounded-full" />
+                      <div className="relative z-10 flex flex-col h-full">
+                        <div className="flex justify-between items-start mb-6">
+                          <div className="flex items-center gap-2 px-3 py-1 bg-amber-500/20 rounded-full border border-amber-500/40">
+                            <Globe className="w-3 h-3 text-amber-500" />
+                            <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">Global Anomaly</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] font-black text-amber-500/50 uppercase tracking-widest block mb-1">Hadiah</span>
+                            <span className="text-2xl font-black text-white font-mono">+{quest.xp} XP</span>
+                          </div>
+                        </div>
+                        <h4 className="text-xl md:text-2xl font-black text-white mb-3 tracking-tighter italic">"{quest.title}"</h4>
+                        <p className="text-neutral-400 text-sm mb-8 leading-relaxed font-medium">{quest.desc}</p>
+                        <button 
+                          onClick={() => setActiveQuestInput(quest.id)}
+                          className="mt-auto w-full py-4 bg-amber-500 hover:bg-amber-400 text-black rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all transform active:scale-95 shadow-[0_10px_30px_rgba(245,158,11,0.3)]"
+                        >
+                          Buktikan Tantangan Dunia
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="col-span-full py-20 flex flex-col items-center justify-center text-center space-y-6 bg-white/[0.02] rounded-[40px] border border-dashed border-white/10">
+                    <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center">
+                      <Globe className="w-10 h-10 text-neutral-700" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-black text-white uppercase tracking-widest mb-2">Dunia Sedang Tenang</h4>
+                      <p className="text-neutral-500 text-sm max-w-xs mx-auto">Tidak ada anomali global saat ini. Bersantailah, atau selesaikan ritual harianmu.</p>
+                    </div>
+                  </div>
+                )
+              ) : questFilter === 'WEEKLY' ? (
+                <div className="col-span-full space-y-12">
+                  {/* ACTIVE WEEKLY QUESTS */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-1.5 h-6 bg-jiwa rounded-full shadow-[0_0_10px_rgba(var(--color-jiwa),0.5)]" />
+                      <h4 className="text-sm font-black uppercase tracking-[0.2em] text-white">Misi Berjalan</h4>
+                    </div>
+                    
+                    {activeWeeklyQuests.length > 0 ? (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {activeWeeklyQuests.map((quest) => (
+                          <motion.div key={quest.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+                            className={cn("glass-panel p-6 md:p-8 border-l-4 group relative overflow-hidden",
+                              quest.completed ? "border-neutral-600 opacity-60 grayscale" : "border-jiwa")}>
+                            
+                            <div className="flex justify-between items-start mb-6">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-jiwa bg-jiwa/10 px-3 py-1 rounded-lg">
+                                {quest.stat}
+                              </span>
+                              <div className="text-right">
+                                <span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest block mb-1">Hadiah</span>
+                                <span className="text-xl font-black text-white">+{quest.xp} XP</span>
+                              </div>
+                            </div>
+
+                            <h4 className="text-xl md:text-2xl font-black italic mb-3 text-white">"{quest.title}"</h4>
+                            <p className="text-sm text-neutral-400 mb-6 font-medium leading-relaxed">{quest.desc}</p>
+
+                            {/* PROGRESS BAR */}
+                            {quest.steps && (
+                              <div className="space-y-3 mb-8">
+                                <div className="flex justify-between items-end">
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500">Progres Disiplin</span>
+                                  <span className="text-xs font-black text-white">{quest.steps.current} / {quest.steps.total} Hari</span>
+                                </div>
+                                <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                                  <motion.div 
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${(quest.steps.current / quest.steps.total) * 100}%` }}
+                                    className="h-full bg-gradient-to-r from-jiwa to-ilmu shadow-[0_0_15px_rgba(var(--color-jiwa),0.3)]"
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {!quest.completed ? (
+                              <button onClick={() => setActiveQuestInput(quest.id)} 
+                                className="w-full py-4 bg-white text-black text-xs font-black uppercase tracking-widest rounded-2xl hover:scale-[1.02] transition-all shadow-xl">
+                                Lapor Progres Hari Ini
+                              </button>
+                            ) : (
+                              <div className="w-full py-4 bg-neutral-900 border border-neutral-800 text-neutral-500 text-xs font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2">
+                                <Shield className="w-4 h-4" /> UJIAN SELESAI
+                              </div>
+                            )}
+                          </motion.div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="py-12 bg-white/[0.02] rounded-[32px] border border-dashed border-white/10 flex flex-col items-center justify-center text-center gap-4">
+                        <Calendar className="w-8 h-8 text-neutral-700" />
+                        <p className="text-xs font-black text-neutral-500 uppercase tracking-widest">Belum ada misi mingguan aktif</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* AVAILABLE WEEKLY QUESTS */}
+                  {availableWeeklyQuests.length > 0 && (
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-1.5 h-6 bg-neutral-700 rounded-full" />
+                        <h4 className="text-sm font-black uppercase tracking-[0.2em] text-neutral-500">Pilihan Ujian Minggu Ini</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        {availableWeeklyQuests.map((quest) => (
+                          <motion.div key={quest.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                            className="glass-panel p-6 border border-white/5 hover:border-white/20 transition-all group">
+                            <div className="flex justify-between items-start mb-4">
+                              <span className="text-[9px] font-black uppercase tracking-widest text-neutral-500">{quest.stat}</span>
+                              <span className="text-xs font-black text-neutral-300">+{quest.xp} XP</span>
+                            </div>
+                            <h5 className="text-lg font-black italic text-white mb-2 group-hover:text-jiwa transition-colors">"{quest.title}"</h5>
+                            <p className="text-xs text-neutral-400 mb-6 font-medium line-clamp-2">{quest.desc}</p>
+                            <button onClick={() => onClaimWeeklyQuest(quest.id)}
+                              className="w-full py-3 bg-white/5 hover:bg-white text-neutral-400 hover:text-black text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-white/5">
+                              Ambil Misi
+                            </button>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                filteredQuests.length > 0 ? (
+                  filteredQuests.map((quest) => (
+                    <motion.div key={quest.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} whileHover={{ y: -5 }}
+                      className={cn("glass-panel p-6 md:p-8 border-l-4 group transition-all flex flex-col",
+                        quest.completed ? "opacity-60 grayscale border-neutral-600" : "border-jiwa hover:border-white shadow-xl hover:shadow-jiwa/5")}>
 
                     <div className="flex justify-between items-start mb-5">
                       <span className="text-xs font-black uppercase tracking-widest text-neutral-400 bg-black/20 px-3 py-1.5 rounded-lg">{quest.stat}</span>
@@ -352,7 +565,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     Mulai Hari Ini
                   </button>
                 </div>
-              )}
+              ))}
             </div>
           </section>
         </div>
@@ -412,7 +625,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <span className="text-sm italic text-neutral-300">{dim.val}%</span>
                   </div>
                   <div className="h-1.5 bg-white/5 rounded-full overflow-hidden shadow-inner">
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${dim.val}%` }}
+                    <motion.div 
+                      initial={{ width: 0 }} 
+                      animate={{ width: `${Math.max(0, Math.min(100, Number(dim.val) || 0))}%` }}
                       className={cn("h-full relative", dim.bar)}
                     >
                       <div className="absolute inset-0 bg-white/20 animate-pulse" />
@@ -608,6 +823,158 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <p className="text-[10px] text-neutral-500 italic max-w-sm mx-auto">
                 "Kondisi mentalmu adalah kompas dalam perjalanan ini. Jujurlah pada dirimu sendiri."
               </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* TALENT SELECTION MODAL */}
+      <AnimatePresence>
+        {showTalentModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/98 backdrop-blur-3xl overflow-y-auto">
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+              className="max-w-4xl w-full py-12 px-6 md:px-12 space-y-12">
+              
+              <div className="text-center space-y-4">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-jiwa/10 border border-jiwa/20 rounded-full">
+                  <Star className="w-4 h-4 text-jiwa" />
+                  <span className="text-[10px] font-black tracking-[0.3em] text-jiwa uppercase">Pilihan Takdir Baru</span>
+                </div>
+                <h3 className="text-4xl md:text-6xl font-black italic text-white tracking-tighter leading-none">PILIH TALENTA ANDA</h3>
+                <p className="text-sm text-neutral-400 max-w-lg mx-auto">Satu pilihan akan mengubah jalannya sejarah. Pilih dengan bijak, Pahlawan.</p>
+              </div>
+
+              <div className="flex justify-center gap-4">
+                {[0, 1, 2].map((i) => {
+                  const talentId = talents[i];
+                  const talent = talentId ? TALENTS.find(t => t.id === talentId) : null;
+                  
+                  const colors = talent ? {
+                    'Common': 'border-neutral-500/20 bg-neutral-500/5 text-neutral-400',
+                    'Uncommon': 'border-green-500/20 bg-green-500/5 text-green-400',
+                    'Rare': 'border-blue-500/20 bg-blue-500/5 text-blue-400',
+                    'Epic': 'border-purple-500/20 bg-purple-500/5 text-purple-400',
+                    'Legendary': 'border-amber-500/40 bg-amber-500/10 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.1)]'
+                  }[talent.rarity as string] : 'border-dashed border-white/10 bg-transparent text-white/20';
+
+                  return (
+                    <motion.div 
+                      key={i}
+                      whileHover={talent ? { scale: 1.05, y: -5 } : {}}
+                      onClick={() => talents.length >= 3 && talentId && setReplacingTalentId(talentId)}
+                      className={cn(
+                        "w-24 h-24 md:w-32 md:h-32 rounded-3xl border-2 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer relative overflow-hidden",
+                        colors,
+                        replacingTalentId === talentId && talentId ? "border-white ring-4 ring-white/20 bg-white text-black" : ""
+                      )}
+                    >
+                      {talent ? (
+                        <>
+                          <div className="text-2xl">{talent.rarity === 'Legendary' ? '🔱' : talent.rarity === 'Epic' ? '💎' : talent.rarity === 'Rare' ? '⚔️' : '✨'}</div>
+                          <div className={cn("text-[8px] font-black uppercase tracking-widest text-center px-2", replacingTalentId === talentId ? "text-black" : "text-white/40")}>{talent.name}</div>
+                          <div className={cn("absolute bottom-2 px-1.5 py-0.5 rounded-[4px] text-[6px] font-bold uppercase tracking-widest", replacingTalentId === talentId ? "bg-black text-white" : "bg-white/10 text-white")}>
+                            {talent.rarity}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-[8px] font-black uppercase tracking-widest">Slot Kosong</div>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {talents.length >= 3 && !replacingTalentId && (
+                <p className="text-center text-jiwa text-xs font-black animate-bounce">Slot Penuh! Pilih satu talenta di atas untuk diganti.</p>
+              )}
+
+              {/* OPTIONS POOL */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {talentPool.map((t) => {
+                  const colors = {
+                    'Common': 'text-neutral-400 border-neutral-500/20 bg-neutral-500/5',
+                    'Uncommon': 'text-green-400 border-green-500/20 bg-green-500/5',
+                    'Rare': 'text-blue-400 border-blue-500/20 bg-blue-500/5',
+                    'Epic': 'text-purple-400 border-purple-500/20 bg-purple-500/5',
+                    'Legendary': 'text-amber-400 border-amber-500/20 bg-amber-500/5 shadow-[0_0_20px_rgba(245,158,11,0.1)]'
+                  }[t.rarity as string] || 'text-white border-white/10';
+
+                  const badgeColors = {
+                    'Common': 'bg-neutral-500/20 text-neutral-400',
+                    'Uncommon': 'bg-green-500/20 text-green-400',
+                    'Rare': 'bg-blue-500/20 text-blue-400',
+                    'Epic': 'bg-purple-500/20 text-purple-400',
+                    'Legendary': 'bg-amber-500 text-black font-black'
+                  }[t.rarity as string] || 'bg-white/10 text-white';
+
+                  return (
+                    <motion.div
+                      key={t.id}
+                      whileHover={{ y: -10, scale: 1.02 }}
+                      onClick={() => {
+                        if (talents.length < 3 || replacingTalentId) {
+                          setSelectedNewTalentId(t.id);
+                        }
+                      }}
+                      className={cn(
+                        "glass-panel p-6 border transition-all cursor-pointer text-left space-y-4 group relative overflow-hidden",
+                        colors,
+                        selectedNewTalentId === t.id ? "bg-white text-black border-white ring-4 ring-white/20" : ""
+                      )}
+                    >
+                      {t.rarity === 'Legendary' && (
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
+                      )}
+                      
+                      <div className="flex justify-between items-start">
+                        <div className={cn("text-4xl group-hover:scale-125 transition-transform duration-500", selectedNewTalentId === t.id ? "text-black" : "")}>
+                          {t.rarity === 'Legendary' ? '🔱' : t.rarity === 'Epic' ? '💎' : t.rarity === 'Rare' ? '⚔️' : '✨'}
+                        </div>
+                        <div className={cn("px-2 py-0.5 rounded text-[8px] font-black tracking-widest uppercase", selectedNewTalentId === t.id ? "bg-black text-white" : badgeColors)}>
+                          {t.rarity}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <h4 className="font-black italic text-xl leading-tight uppercase tracking-tighter">{t.name}</h4>
+                        <p className={cn("text-[11px] leading-relaxed font-medium", selectedNewTalentId === t.id ? "text-black/80" : "text-neutral-400")}>
+                          {t.desc}
+                        </p>
+                      </div>
+
+                      {/* BONUS INFO */}
+                      <div className="pt-2 flex flex-wrap gap-2">
+                        {t.statBoost && (
+                          <div className={cn("px-2 py-1 rounded bg-black/20 text-[9px] font-bold flex items-center gap-1", selectedNewTalentId === t.id ? "bg-black/10 text-black" : "text-white/60")}>
+                            <span className="opacity-50">BUFF:</span>
+                            <span className="text-white">+{Math.round(t.statBoost.value * 100)}% {t.statBoost.stat}</span>
+                          </div>
+                        )}
+                        {t.xpBoost && (
+                          <div className={cn("px-2 py-1 rounded bg-black/20 text-[9px] font-bold flex items-center gap-1", selectedNewTalentId === t.id ? "bg-black/10 text-black" : "text-white/60")}>
+                            <span className="opacity-50">XP:</span>
+                            <span className="text-white">+{Math.round(t.xpBoost.value * 100)}% ({t.xpBoost.condition})</span>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              <div className="flex justify-center pt-8">
+                <button 
+                  disabled={!selectedNewTalentId || (talents.length >= 3 && !replacingTalentId)}
+                  onClick={async () => {
+                    await onSelectTalent(selectedNewTalentId!, replacingTalentId || undefined);
+                    setShowTalentModal(false);
+                  }}
+                  className="px-12 py-5 bg-white text-black rounded-2xl font-black italic tracking-widest hover:scale-110 active:scale-95 transition-all disabled:opacity-20 shadow-[0_0_50px_rgba(255,255,255,0.3)]"
+                >
+                  KONFIRMASI TAKDIR
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}

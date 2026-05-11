@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, ArrowRight, Sparkles } from 'lucide-react';
+import { Zap, ArrowRight, Sparkles, Star } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { TALENTS } from '../lib/talents';
 import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import { type CharacterAnalysis } from '../lib/gemini';
 
@@ -171,12 +172,66 @@ export const CharacterReveal: React.FC<CharacterRevealProps> = ({ analysis, onCo
               transition={{ duration: 0.6 }}
               className="space-y-6 md:space-y-8"
             >
-              {/* Character Summary */}
-              <div className="glass-panel p-6 md:p-8 border-l-4 border-l-jiwa">
-                <p className="text-base md:text-xl leading-relaxed text-neutral-400 italic">
-                  "{analysis.character_summary}"
-                </p>
+              {/* Character Summary & Rationale */}
+              <div className="space-y-4">
+                <div className="glass-panel p-6 md:p-8 border-l-4 border-l-jiwa bg-rpg-card/30">
+                  <p className="text-base md:text-xl leading-relaxed text-neutral-400 italic">
+                    "{analysis.character_summary}"
+                  </p>
+                </div>
+
+                {analysis.rationale && (
+                  <motion.div 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="glass-panel p-6 md:p-8 border-l-4 border-l-ilmu bg-rpg-card/20"
+                  >
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-4 flex items-center gap-2">
+                      <Sparkles className="w-3 h-3 text-ilmu" /> Logika Arbiter
+                    </h4>
+                    <div className="text-xs md:text-sm leading-relaxed text-neutral-400 space-y-2 whitespace-pre-wrap italic">
+                      {analysis.rationale}
+                    </div>
+                  </motion.div>
+                )}
               </div>
+
+              {/* Newly Gained Talents */}
+              {analysis.newTalents && analysis.newTalents.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1 }}
+                  className="space-y-4"
+                >
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 flex items-center gap-2">
+                    <Zap className="w-3 h-3 text-harta" /> Bakat Terbuka
+                  </h4>
+                  <div className="flex flex-wrap gap-3">
+                    {analysis.newTalents.map(id => {
+                      const t = TALENTS.find(talent => talent.id === id);
+                      if (!t) return null;
+                      return (
+                        <div key={id} className={cn(
+                          "px-5 py-3 rounded-2xl text-xs font-black border flex items-center gap-3 bg-rpg-card/50 backdrop-blur-xl",
+                          t.rarity === 'Legendary' ? 'border-amber-500/30 text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.1)]' :
+                          t.rarity === 'Epic' ? 'border-purple-500/30 text-purple-500' :
+                          t.rarity === 'Rare' ? 'border-blue-500/30 text-blue-500' :
+                          t.rarity === 'Uncommon' ? 'border-green-500/30 text-green-500' :
+                          'border-white/10 text-neutral-400'
+                        )}>
+                          {t.rarity === 'Legendary' && <Star className="w-4 h-4 fill-amber-500" />}
+                          <div className="flex flex-col gap-0.5">
+                            <span>{t.name}</span>
+                            <span className="text-[9px] font-medium opacity-60 leading-tight">{t.desc}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
 
               {/* Starter Quest */}
               <motion.div

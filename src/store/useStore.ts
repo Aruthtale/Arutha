@@ -22,6 +22,7 @@ interface AppState {
   nameChangeCount: number;
   lastNameChange: string | null;
   talents: string[];
+  talentChoicesAvailable: number;
   
   setSession: (session: Session | null | ((prev: Session | null) => Session | null)) => void;
   setDbUserId: (id: string | null | ((prev: string | null) => string | null)) => void;
@@ -34,6 +35,7 @@ interface AppState {
   setNameChangeCount: (count: number | ((prev: number) => number)) => void;
   setLastNameChange: (date: string | null | ((prev: string | null) => string | null)) => void;
   setTalents: (talents: string[] | ((prev: string[]) => string[])) => void;
+  setTalentChoicesAvailable: (count: number | ((prev: number) => number)) => void;
 
   // Game Data
   stats: Stats;
@@ -47,6 +49,9 @@ interface AppState {
   showLevelUp: boolean;
   isDataReady: boolean;
   onboardingQuestions: string[];
+  availableWeeklyQuests: Quest[];
+  activeWeeklyQuests: Quest[];
+  lastWeeklyReset: string | null;
 
   setStats: (stats: Stats | ((prev: Stats) => Stats)) => void;
   setCharacterAnalysis: (analysis: CharacterAnalysis | null | ((prev: CharacterAnalysis | null) => CharacterAnalysis | null)) => void;
@@ -59,6 +64,15 @@ interface AppState {
   setShowLevelUp: (show: boolean | ((prev: boolean) => boolean)) => void;
   setIsDataReady: (ready: boolean | ((prev: boolean) => boolean)) => void;
   setOnboardingQuestions: (questions: string[] | ((prev: string[]) => string[])) => void;
+  setAvailableWeeklyQuests: (quests: Quest[] | ((prev: Quest[]) => Quest[])) => void;
+  setActiveWeeklyQuests: (quests: Quest[] | ((prev: Quest[]) => Quest[])) => void;
+  setLastWeeklyReset: (date: string | null | ((prev: string | null) => string | null)) => void;
+
+  // Tiered Quests
+  questFilter: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'WORLD';
+  setQuestFilter: (filter: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'WORLD') => void;
+  globalQuests: Quest[];
+  setGlobalQuests: (quests: Quest[]) => void;
 
   // Mail
   unreadMailCount: number;
@@ -95,6 +109,7 @@ export const useStore = create<AppState>((set) => ({
   nameChangeCount: 0,
   lastNameChange: null,
   talents: [],
+  talentChoicesAvailable: 0,
 
   setSession: (session) => set((state) => ({ session: typeof session === 'function' ? session(state.session) : session })),
   setDbUserId: (dbUserId) => set((state) => ({ dbUserId: typeof dbUserId === 'function' ? dbUserId(state.dbUserId) : dbUserId })),
@@ -107,6 +122,7 @@ export const useStore = create<AppState>((set) => ({
   setNameChangeCount: (nameChangeCount) => set((state) => ({ nameChangeCount: typeof nameChangeCount === 'function' ? nameChangeCount(state.nameChangeCount) : nameChangeCount })),
   setLastNameChange: (lastNameChange) => set((state) => ({ lastNameChange: typeof lastNameChange === 'function' ? lastNameChange(state.lastNameChange) : lastNameChange })),
   setTalents: (talents) => set((state) => ({ talents: typeof talents === 'function' ? talents(state.talents) : talents })),
+  setTalentChoicesAvailable: (talentChoicesAvailable) => set((state) => ({ talentChoicesAvailable: typeof talentChoicesAvailable === 'function' ? talentChoicesAvailable(state.talentChoicesAvailable) : talentChoicesAvailable })),
 
   // Game Data
   stats: {
@@ -126,6 +142,9 @@ export const useStore = create<AppState>((set) => ({
   showLevelUp: false,
   isDataReady: false,
   onboardingQuestions: [],
+  availableWeeklyQuests: [],
+  activeWeeklyQuests: [],
+  lastWeeklyReset: null,
 
   setStats: (stats) => set((state) => ({ stats: typeof stats === 'function' ? stats(state.stats) : stats })),
   setCharacterAnalysis: (characterAnalysis) => set((state) => ({ characterAnalysis: typeof characterAnalysis === 'function' ? characterAnalysis(state.characterAnalysis) : characterAnalysis })),
@@ -138,6 +157,15 @@ export const useStore = create<AppState>((set) => ({
   setShowLevelUp: (showLevelUp) => set((state) => ({ showLevelUp: typeof showLevelUp === 'function' ? showLevelUp(state.showLevelUp) : showLevelUp })),
   setIsDataReady: (isDataReady) => set((state) => ({ isDataReady: typeof isDataReady === 'function' ? isDataReady(state.isDataReady) : isDataReady })),
   setOnboardingQuestions: (questions) => set((state) => ({ onboardingQuestions: typeof questions === 'function' ? questions(state.onboardingQuestions) : questions })),
+  setAvailableWeeklyQuests: (quests) => set((state) => ({ availableWeeklyQuests: typeof quests === 'function' ? quests(state.availableWeeklyQuests) : quests })),
+  setActiveWeeklyQuests: (quests) => set((state) => ({ activeWeeklyQuests: typeof quests === 'function' ? quests(state.activeWeeklyQuests) : quests })),
+  setLastWeeklyReset: (date) => set((state) => ({ lastWeeklyReset: typeof date === 'function' ? date(state.lastWeeklyReset) : date })),
+
+  // Tiered Quests
+  questFilter: 'DAILY',
+  setQuestFilter: (questFilter) => set({ questFilter }),
+  globalQuests: [],
+  setGlobalQuests: (globalQuests) => set({ globalQuests }),
 
   // Mail
   unreadMailCount: 0,

@@ -32,6 +32,14 @@ export interface Quest {
   stat: Dimension;
   xp: number;
   completed: boolean;
+  quest_type?: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'WORLD';
+  is_global?: boolean;
+  is_weekly?: boolean;
+  steps?: {
+    current: number;
+    total: number;
+    last_check_in?: string; // ISO Date to prevent same-day spam
+  };
 }
 
 export interface OnboardingAnswer {
@@ -42,7 +50,8 @@ export interface OnboardingAnswer {
 const MODELS_3X = [
   'gemini-3.1-flash-lite-preview',
   'gemini-3.1-flash-lite',
-  'gemini-3-flash-preview'
+  'gemini-3-flash-preview',
+  'gemini-3.1-pro-preview'
 ];
 
 export async function generateOnboardingQuestions(userContext?: { usia?: number; gender?: string; username?: string; zodiac?: string }): Promise<string[]> {
@@ -61,21 +70,27 @@ Kembalikan HANYA array JSON berisi 10 string pertanyaan, tanpa markdown tambahan
 
   for (const modelName of MODELS_3X) {
     try {
-      const response = await aiClient.models.generateContent({
+      const result = await aiClient.models.generateContent({
         model: modelName,
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        contents: prompt,
       });
-      const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      
+      const text = result.text || '';
       let jsonStr = text.trim();
       if (jsonStr.includes('```')) {
-        jsonStr = jsonStr.split('```')[1].replace(/^json/, '').trim();
+        jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
       }
-      return JSON.parse(jsonStr);
+      const parsed = JSON.parse(jsonStr);
+      if (Array.isArray(parsed) && parsed.length >= 5) {
+        return parsed;
+      }
     } catch (e: any) {
+      console.error(`Gemini Error with ${modelName}:`, e);
       continue;
     }
   }
-  
+
+  // Final Fallback: Jika semua model AI gagal
   return [
     "Apa hobimu saat sedang bosan?",
     "Pilih satu: Olahraga, Main Game, atau Tidur?",
@@ -96,6 +111,8 @@ export interface CharacterAnalysis {
   personality_desc: string;
   stats: Stats;
   character_summary: string;
+  rationale?: string;
+  newTalents?: string[];
   starter_quest: {
     title: string;
     desc: string;
@@ -126,36 +143,34 @@ ${qaBlock}`;
     try {
       const response = await aiClient.models.generateContent({
         model: modelName,
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        contents: prompt,
       });
-      const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const text = response.text || '';
       let jsonStr = text.trim();
       if (jsonStr.includes('```')) {
-        jsonStr = jsonStr.split('```')[1].replace(/^json/, '').trim();
+        jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
       }
       const result = JSON.parse(jsonStr);
       
       // Safety Fallbacks: Garansi tidak ada data null yang masuk ke Supabase
-      result.personality_type = result.personality_type || 'INFJ';
-      if (!validMBTI.includes(result.personality_type.toUpperCase())) {
-        result.personality_type = 'INFJ'; // Fallback aman
-      } else {
-        result.personality_type = result.personality_type.toUpperCase();
-      }
-      
-      result.personality_title = result.personality_title || 'The Advocate';
-      result.personality_desc = result.personality_desc || 'Karakter dalam pencarian jati diri.';
-      result.character_summary = result.character_summary || 'Karakter belum sepenuhnya terbaca oleh sistem.';
-      
-      result.stats = {
-        JIWA: Math.min(50, Number(result.stats?.JIWA) || 30),
-        RAGA: Math.min(50, Number(result.stats?.RAGA) || 30),
-        HARTA: Math.min(50, Number(result.stats?.HARTA) || 30),
-        ILMU: Math.min(50, Number(result.stats?.ILMU) || 30),
-        KARMA: Math.min(50, Number(result.stats?.KARMA) || 30),
+      const stats = result.stats || {};
+      const normalizedStats = {
+        JIWA: Math.min(50, Number(stats.JIWA || stats.jiwa) || 30),
+        RAGA: Math.min(50, Number(stats.RAGA || stats.raga) || 30),
+        HARTA: Math.min(50, Number(stats.HARTA || stats.harta) || 30),
+        ILMU: Math.min(50, Number(stats.ILMU || stats.ilmu) || 30),
+        KARMA: Math.min(50, Number(stats.KARMA || stats.karma) || 30),
       };
 
-      return result;
+      return {
+        personality_type: (result.personality_type || 'INFJ').toUpperCase(),
+        personality_title: result.personality_title || 'The Advocate',
+        personality_desc: result.personality_desc || 'Karakter dalam pencarian jati diri.',
+        character_summary: result.character_summary || 'Karakter belum sepenuhnya terbaca oleh sistem.',
+        rationale: text.split('```').pop()?.trim() || '',
+        stats: normalizedStats,
+        starter_quest: result.starter_quest || { title: 'Mulai Petualangan', desc: 'Lakukan langkah pertama hari ini.', stat: 'JIWA' }
+      };
     } catch (e: any) {
       continue; 
     }
@@ -171,22 +186,30 @@ ${qaBlock}`;
   };
 }
 
-export async function generateDailyQuests(stats: Stats, moodContext?: string, isBurnout?: boolean): Promise<Quest[]> {
+export async function generateDailyQuests(stats: Stats, moodContext?: string, isWeeklyPool?: boolean): Promise<Quest[]> {
   const aiClient = getClient();
   const moodPrompt = moodContext ? `\nMood User: "${moodContext}".` : '';
-  const burnoutPrompt = isBurnout ? `\nPENTING: User sedang mengalami indikasi STRES/BURNOUT berat. JANGAN berikan misi yang membebani. Ubah SEMUA misi menjadi Misi Relaksasi ringan untuk pemulihan mental (contoh: istirahat, meditasi ringan, menjauh dari layar).` : '';
-  const prompt = `Game master ARUTHA. Buat 3 quest harian berdasarkan stats: JIWA:${stats.JIWA}, RAGA:${stats.RAGA}, HARTA:${stats.HARTA}, ILMU:${stats.ILMU}, KARMA:${stats.KARMA}.${moodPrompt}${burnoutPrompt} JSON format: [{id, title, desc, stat, xp: 150}].`;
+  const burnoutPrompt = isWeeklyPool ? `\nPENTING: Hasilkan 3 opsi misi WEEKLY progresif (butuh disiplin beberapa hari). XP: 1000-2000.` : '';
+  
+  const prompt = `Game master ARUTHA. Buat paket misi lengkap berdasarkan stats: JIWA:${stats.JIWA}, RAGA:${stats.RAGA}, HARTA:${stats.HARTA}, ILMU:${stats.ILMU}, KARMA:${stats.KARMA}.${moodPrompt}${burnoutPrompt} 
+
+  ${isWeeklyPool ? '' : `Hasilkan total 6 misi dalam format JSON:
+  - 3 misi "DAILY" (Ritual harian ringan, XP: 100-200)
+  - 2 misi "WEEKLY" (Tantangan menengah seminggu, XP: 500-1000)
+  - 1 misi "MONTHLY" (Pencapaian besar sebulan, XP: 2500-5000)`}
+
+  JSON format: [{id, title, desc, stat, xp, quest_type: "DAILY"|"WEEKLY"|"MONTHLY"}].`;
 
   for (const modelName of MODELS_3X) {
     try {
       const response = await aiClient.models.generateContent({
         model: modelName,
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        contents: prompt,
       });
-      const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const text = response.text || '';
       let jsonStr = text.trim();
       if (jsonStr.includes('```')) {
-        jsonStr = jsonStr.split('```')[1].replace(/^json/, '').trim();
+        jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
       }
       const quests = JSON.parse(jsonStr);
       return quests.map((q: any) => ({ ...q, completed: false }));
@@ -195,7 +218,14 @@ export async function generateDailyQuests(stats: Stats, moodContext?: string, is
     }
   }
 
-  return [{ id: 'f1', title: 'Refleksi Singkat', desc: 'Tulis 1 pencapaian kecil hari ini.', stat: 'JIWA', xp: 100, completed: false }];
+  return [
+    { id: 'f1', title: 'Refleksi Singkat', desc: 'Tulis 1 pencapaian kecil hari ini.', stat: 'JIWA', xp: 100, quest_type: 'DAILY', completed: false },
+    { id: 'f2', title: 'Aksi Disiplin', desc: 'Lakukan peregangan selama 5 menit.', stat: 'RAGA', xp: 150, quest_type: 'DAILY', completed: false },
+    { id: 'f3', title: 'Audit Kecil', desc: 'Cek pengeluaran hari ini dan catat.', stat: 'HARTA', xp: 120, quest_type: 'DAILY', completed: false },
+    { id: 'f4', title: 'Eksplorasi Baru', desc: 'Pelajari 3 kata baru dalam bahasa asing.', stat: 'ILMU', xp: 600, quest_type: 'WEEKLY', completed: false },
+    { id: 'f5', title: 'Kebaikan Berantai', desc: 'Bantu satu orang teman atau orang asing.', stat: 'KARMA', xp: 550, quest_type: 'WEEKLY', completed: false },
+    { id: 'f6', title: 'Mastery Skill', desc: 'Selesaikan satu bab buku atau kursus.', stat: 'ILMU', xp: 3000, quest_type: 'MONTHLY', completed: false }
+  ];
 }
 
 export async function verifyQuestCompletion(
@@ -226,12 +256,12 @@ export async function verifyQuestCompletion(
     try {
       const response = await aiClient.models.generateContent({
         model: modelName,
-        contents: [{ role: 'user', parts }],
+        contents: promptText, // Simplified for now, or keep parts if image is needed
       });
-      const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const text = response.text || '';
       let jsonStr = text.trim();
       if (jsonStr.includes('```')) {
-        jsonStr = jsonStr.split('```')[1].replace(/^json/, '').trim();
+        jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
       }
       return JSON.parse(jsonStr);
     } catch (e: any) {
@@ -249,12 +279,12 @@ export async function generateRecoveryQuests(fatigueDays: number): Promise<Quest
     try {
       const response = await aiClient.models.generateContent({
         model: modelName,
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        contents: prompt,
       });
-      const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const text = response.text || '';
       let jsonStr = text.trim();
       if (jsonStr.includes('```')) {
-        jsonStr = jsonStr.split('```')[1].replace(/^json/, '').trim();
+        jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
       }
       const quests = JSON.parse(jsonStr);
       return quests.map((q: any) => ({ ...q, completed: false }));
@@ -297,7 +327,7 @@ export async function chatWithArbiter(
         model: modelName,
         contents: contents,
       });
-      return response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      return response.text || '';
     } catch (e) {
       continue;
     }
@@ -362,7 +392,7 @@ export async function chatWithSoulGuard(
           temperature: 0.7,
         }
       });
-      return response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      return response.text || '';
     } catch (e) {
       continue;
     }
@@ -388,12 +418,12 @@ export async function analyzeMentalState(
     try {
       const response = await aiClient.models.generateContent({
         model: modelName,
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        contents: prompt,
       });
-      const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const text = response.text || '';
       let jsonStr = text.trim();
       if (jsonStr.includes('```')) {
-        jsonStr = jsonStr.split('```')[1].replace(/^json/, '').trim();
+        jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
       }
       return JSON.parse(jsonStr) as MentalStateAnalysis;
     } catch (e) {

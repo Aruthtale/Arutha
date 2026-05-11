@@ -23,8 +23,8 @@ interface OnboardingProps {
 }
 
 export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext, questions: providedQuestions }) => {
-  const [step, setStep] = useState(providedQuestions ? 0 : -1); // -1 is Intro if questions not provided
-  const [questions, setQuestions] = useState<string[]>(providedQuestions || FALLBACK_QUESTIONS);
+  const [step, setStep] = useState((providedQuestions && providedQuestions.length > 0) ? 0 : -1); 
+  const [questions, setQuestions] = useState<string[]>((providedQuestions && providedQuestions.length > 0) ? providedQuestions : FALLBACK_QUESTIONS);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [answers, setAnswers] = useState<OnboardingAnswer[]>([]);
@@ -43,9 +43,14 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
   }, [step]);
 
   const handleStart = async () => {
+    console.log("Memulai Sinkronisasi Dimensi...");
     setIsLoadingQuestions(true);
     try {
       const generated = await generateOnboardingQuestions(userContext);
+      console.log("Pertanyaan diterima:", generated);
+      if (!generated || generated.length === 0) {
+        console.error("AI mengembalikan array kosong!");
+      }
       setQuestions(generated);
     } catch (e) {
       console.warn("Failed to fetch questions, using fallback.");
@@ -272,12 +277,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
               onClick={() => {
                 setIsAnalyzing(true);
                 setAnalyzeError(null);
-                analyzeCharacter(answers)
-                  .then(onComplete)
-                  .catch(err => {
-                    setAnalyzeError(err.message);
-                    setIsAnalyzing(false);
-                  });
+                onComplete(answers);
               }}
               className="block mx-auto mt-2 underline font-bold hover:text-white transition-colors"
             >

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { LayoutGrid, User, Map, ShieldAlert, Contact2, Mail, Trophy, Book, Settings, Heart } from 'lucide-react';
+import { LayoutGrid, User, Map, ShieldAlert, Contact2, Mail, Trophy, Book, Settings, Heart, Star } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
 import { cn, getDimensionRank } from '../lib/utils';
 import { isAdmin } from '../lib/config';
@@ -13,9 +13,10 @@ interface NavbarProps {
   onNavigate: (page: any) => void;
   currentPage: string;
   stats?: { JIWA: number; RAGA: number; HARTA: number; ILMU: number; KARMA: number };
+  talentChoicesAvailable?: number;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, currentPage, stats }) => {
+export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, currentPage, stats, talentChoicesAvailable = 0 }) => {
   const avgStats = stats ? Object.values(stats).reduce((a, b) => a + b, 0) / 5 : 0;
   const currentRank = getDimensionRank(avgStats);
   const { dbUserId, unreadMailCount, setUnreadMailCount, mailToast, setMailToast, lastMailSeenAt } = useStore();
@@ -131,7 +132,13 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
           {/* Navigation Links */}
           {session && (
             <div className="flex flex-col gap-3 w-full">
-              <SidebarPill active={currentPage === 'DASHBOARD'} onClick={() => onNavigate('DASHBOARD')} icon={<LayoutGrid className="w-5 h-5" />} label="Home" />
+              <SidebarPill 
+                active={currentPage === 'DASHBOARD'} 
+                onClick={() => onNavigate('DASHBOARD')} 
+                icon={<LayoutGrid className="w-5 h-5" />} 
+                label="Home" 
+                badge={talentChoicesAvailable > 0 ? <Star className="w-3 h-3 text-black fill-current" /> : undefined}
+              />
               <SidebarPill active={currentPage === 'LEADERBOARD'} onClick={() => onNavigate('LEADERBOARD')} icon={<Trophy className="w-5 h-5 text-harta" />} label="Hall of Fame" />
               <SidebarPill active={currentPage === 'CODEX'} onClick={() => onNavigate('CODEX')} icon={<Book className="w-5 h-5 text-jiwa" />} label="Codex" />
               <SidebarPill active={currentPage === 'PROFILE'} onClick={() => onNavigate('PROFILE')} icon={<Contact2 className="w-5 h-5" />} label="Profile" />
@@ -291,7 +298,13 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
       {/* Bottom Navigation - Mobile Only */}
       {session && (
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-rpg-black/80 backdrop-blur-3xl border-t border-white/10 px-2 pb-[calc(env(safe-area-inset-bottom)+8px)] pt-3 flex justify-around items-center shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-          <MobileNavPill active={currentPage === 'DASHBOARD'} onClick={() => onNavigate('DASHBOARD')} icon={<LayoutGrid />} label="Home" />
+          <MobileNavPill 
+            active={currentPage === 'DASHBOARD'} 
+            onClick={() => onNavigate('DASHBOARD')} 
+            icon={<LayoutGrid />} 
+            label="Home" 
+            badge={talentChoicesAvailable > 0}
+          />
           <MobileNavPill active={currentPage === 'CODEX'} onClick={() => onNavigate('CODEX')} icon={<Book className="text-jiwa" />} label="Codex" />
           <MobileNavPill active={currentPage === 'PROFILE'} onClick={() => onNavigate('PROFILE')} icon={<Contact2 />} label="Profile" />
           <MobileNavPill active={currentPage === 'SOUL_GUARD'} onClick={() => onNavigate('SOUL_GUARD')} icon={<Heart className="text-karma" />} label="Soul" />
@@ -319,7 +332,7 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
   );
 };
 
-const SidebarPill = ({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) => (
+const SidebarPill = ({ active, onClick, icon, label, badge }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string; badge?: React.ReactNode }) => (
   <button
     onClick={onClick}
     className={cn(
@@ -334,6 +347,12 @@ const SidebarPill = ({ active, onClick, icon, label }: { active: boolean; onClic
     </div>
     <span className="hidden xl:block overflow-hidden whitespace-nowrap">{label}</span>
     
+    {badge && (
+      <div className="absolute right-4 w-5 h-5 bg-jiwa rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(236,72,153,0.5)] animate-pulse">
+        {badge}
+      </div>
+    )}
+    
     {/* Tooltip for compact mode */}
     <div className="xl:hidden absolute left-full ml-4 px-3 py-2 bg-white text-black text-[10px] font-black rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-[100] shadow-2xl whitespace-nowrap">
       {label}
@@ -341,7 +360,7 @@ const SidebarPill = ({ active, onClick, icon, label }: { active: boolean; onClic
   </button>
 );
 
-const MobileNavPill = ({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) => (
+const MobileNavPill = ({ active, onClick, icon, label, badge }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string; badge?: boolean }) => (
   <button
     onClick={onClick}
     className={cn(
@@ -356,6 +375,9 @@ const MobileNavPill = ({ active, onClick, icon, label }: { active: boolean; onCl
       {React.cloneElement(icon as React.ReactElement<any>, { 
         className: cn("w-5 h-5", active ? "stroke-[2.5px]" : "stroke-[2px]") 
       })}
+      {badge && (
+        <div className="absolute -top-1 -right-1 w-3 h-3 bg-jiwa rounded-full border-2 border-rpg-black shadow-[0_0_10px_rgba(236,72,153,0.5)] animate-pulse" />
+      )}
     </div>
     <span className={cn(
       "text-[9px] font-black uppercase tracking-widest transition-all",

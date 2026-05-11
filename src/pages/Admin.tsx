@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { 
   Users, ShieldCheck, RefreshCw, Star, Trash2, ArrowLeft, Search, 
   ExternalLink, TrendingUp, AlertTriangle, ArrowUpCircle, Eye, X, Brain,
-  Megaphone, Gift, RotateCcw, Send, Mail as MailIcon
+  Megaphone, Gift, RotateCcw, Send, Mail as MailIcon, Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
@@ -51,9 +51,34 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
     inputType?: 'text' | 'number';
   } | null>(null);
 
+  // Tabs
+  const [activeTab, setActiveTab] = useState<'PLAYERS' | 'GLOBAL_QUESTS' | 'SUBMISSIONS'>('PLAYERS');
+  
+  // Global Quests State
+  const [globalQuests, setGlobalQuests] = useState<any[]>([]);
+  const [editingQuest, setEditingQuest] = useState<any | null>(null);
+  
+  // Submissions State
+  const [submissions, setSubmissions] = useState<any[]>([]);
+
   useEffect(() => {
     fetchUsers();
+    fetchGlobalQuests();
+    fetchSubmissions();
   }, []);
+
+  const fetchGlobalQuests = async () => {
+    const { data } = await supabase.from('arutha_global_quests').select('*').order('created_at', { ascending: false });
+    if (data) setGlobalQuests(data);
+  };
+
+  const fetchSubmissions = async () => {
+    const { data } = await supabase
+      .from('arutha_global_quest_submissions')
+      .select('*, arutha_user(username)')
+      .order('created_at', { ascending: false });
+    if (data) setSubmissions(data);
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -278,6 +303,101 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
     u.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleSaveGlobalQuest = async (questData: any) => {
+    setActionLoading('save-quest');
+    
+    // Normalize data
+    const normalizedData = {
+      title: questData.title,
+      description: questData.desc || questData.description,
+      stat_type: questData.stat_type || questData.stat || 'JIWA',
+      reward_xp: parseInt(String(questData.reward_xp)) || 0,
+      expires_at: questData.expires_at && questData.expires_at !== '' ? questData.expires_at : null
+    };
+
+    if (questData.id) {
+      const { error } = await supabase.from('arutha_global_quests').update(normalizedData).eq('id', questData.id);
+      if (!error) {
+        setGlobalQuests(prev => prev.map(q => q.id === questData.id ? { ...q, ...normalizedData } : q));
+        setEditingQuest(null);
+      } else {
+        alert("Gagal mengupdate misi: " + error.message);
+      }
+    } else {
+      const { data, error } = await supabase.from('arutha_global_quests').insert([{ ...normalizedData, id: crypto.randomUUID() }]).select();
+      if (!error && data) {
+        setGlobalQuests([data[0], ...globalQuests]);
+        setEditingQuest(null);
+      } else {
+        alert("Gagal membuat misi: " + (error?.message || "Error tidak diketahui"));
+      }
+    }
+    setActionLoading(null);
+  };
+
+  const handleDeleteGlobalQuest = async (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Hapus Misi Global',
+      message: 'Yakin ingin menghapus misi ini? Semua submission terkait mungkin juga akan terpengaruh.',
+      type: 'confirm',
+      variant: 'danger',
+      action: async () => {
+        setActionLoading(id + '-delete-quest');
+        const { error } = await supabase.from('arutha_global_quests').delete().eq('id', id);
+        if (!error) {
+          setGlobalQuests(prev => prev.filter(q => q.id !== id));
+        }
+        setActionLoading(null);
+      }
+    });
+  };
+
+  const handleReviewSubmission = async (subId: string, status: 'APPROVED' | 'REJECTED', userId: string, xp: number, stat: string, questId?: string) => {
+    setActionLoading(subId + '-review');
+    const { error } = await supabase.from('arutha_global_quest_submissions').update({ status }).eq('id', subId);
+    
+    if (!error && status === 'APPROVED') {
+      // Mark quest as claimed if it was a World Quest
+      if (questId) {
+        await supabase.from('arutha_global_quests').update({ 
+          is_claimed: true, 
+          claimed_by: userId, 
+          claimed_at: new Date().toISOString() 
+        }).eq('id', questId);
+      }
+
+      // Award XP to user
+      // Need to fetch current level/xp for accurate level up logic
+      const { data: user } = await supabase.from('arutha_user').select('xp, level').eq('id', userId).single();
+      if (user) {
+        let nextXp = user.xp + xp;
+        let nextLevel = user.level;
+        while (nextXp >= nextLevel * 1000) {
+          nextXp -= (nextLevel * 1000);
+          nextLevel += 1;
+        }
+        await supabase.from('arutha_user').update({ xp: nextXp, level: nextLevel }).eq('id', userId);
+        
+        // Also update stats in character_profile
+        const { data: profile } = await supabase.from('character_profile').select('id, jiwa, raga, harta, ilmu, karma').eq('user_id', userId).single();
+        if (profile) {
+          const updatedStats = {
+            jiwa: profile.jiwa + (stat === 'JIWA' ? 2 : 0),
+            raga: profile.raga + (stat === 'RAGA' ? 2 : 0),
+            harta: profile.harta + (stat === 'HARTA' ? 2 : 0),
+            ilmu: profile.ilmu + (stat === 'ILMU' ? 2 : 0),
+            karma: profile.karma + (stat === 'KARMA' ? 2 : 0),
+          };
+          await supabase.from('character_profile').update(updatedStats).eq('id', profile.id);
+        }
+      }
+    }
+    
+    setSubmissions(prev => prev.map(s => s.id === subId ? { ...s, status } : s));
+    setActionLoading(null);
+  };
+
   return (
     <div className="min-h-screen bg-rpg-black text-white p-4 md:p-8 pb-32 pt-24 md:pt-8">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -314,6 +434,29 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
           </div>
         </header>
 
+        {/* Tab Navigation */}
+        <div className="flex p-1.5 bg-rpg-card rounded-2xl border border-white/5 gap-2 overflow-x-auto no-scrollbar">
+          {[
+            { id: 'PLAYERS', label: 'Players', icon: Users },
+            { id: 'GLOBAL_QUESTS', label: 'Global Quests', icon: Globe },
+            { id: 'SUBMISSIONS', label: 'Review Submissions', icon: ShieldCheck },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={cn(
+                "flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all whitespace-nowrap",
+                activeTab === tab.id 
+                  ? "bg-jiwa text-black shadow-[0_0_20px_rgba(167,139,250,0.3)]" 
+                  : "text-neutral-500 hover:text-white hover:bg-white/5"
+              )}
+            >
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         {/* Global Broadcast */}
         <div className="bg-gradient-to-r from-jiwa/10 to-transparent border border-jiwa/20 p-6 rounded-[24px] space-y-4">
           <div className="flex items-center gap-2 text-jiwa">
@@ -338,7 +481,6 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
             </button>
           </div>
         </div>
-
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard icon={<Users className="text-ilmu" />} label="Total Players" value={users.length} />
@@ -347,218 +489,325 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
           <StatCard icon={<AlertTriangle className="text-karma" />} label="Reports" value={0} />
         </div>
 
-        {/* User List */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between px-2">
-            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-neutral-500">Player Registry</h2>
-            <span className="text-[10px] font-bold text-jiwa bg-jiwa/10 px-3 py-1 rounded-full uppercase tracking-widest">
-              {filteredUsers.length} Players
-            </span>
-          </div>
+        {/* Players Tab */}
+        {activeTab === 'PLAYERS' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between px-2">
+              <h2 className="text-sm font-black uppercase tracking-[0.3em] text-neutral-500">Player Registry</h2>
+              <span className="text-[10px] font-bold text-jiwa bg-jiwa/10 px-3 py-1 rounded-full uppercase tracking-widest">
+                {filteredUsers.length} Players
+              </span>
+            </div>
 
-          {/* Desktop Table View */}
-          <div className="hidden md:block glass-panel overflow-hidden border-white/5">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500">
-                    <th className="px-6 py-4">Player</th>
-                    <th className="px-6 py-4">Profile</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4">Cooldown</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  <AnimatePresence>
-                    {filteredUsers.map((user) => (
-                      <motion.tr 
-                        layout
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        key={user.id} 
-                        className="group hover:bg-white/[0.02] transition-colors"
-                      >
-                        <td className="px-6 py-5">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-jiwa/20 to-ilmu/20 flex items-center justify-center font-black text-jiwa shrink-0">
-                              {user.username?.[0].toUpperCase() || '?'}
+            {/* Desktop Table View */}
+            <div className="hidden md:block glass-panel overflow-hidden border-white/5">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500">
+                      <th className="px-6 py-4">Player</th>
+                      <th className="px-6 py-4">Profile</th>
+                      <th className="px-6 py-4">Status</th>
+                      <th className="px-6 py-4">Cooldown</th>
+                      <th className="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    <AnimatePresence>
+                      {filteredUsers.map((user) => (
+                        <motion.tr 
+                          layout
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          key={user.id} 
+                          className="group hover:bg-white/[0.02] transition-colors"
+                        >
+                          <td className="px-6 py-5">
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-jiwa/20 to-ilmu/20 flex items-center justify-center font-black text-jiwa shrink-0">
+                                {user.username?.[0].toUpperCase() || '?'}
+                              </div>
+                              <div>
+                                <p className="font-bold text-sm text-white line-clamp-1">{user.username || 'Anonymous'}</p>
+                                <p className="text-[10px] text-neutral-500 font-medium line-clamp-1">{user.email}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-bold text-sm text-white line-clamp-1">{user.username || 'Anonymous'}</p>
-                              <p className="text-[10px] text-neutral-500 font-medium line-clamp-1">{user.email}</p>
+                          </td>
+                          <td className="px-6 py-5">
+                            {user.usia ? (
+                              <div className="flex flex-col">
+                                <span className="text-xs font-bold text-white capitalize">{user.gender || 'Unknown'}</span>
+                                <span className="text-[10px] text-neutral-500">{user.usia} Tahun</span>
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-neutral-600 italic">No Data</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-5">
+                            <div className="flex items-center gap-3">
+                              <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter">LVL</span>
+                                <span className="font-black text-white italic">{user.level}</span>
+                              </div>
+                              <div className="w-px h-6 bg-white/10" />
+                              <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter">XP</span>
+                                <span className="font-bold text-harta text-xs">{user.xp}</span>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          {user.usia ? (
-                            <div className="flex flex-col">
-                              <span className="text-xs font-bold text-white capitalize">{user.gender || 'Unknown'}</span>
-                              <span className="text-[10px] text-neutral-500">{user.usia} Tahun</span>
+                          </td>
+                          <td className="px-6 py-5">
+                            {user.last_name_change ? (
+                              <div className="flex flex-col gap-1">
+                                <span className="px-2 py-0.5 bg-red-500/10 text-red-500 text-[8px] font-black rounded uppercase w-fit">Locked</span>
+                                <span className="text-[9px] text-neutral-500 font-mono italic">
+                                  {new Date(user.last_name_change).toLocaleDateString()}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="px-2 py-0.5 bg-raga/10 text-raga text-[8px] font-black rounded uppercase w-fit">Available</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-5 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <AdminButton 
+                                icon={<Eye className="w-3.5 h-3.5" />} 
+                                label="View" 
+                                onClick={() => handleViewProfile(user)}
+                                variant="info"
+                              />
+                              <AdminButton 
+                                icon={<MailIcon className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-mail' && "animate-spin")} />} 
+                                label="Mail" 
+                                onClick={() => handleSendMail(user.supabase_id, user.username || user.email)}
+                                variant="info"
+                              />
+                              <AdminButton 
+                                icon={<Gift className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-reward' && "animate-spin")} />} 
+                                label="+XP" 
+                                onClick={() => handleGiveReward(user.supabase_id, user.xp, user.level)}
+                                variant="success"
+                              />
+                              <AdminButton 
+                                icon={<RotateCcw className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-reset-lvl' && "animate-spin")} />} 
+                                label="Reset" 
+                                onClick={() => handleResetLevel(user.supabase_id)}
+                                variant="danger"
+                              />
+                              <AdminButton 
+                                icon={<ArrowUpCircle className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-lvl' && "animate-spin")} />} 
+                                label="+LVL" 
+                                onClick={() => handleLevelUp(user.supabase_id, user.level)}
+                                variant="warning"
+                              />
+                              <AdminButton 
+                                icon={<Trash2 className={cn("w-3.5 h-3.5", actionLoading === user.id + '-delete' && "animate-spin")} />} 
+                                label="Del" 
+                                onClick={() => handleDeleteUser(user.id, user.supabase_id)}
+                                variant="danger"
+                              />
                             </div>
-                          ) : (
-                            <span className="text-[10px] text-neutral-600 italic">No Data</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-5">
-                          <div className="flex items-center gap-3">
-                            <div className="flex flex-col">
-                              <span className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter">LVL</span>
-                              <span className="font-black text-white italic">{user.level}</span>
-                            </div>
-                            <div className="w-px h-6 bg-white/10" />
-                            <div className="flex flex-col">
-                              <span className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter">XP</span>
-                              <span className="font-bold text-harta text-xs">{user.xp}</span>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          {user.last_name_change ? (
-                            <div className="flex flex-col gap-1">
-                              <span className="px-2 py-0.5 bg-red-500/10 text-red-500 text-[8px] font-black rounded uppercase w-fit">Locked</span>
-                              <span className="text-[9px] text-neutral-500 font-mono italic">
-                                {new Date(user.last_name_change).toLocaleDateString()}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="px-2 py-0.5 bg-raga/10 text-raga text-[8px] font-black rounded uppercase w-fit">Available</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-5 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <AdminButton 
-                              icon={<Eye className="w-3.5 h-3.5" />} 
-                              label="View" 
-                              onClick={() => handleViewProfile(user)}
-                              variant="info"
-                            />
-                            <AdminButton 
-                              icon={<MailIcon className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-mail' && "animate-spin")} />} 
-                              label="Mail" 
-                              onClick={() => handleSendMail(user.supabase_id, user.username || user.email)}
-                              variant="info"
-                            />
-                            <AdminButton 
-                              icon={<Gift className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-reward' && "animate-spin")} />} 
-                              label="+XP" 
-                              onClick={() => handleGiveReward(user.supabase_id, user.xp, user.level)}
-                              variant="success"
-                            />
-                            <AdminButton 
-                              icon={<RotateCcw className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-reset-lvl' && "animate-spin")} />} 
-                              label="Reset" 
-                              onClick={() => handleResetLevel(user.supabase_id)}
-                              variant="danger"
-                            />
-                            <AdminButton 
-                              icon={<ArrowUpCircle className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-lvl' && "animate-spin")} />} 
-                              label="+LVL" 
-                              onClick={() => handleLevelUp(user.supabase_id, user.level)}
-                              variant="warning"
-                            />
-                            <AdminButton 
-                              icon={<Trash2 className={cn("w-3.5 h-3.5", actionLoading === user.id + '-delete' && "animate-spin")} />} 
-                              label="Del" 
-                              onClick={() => handleDeleteUser(user.id, user.supabase_id)}
-                              variant="danger"
-                            />
-                          </div>
-                        </td>
-                      </motion.tr>
-                    ))}
-                  </AnimatePresence>
-                </tbody>
-              </table>
+                          </td>
+                        </motion.tr>
+                      ))}
+                    </AnimatePresence>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+              <AnimatePresence>
+                {filteredUsers.map((user, index) => (
+                  <motion.div
+                    key={user.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="bg-rpg-card border border-white/5 rounded-3xl p-5 space-y-5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-jiwa/20 to-ilmu/20 flex items-center justify-center font-black text-jiwa shrink-0">
+                          {user.username?.[0].toUpperCase() || '?'}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-sm text-white truncate">{user.username || 'Anonymous'}</p>
+                          <p className="text-[10px] text-neutral-500 font-medium truncate">{user.email}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter block">LVL</span>
+                        <span className="font-black text-white italic text-lg leading-none">{user.level}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 py-4 border-y border-white/5">
+                      <div>
+                        <span className="text-[9px] font-black text-neutral-600 uppercase tracking-widest block mb-1">XP Points</span>
+                        <span className="text-xs font-bold text-harta">{user.xp} XP</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[9px] font-black text-neutral-600 uppercase tracking-widest block mb-1">Status</span>
+                        {user.last_name_change ? (
+                          <span className="text-[9px] text-red-400 font-bold uppercase italic">Cooldown Active</span>
+                        ) : (
+                          <span className="text-[9px] text-raga font-bold uppercase italic">Verified</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      <AdminButton 
+                        icon={<Eye className="w-3.5 h-3.5" />} 
+                        label="View" 
+                        onClick={() => handleViewProfile(user)}
+                        variant="info"
+                      />
+                      <AdminButton 
+                        icon={<MailIcon className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-mail' && "animate-spin")} />} 
+                        label="Mail" 
+                        onClick={() => handleSendMail(user.supabase_id, user.username || user.email)}
+                        variant="info"
+                      />
+                      <AdminButton 
+                        icon={<Gift className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-reward' && "animate-spin")} />} 
+                        label="+XP" 
+                        onClick={() => handleGiveReward(user.supabase_id, user.xp, user.level)}
+                        variant="success"
+                      />
+                      <AdminButton 
+                        icon={<ArrowUpCircle className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-lvl' && "animate-spin")} />} 
+                        label="+LVL" 
+                        onClick={() => handleLevelUp(user.supabase_id, user.level)}
+                        variant="warning"
+                      />
+                      <AdminButton 
+                        icon={<RotateCcw className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-reset-lvl' && "animate-spin")} />} 
+                        label="Reset" 
+                        onClick={() => handleResetLevel(user.supabase_id)}
+                        variant="danger"
+                      />
+                      <AdminButton 
+                        icon={<Trash2 className={cn("w-3.5 h-3.5", actionLoading === user.id + '-delete' && "animate-spin")} />} 
+                        label="Del" 
+                        onClick={() => handleDeleteUser(user.id, user.supabase_id)}
+                        variant="danger"
+                      />
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           </div>
+        )}
 
-          {/* Mobile Card View */}
-          <div className="md:hidden space-y-4">
-            <AnimatePresence>
-              {filteredUsers.map((user, index) => (
-                <motion.div
-                  key={user.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="bg-rpg-card border border-white/5 rounded-3xl p-5 space-y-5"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-jiwa/20 to-ilmu/20 flex items-center justify-center font-black text-jiwa shrink-0">
-                        {user.username?.[0].toUpperCase() || '?'}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-sm text-white truncate">{user.username || 'Anonymous'}</p>
-                        <p className="text-[10px] text-neutral-500 font-medium truncate">{user.email}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter block">LVL</span>
-                      <span className="font-black text-white italic text-lg leading-none">{user.level}</span>
+
+        {/* Global Quests Tab */}
+        {activeTab === 'GLOBAL_QUESTS' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-black uppercase tracking-[0.3em] text-neutral-500">World Anomaly Quests</h2>
+              <button 
+                onClick={() => setEditingQuest({ title: '', desc: '', stat_type: 'JIWA', reward_xp: 500, expires_at: new Date(Date.now() + 86400000).toISOString() })}
+                className="px-6 py-3 bg-jiwa text-black font-black uppercase text-[10px] tracking-widest rounded-xl hover:bg-jiwa/90 transition-all"
+              >
+                + Create New Quest
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {globalQuests.map((quest) => (
+                <motion.div key={quest.id} layout className="bg-rpg-card border border-white/5 rounded-3xl p-6 space-y-4 relative overflow-hidden group">
+                  <div className="flex justify-between items-start relative z-10">
+                    <span className={cn("px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em]", 
+                      quest.is_claimed ? "bg-red-500/20 text-red-400" : "bg-green-500/20 text-green-400")}>
+                      {quest.is_claimed ? 'CLAIMED' : 'ACTIVE'}
+                    </span>
+                    <div className="flex gap-2">
+                      <button onClick={() => setEditingQuest(quest)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-all"><TrendingUp className="w-4 h-4 text-ilmu" /></button>
+                      <button onClick={() => handleDeleteGlobalQuest(quest.id)} className="p-2 bg-white/5 hover:bg-red-500/10 rounded-lg transition-all group-hover:bg-red-500/20"><Trash2 className="w-4 h-4 text-red-500" /></button>
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4 py-4 border-y border-white/5">
-                    <div>
-                      <span className="text-[9px] font-black text-neutral-600 uppercase tracking-widest block mb-1">XP Points</span>
-                      <span className="text-xs font-bold text-harta">{user.xp} XP</span>
+                  <h3 className="text-lg font-black text-white italic">"{quest.title}"</h3>
+                  <p className="text-xs text-neutral-500 line-clamp-2">{quest.description || quest.desc}</p>
+                  <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                    <div className="flex flex-col">
+                      <span className="text-[8px] font-black text-neutral-600 uppercase tracking-widest">Reward</span>
+                      <span className="text-xs font-bold text-harta">{quest.reward_xp} XP + {quest.stat_type}</span>
                     </div>
-                    <div className="text-right">
-                      <span className="text-[9px] font-black text-neutral-600 uppercase tracking-widest block mb-1">Status</span>
-                      {user.last_name_change ? (
-                        <span className="text-[9px] text-red-400 font-bold uppercase italic">Cooldown Active</span>
-                      ) : (
-                        <span className="text-[9px] text-raga font-bold uppercase italic">Verified</span>
-                      )}
+                    <div className="text-right flex flex-col">
+                      <span className="text-[8px] font-black text-neutral-600 uppercase tracking-widest">Expires</span>
+                      <span className="text-[10px] font-mono text-neutral-500">{new Date(quest.expires_at).toLocaleDateString()}</span>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2">
-                    <AdminButton 
-                      icon={<Eye className="w-3.5 h-3.5" />} 
-                      label="View" 
-                      onClick={() => handleViewProfile(user)}
-                      variant="info"
-                    />
-                    <AdminButton 
-                      icon={<MailIcon className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-mail' && "animate-spin")} />} 
-                      label="Mail" 
-                      onClick={() => handleSendMail(user.supabase_id, user.username || user.email)}
-                      variant="info"
-                    />
-                    <AdminButton 
-                      icon={<Gift className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-reward' && "animate-spin")} />} 
-                      label="+XP" 
-                      onClick={() => handleGiveReward(user.supabase_id, user.xp, user.level)}
-                      variant="success"
-                    />
-                    <AdminButton 
-                      icon={<ArrowUpCircle className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-lvl' && "animate-spin")} />} 
-                      label="+LVL" 
-                      onClick={() => handleLevelUp(user.supabase_id, user.level)}
-                      variant="warning"
-                    />
-                    <AdminButton 
-                      icon={<RotateCcw className={cn("w-3.5 h-3.5", actionLoading === user.supabase_id + '-reset-lvl' && "animate-spin")} />} 
-                      label="Reset" 
-                      onClick={() => handleResetLevel(user.supabase_id)}
-                      variant="danger"
-                    />
-                    <AdminButton 
-                      icon={<Trash2 className={cn("w-3.5 h-3.5", actionLoading === user.id + '-delete' && "animate-spin")} />} 
-                      label="Del" 
-                      onClick={() => handleDeleteUser(user.id, user.supabase_id)}
-                      variant="danger"
-                    />
                   </div>
                 </motion.div>
               ))}
-            </AnimatePresence>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Submissions Tab */}
+        {activeTab === 'SUBMISSIONS' && (
+          <div className="space-y-6">
+            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-neutral-500">Pending Review</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {submissions.filter(s => s.status === 'PENDING').map((sub) => (
+                <div key={sub.id} className="bg-rpg-card border border-jiwa/20 rounded-3xl p-6 space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-jiwa/20 flex items-center justify-center font-black text-jiwa italic">
+                        {sub.arutha_user?.username?.[0].toUpperCase() || 'P'}
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm text-white">{sub.arutha_user?.username || 'Unknown Player'}</p>
+                        <p className="text-[10px] text-neutral-500">{new Date(sub.created_at).toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <span className="px-3 py-1 bg-amber-500/20 text-amber-500 text-[8px] font-black rounded-full">PENDING REVIEW</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-sm text-neutral-300 bg-white/5 p-4 rounded-2xl border border-white/5 italic">
+                      "{sub.proof_note}"
+                    </p>
+                    {sub.proof_photo && (
+                      <div className="relative aspect-video bg-black rounded-2xl overflow-hidden border border-white/10">
+                        <img src={sub.proof_photo} alt="Proof" className="w-full h-full object-contain" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button 
+                      onClick={() => {
+                        const quest = globalQuests.find(q => q.id === sub.quest_id);
+                        handleReviewSubmission(sub.id, 'APPROVED', sub.user_id, quest?.reward_xp || 500, quest?.stat_type || 'JIWA', sub.quest_id);
+                      }}
+                      className="flex-1 py-4 bg-green-500 text-black font-black uppercase text-xs tracking-widest rounded-2xl hover:bg-green-400 transition-all shadow-[0_10px_30px_rgba(34,197,94,0.3)]"
+                    >
+                      Approve & Grant Reward
+                    </button>
+                    <button 
+                      onClick={() => handleReviewSubmission(sub.id, 'REJECTED', sub.user_id, 0, 'JIWA', sub.quest_id)}
+                      className="px-6 py-4 bg-red-500/10 text-red-500 font-black uppercase text-xs tracking-widest rounded-2xl hover:bg-red-500 hover:text-white transition-all border border-red-500/20"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {submissions.filter(s => s.status === 'PENDING').length === 0 && (
+                <div className="col-span-full py-20 flex flex-col items-center justify-center text-neutral-600 bg-white/[0.02] border border-dashed border-white/10 rounded-3xl">
+                  <ShieldCheck className="w-12 h-12 mb-4 opacity-20" />
+                  <p className="font-bold uppercase tracking-widest text-xs">No pending submissions</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
       </div>
 
@@ -717,6 +966,98 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                   )}
                 >
                   {confirmModal.type === 'alert' ? 'OK' : 'Konfirmasi'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Quest Modal */}
+      <AnimatePresence>
+        {editingQuest && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+              className="w-full max-w-lg bg-rpg-card border border-white/10 rounded-[32px] p-8 space-y-6 shadow-2xl"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-black italic tracking-tight">
+                  {editingQuest.id ? 'Edit World Anomaly' : 'Create World Anomaly'}
+                </h3>
+                <button onClick={() => setEditingQuest(null)} className="p-2 hover:bg-white/10 rounded-full"><X className="w-5 h-5" /></button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest px-1">Quest Title</label>
+                  <input 
+                    type="text" 
+                    placeholder="Contoh: Sang Pencuri Bintang"
+                    className="w-full px-4 py-3 bg-black/50 border border-white/5 rounded-xl outline-none focus:border-jiwa/30 transition-all text-sm"
+                    value={editingQuest.title}
+                    onChange={e => setEditingQuest({ ...editingQuest, title: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest px-1">Description</label>
+                  <textarea 
+                    placeholder="Apa yang harus dilakukan pemain? Ceritakan narasinya..."
+                    rows={3}
+                    className="w-full px-4 py-3 bg-black/50 border border-white/5 rounded-xl outline-none focus:border-jiwa/30 transition-all text-sm resize-none"
+                    value={editingQuest.desc}
+                    onChange={e => setEditingQuest({ ...editingQuest, desc: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest px-1">Stat Affinity</label>
+                    <select 
+                      className="w-full px-4 py-3 bg-black/50 border border-white/5 rounded-xl outline-none focus:border-jiwa/30 transition-all text-sm appearance-none"
+                      value={editingQuest.stat_type || 'JIWA'}
+                      onChange={e => setEditingQuest({ ...editingQuest, stat_type: e.target.value })}
+                    >
+                      <option value="JIWA">JIWA</option>
+                      <option value="RAGA">RAGA</option>
+                      <option value="HARTA">HARTA</option>
+                      <option value="ILMU">ILMU</option>
+                      <option value="KARMA">KARMA</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest px-1">XP Reward</label>
+                    <input 
+                      type="number" 
+                      className="w-full px-4 py-3 bg-black/50 border border-white/5 rounded-xl outline-none focus:border-jiwa/30 transition-all text-sm"
+                      value={editingQuest.reward_xp ?? ''}
+                      onChange={e => {
+                        const val = parseInt(e.target.value);
+                        setEditingQuest({ ...editingQuest, reward_xp: isNaN(val) ? 0 : val });
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest px-1">Expires At</label>
+                  <input 
+                    type="datetime-local" 
+                    className="w-full px-4 py-3 bg-black/50 border border-white/5 rounded-xl outline-none focus:border-jiwa/30 transition-all text-sm"
+                    value={editingQuest.expires_at ? editingQuest.expires_at.slice(0, 16) : ''}
+                    onChange={e => setEditingQuest({ ...editingQuest, expires_at: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button 
+                  onClick={() => handleSaveGlobalQuest(editingQuest)}
+                  disabled={actionLoading === 'save-quest'}
+                  className="flex-1 py-4 bg-jiwa text-black font-black uppercase text-xs tracking-[0.2em] rounded-2xl hover:bg-jiwa/90 transition-all shadow-[0_10px_30px_rgba(167,139,250,0.3)] disabled:opacity-50"
+                >
+                  {actionLoading === 'save-quest' ? 'MEMPROSES...' : 'SIMPAN MISI DUNIA'}
                 </button>
               </div>
             </motion.div>

@@ -6,6 +6,7 @@ import { cn, getDimensionColor } from '../lib/utils';
 
 interface LeaderboardEntry {
   id: string;
+  profileId: string;
   name: string;
   level: number;
   xp: number;
@@ -39,41 +40,51 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, onBack,
     setLoading(true);
     try {
       let query = supabase
-        .from('character_profile')
+        .from('arutha_user')
         .select(`
-          jiwa, raga, harta, ilmu, karma,
-          arutha_user!inner(id, username, level, xp)
-        `);
+          id, username, level, xp,
+          character_profile(jiwa, raga, harta, ilmu, karma, id, created_at)
+        `)
+        .order(category === 'OVERALL' ? 'level' : 'id', { ascending: false });
 
       if (category === 'OVERALL') {
-        // Sort by level and xp in the joined table
-        query = query.order('arutha_user(level)', { ascending: false }).order('arutha_user(xp)', { ascending: false });
-      } else {
-        // Sort by dimension directly in character_profile
-        query = query.order(category.toLowerCase(), { ascending: false });
+        query = query.order('xp', { ascending: false });
       }
 
-      const { data, error } = await query.limit(isPreview ? 3 : 20);
+      const { data, error } = await query.limit(isPreview ? 3 : 50);
 
       if (error) throw error;
 
-      const formatted = data.map((d: any) => {
-        const user = d.arutha_user;
-        return {
-          id: user.id,
-          name: user.username,
-          avatar_url: undefined,
-          level: user.level,
-          xp: user.xp,
-          jiwa: d.jiwa || 0,
-          raga: d.raga || 0,
-          harta: d.harta || 0,
-          ilmu: d.ilmu || 0,
-          karma: d.karma || 0
-        };
-      });
+      // Map and filter users who have at least one profile
+      const formatted = data
+        .filter((user: any) => user.character_profile && user.character_profile.length > 0)
+        .map((user: any) => {
+          // Get the latest profile (in case there are multiple)
+          const latestProfile = [...user.character_profile].sort((a, b) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          )[0];
 
-      setEntries(formatted);
+          return {
+            id: user.id,
+            profileId: latestProfile.id,
+            name: user.username,
+            avatar_url: undefined,
+            level: user.level,
+            xp: user.xp,
+            jiwa: latestProfile.jiwa || 0,
+            raga: latestProfile.raga || 0,
+            harta: latestProfile.harta || 0,
+            ilmu: latestProfile.ilmu || 0,
+            karma: latestProfile.karma || 0
+          };
+        });
+
+      // If sorting by dimension, we need to re-sort after getting latest profile
+      if (category !== 'OVERALL') {
+        formatted.sort((a: any, b: any) => (b[category.toLowerCase()] || 0) - (a[category.toLowerCase()] || 0));
+      }
+
+      setEntries(formatted.slice(0, isPreview ? 3 : 20));
     } catch (err) {
       console.error('Error fetching leaderboard:', err);
     } finally {
@@ -169,7 +180,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, onBack,
             <AnimatePresence mode="popLayout">
               {entries.map((entry, index) => (
                 <motion.div
-                  key={entry.id}
+                  key={entry.profileId || `${entry.id}-${index}`}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}

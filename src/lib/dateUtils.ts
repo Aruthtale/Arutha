@@ -58,3 +58,28 @@ export function isToday(timestamp: string | null | undefined): boolean {
 export function isNewDay(timestamp: string | null | undefined): boolean {
   return !isToday(timestamp);
 }
+
+/**
+ * Mendapatkan nomor minggu ISO (Senin sebagai awal minggu).
+ */
+export function getISOWeek(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+/**
+ * Mengecek apakah sudah berganti minggu (untuk reset Senin).
+ */
+export function isNewWeek(lastTimestamp: string | null | undefined): boolean {
+  if (!lastTimestamp) return true;
+  const lastDate = new Date(lastTimestamp.replace(' ', 'T'));
+  const now = new Date();
+  
+  // Jika tahun beda, pasti minggu beda (atau minimal reset)
+  if (now.getFullYear() !== lastDate.getFullYear()) return true;
+  
+  return getISOWeek(now) !== getISOWeek(lastDate);
+}

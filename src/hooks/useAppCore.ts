@@ -1,0 +1,625 @@
+import { useState, useRef } from 'react';
+import { supabase } from '../lib/supabase';
+import { useStore } from '../store/useStore';
+import { 
+  analyzeCharacter, 
+  generateDailyQuests, 
+  generateOnboardingQuestions, 
+  generateRecoveryQuests,
+  verifyQuestCompletion,
+  type Quest, 
+  type Stats, 
+  type Dimension, 
+  type OnboardingAnswer 
+} from '../lib/gemini';
+import { checkAndApplyDecay, resetFatigue } from '../lib/decaySystem';
+import { isNewDay, getLocalTimestamp, getTodayDate, isToday, isNewWeek } from '../lib/dateUtils';
+import { TALENTS } from '../lib/talents';
+
+export function useAppCore() {
+  const {
+    page, setPage,
+    session, setSession,
+    dbUserId, setDbUserId,
+    setIsDataReady,
+    decayResult, setDecayResult,
+    name, setName,
+    level, setLevel,
+    xp, setXp,
+    stats, setStats,
+    characterAnalysis, setCharacterAnalysis,
+    quests, setQuests,
+    statHistory, setStatHistory,
+    isRefreshing, setIsRefreshing,
+    lastEvolutionDate, setLastEvolutionDate,
+    refreshCount, setRefreshCount,
+    streak, setStreak,
+    lastStreakDate, setLastStreakDate,
+    showLevelUp, setShowLevelUp,
+    nameChangeCount, setNameChangeCount,
+    lastNameChange, setLastNameChange,
+    userContext, setUserContext,
+    talents, setTalents,
+    onboardingQuestions, setOnboardingQuestions,
+    availableWeeklyQuests, setAvailableWeeklyQuests,
+    activeWeeklyQuests, setActiveWeeklyQuests,
+    lastWeeklyReset, setLastWeeklyReset,
+    globalQuests, setGlobalQuests,
+    talentChoicesAvailable, setTalentChoicesAvailable
+  } = useStore();
+
+  const [loading, setLoading] = useState(false);
+  const [levelUpStage, setLevelUpStage] = useState<1 | 2>(1);
+  const initLockRef = useRef(false);
+  const refreshLockRef = useRef(false);
+
+  const fetchGlobalQuests = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('arutha_global_quests')
+        .select('*')
+        .eq('is_claimed', false)
+        .gt('expires_at', getLocalTimestamp());
+      
+      if (error) throw error;
+      if (data) {
+        setGlobalQuests(data.map(q => ({
+          ...q,
+          stat: q.stat_type as Dimension,
+          is_global: true
+        })));
+      }
+    } catch (err) {
+      console.error("Fetch global quests error:", err);
+    }
+  };
+
+  const fetchStatHistory = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('stat_history')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(7);
+
+      if (error) throw error;
+      if (data) setStatHistory(data.reverse());
+    } catch (err) {
+      console.error("Fetch history error:", err);
+    }
+  };
+
+  const syncProgress = async (newLevel: number, newXp: number, newStats: Stats, updatedQuests?: Quest[], newTalents?: string[], newTalentChoicesAvailable?: number) => {
+    if (!session || !dbUserId) return;
+    try {
+      const sanitizedLevel = isNaN(newLevel) ? 1 : Math.max(1, newLevel);
+      const sanitizedXp = isNaN(newXp) ? 0 : Math.max(0, newXp);
+      
+      const updateData: any = { 
+        level: sanitizedLevel, 
+        xp: sanitizedXp,
+        last_active_date: getLocalTimestamp()
+      };
+      
+      if (updatedQuests) updateData.active_quests = updatedQuests;
+      if (newTalents) updateData.talents = newTalents;
+      if (newTalentChoicesAvailable !== undefined) updateData.talent_choices_available = newTalentChoicesAvailable;
+      
+      const { error } = await supabase.from('arutha_user').update(updateData).eq('supabase_id', session.user.id);
+      if (error) console.error("Sync Progress Error (arutha_user):", error);
+
+      const { data: profiles } = await supabase.from('character_profile').select('id').eq('user_id', dbUserId).order('created_at', { ascending: false }).limit(1);
+      const latestProfile = profiles?.[0];
+      if (latestProfile) {
+        await supabase.from('character_profile').update({
+          jiwa: newStats.JIWA, raga: newStats.RAGA, harta: newStats.HARTA, ilmu: newStats.ILMU, karma: newStats.KARMA,
+        }).eq('id', latestProfile.id);
+      }
+
+      const historyData = {
+        jiwa: Math.round(newStats.JIWA || 0),
+        raga: Math.round(newStats.RAGA || 0),
+        harta: Math.round(newStats.HARTA || 0),
+        ilmu: Math.round(newStats.ILMU || 0),
+        karma: Math.round(newStats.KARMA || 0)
+      };
+
+      const { data: lastLogs } = await supabase.from('stat_history').select('id, created_at').eq('user_id', dbUserId).order('created_at', { ascending: false }).limit(1);
+      const isTodayLog = lastLogs && lastLogs.length > 0 && isToday(lastLogs[0].created_at);
+
+      if (isTodayLog) {
+        await supabase.from('stat_history').update(historyData).eq('id', lastLogs[0].id);
+      } else {
+        await supabase.from('stat_history').insert({ id: crypto.randomUUID(), user_id: dbUserId, ...historyData });
+      }
+      fetchStatHistory(dbUserId);
+    } catch (err) { console.error("Sync error:", err); }
+  };
+
+  const initializeUserData = async (currentSession: any) => {
+    if (initLockRef.current) return;
+    initLockRef.current = true;
+    
+    const userMetadata = currentSession.user.user_metadata;
+    const displayName = userMetadata.full_name || userMetadata.username || currentSession.user.email?.split('@')[0] || 'Player One';
+
+    try {
+      const userEmail = currentSession.user.email || `user_${currentSession.user.id.slice(0, 8)}@arutha.local`;
+      let { data: userData } = await supabase.from('arutha_user').select('*').eq('supabase_id', currentSession.user.id).maybeSingle();
+
+      if (!userData) {
+        const { data: newList } = await supabase.from('arutha_user').insert({
+          supabase_id: currentSession.user.id, email: userEmail, username: displayName, level: 1, xp: 0, streak: 0
+        }).select();
+        userData = newList?.[0];
+      }
+
+      if (userData) {
+        setDbUserId(userData.id);
+        setName(userData.username || displayName);
+        setLevel(userData.level || 1);
+        setXp(userData.xp || 0);
+        setStreak(userData.streak || 0);
+        setLastStreakDate(userData.last_streak_date);
+        setNameChangeCount(userData.name_change_count || 0);
+        setLastNameChange(userData.last_name_change);
+        setLastEvolutionDate(userData.last_evolution_date);
+        setRefreshCount(userData.refresh_count || 0);
+        setTalents(userData.talents || []);
+        setLastWeeklyReset(userData.last_weekly_reset);
+
+        // Catch-up logic for talents based on level milestones
+        const MILESTONES = [1, 3, 5, 10, 15, 20, 25, 30];
+        const userLevel = userData.level || 1;
+        const currentTalentsCount = (userData.talents || []).length;
+        const currentChoicesAvailable = userData.talent_choices_available || 0;
+        const expectedTotalChoices = MILESTONES.filter(m => m <= userLevel).length;
+        const actualTotalChoices = currentTalentsCount + currentChoicesAvailable;
+        
+        if (actualTotalChoices < expectedTotalChoices) {
+          const diff = expectedTotalChoices - actualTotalChoices;
+          const newChoices = currentChoicesAvailable + diff;
+          setTalentChoicesAvailable(newChoices);
+          // Sync to DB immediately
+          await supabase.from('arutha_user').update({ talent_choices_available: newChoices }).eq('id', userData.id);
+        } else {
+          setTalentChoicesAvailable(currentChoicesAvailable);
+        }
+
+        setAvailableWeeklyQuests(userData.available_weekly_quests || []);
+        setActiveWeeklyQuests(userData.active_weekly_quests || []);
+        setDecayResult(await checkAndApplyDecay(userData.id));
+
+        setUserContext({ 
+          usia: userData.usia, gender: userData.gender, username: userData.username || displayName,
+          birthDate: userData.birth_date, zodiac: userData.zodiac 
+        });
+
+        if (!userData.usia || !userData.gender || !userData.birth_date) {
+          setPage('COMPLETE_PROFILE');
+          return;
+        }
+
+        const { data: profiles } = await supabase.from('character_profile').select('*').eq('user_id', userData.id).order('created_at', { ascending: false }).limit(1);
+        const profileData = profiles?.[0];
+
+        if (profileData) {
+          const loadedStats = { JIWA: profileData.jiwa, RAGA: profileData.raga, HARTA: profileData.harta, ILMU: profileData.ilmu, KARMA: profileData.karma };
+          setStats(loadedStats);
+          setCharacterAnalysis({
+            personality_type: profileData.personality_type, personality_title: profileData.personality_title,
+            personality_desc: profileData.personality_desc, stats: loadedStats, character_summary: profileData.character_summary,
+            starter_quest: { title: '', desc: '', stat: '' }
+          });
+
+          if (isNewDay(userData.last_quest_update) || !userData.active_quests || (userData.active_quests as any[]).length < 6) {
+            const aiQuests = await generateDailyQuests(loadedStats, undefined, false);
+            setQuests(aiQuests);
+            await supabase.from('arutha_user').update({ active_quests: aiQuests, last_quest_update: getLocalTimestamp() }).eq('supabase_id', currentSession.user.id);
+          } else {
+            setQuests(userData.active_quests as Quest[]);
+          }
+          fetchStatHistory(userData.id);
+          fetchGlobalQuests();
+
+          // Handle Weekly Reset (Monday or First Time)
+          const hasNoWeeklyQuests = (!userData.available_weekly_quests || (userData.available_weekly_quests as any[]).length === 0) && 
+                                   (!userData.active_weekly_quests || (userData.active_weekly_quests as any[]).length === 0);
+
+          if (isNewWeek(userData.last_weekly_reset) || hasNoWeeklyQuests) {
+            const newWeeklyOptions = await generateDailyQuests(loadedStats, "Fokus tantangan mingguan pahlawan yang lebih berat dan butuh waktu lama.", true);
+            // Convert to weekly type with steps
+            const weeklyQuests = newWeeklyOptions.map((q, i) => ({
+              ...q,
+              id: `weekly_${Date.now()}_${i}`,
+              is_weekly: true,
+              xp: q.xp * 5, // Weekly rewards are 5x daily
+              steps: { current: 0, total: q.xp > 500 ? 5 : 3 } // Big quests need 5 days, small ones 3
+            }));
+            
+            setAvailableWeeklyQuests(weeklyQuests);
+            setActiveWeeklyQuests([]); // Reset active ones
+            const now = getLocalTimestamp();
+            setLastWeeklyReset(now);
+            await supabase.from('arutha_user').update({ 
+              available_weekly_quests: weeklyQuests, 
+              active_weekly_quests: [],
+              last_weekly_reset: now 
+            }).eq('id', userData.id);
+          } else {
+            setAvailableWeeklyQuests(userData.available_weekly_quests || []);
+            setActiveWeeklyQuests(userData.active_weekly_quests || []);
+            setLastWeeklyReset(userData.last_weekly_reset);
+          }
+
+          setPage(prev => ['LANDING', 'LOGIN', 'REGISTER', 'ONBOARDING', 'CHARACTER_REVEAL', 'COMPLETE_PROFILE'].includes(prev) ? 'DASHBOARD' : prev);
+        } else {
+          setPage('ONBOARDING');
+        }
+      }
+    } catch (err) { console.error("Init error:", err); } finally { setIsDataReady(true); initLockRef.current = false; }
+  };
+
+  const addXp = (amount: number, stat?: Dimension, updatedQuests?: Quest[]) => {
+    const activeTalents = TALENTS.filter(t => talents.includes(t.id));
+    let bonusMultiplier = 1;
+    activeTalents.forEach(t => { if (t.xpBoost) bonusMultiplier += t.xpBoost.value; });
+
+    const finalXpAmount = Math.round(amount * bonusMultiplier);
+    let nextLevel = level;
+    let nextXp = xp + finalXpAmount;
+    let nextStats = { ...stats };
+    let nextTalentChoicesAvailable = talentChoicesAvailable;
+
+    if (stat) {
+      let statMultiplier = 1;
+      activeTalents.forEach(t => { if (t.statBoost && (t.statBoost.stat === stat || t.statBoost.stat === 'ALL')) statMultiplier += t.statBoost.value; });
+      nextStats[stat] = Math.min(100, stats[stat] + (2 * statMultiplier));
+    }
+
+    if (nextXp >= level * 1000) {
+      nextXp -= level * 1000;
+      nextLevel++;
+      
+      const MILESTONES = [1, 3, 5, 10, 15, 20, 25, 30];
+      if (MILESTONES.includes(nextLevel)) {
+        nextTalentChoicesAvailable += 1;
+        setTalentChoicesAvailable(nextTalentChoicesAvailable);
+      }
+
+      setLevelUpStage(1);
+      setShowLevelUp(true);
+    }
+
+    setLevel(nextLevel); setXp(nextXp); setStats(nextStats);
+    syncProgress(nextLevel, nextXp, nextStats, updatedQuests, undefined, nextTalentChoicesAvailable);
+  };
+
+  const completeQuest = async (id: string, note: string, photoBase64?: string, photoMimeType?: string) => {
+    // 1. Find the quest in all possible lists
+    const isGlobal = globalQuests.find(q => q.id === id);
+    const isWeeklyActive = activeWeeklyQuests.find(q => q.id === id);
+    const quest = isGlobal || isWeeklyActive || quests.find(q => q.id === id);
+    
+    if (!quest || quest.completed) return { success: false, feedback: "Quest tidak valid atau sudah selesai." };
+    
+    // 2. Special handling for Progressive Quests (Steps)
+    if (quest.steps) {
+      if (quest.steps.last_check_in && isToday(quest.steps.last_check_in)) {
+        return { success: false, feedback: "Kamu sudah melaporkan progres misi ini hari ini, Pahlawan. Istirahatlah sejenak dan kembali besok!" };
+      }
+    }
+
+    // 3. Global Quests Handling (Pending Admin)
+    if (quest.is_global) {
+      try {
+        const { error: subError } = await supabase.from('arutha_global_quest_submissions').insert({
+          id: crypto.randomUUID(),
+          quest_id: id,
+          user_id: dbUserId,
+          proof_note: note,
+          proof_photo: photoBase64,
+          status: 'PENDING'
+        });
+        if (subError) throw subError;
+        return { success: true, feedback: "Bukti terkirim! Menunggu verifikasi Admin." };
+      } catch (err: any) {
+        return { success: false, feedback: `Gagal mengirim bukti: ${err.message}` };
+      }
+    }
+
+    // 4. Normal/Weekly AI Verification
+    try {
+      const verification = await verifyQuestCompletion(quest.title, quest.desc, note, photoBase64, photoMimeType);
+      
+      if (verification.success) {
+        const now = getLocalTimestamp();
+
+        if (quest.steps) {
+          // Progressive Quest Logic
+          const newCurrent = quest.steps.current + 1;
+          const isFullyComplete = newCurrent >= quest.steps.total;
+          
+          const updatedSteps = {
+            ...quest.steps,
+            current: newCurrent,
+            last_check_in: now
+          };
+
+          if (isWeeklyActive) {
+            const updatedActiveWeekly = activeWeeklyQuests.map(q => 
+              q.id === id ? { ...q, steps: updatedSteps, completed: isFullyComplete } : q
+            );
+            setActiveWeeklyQuests(updatedActiveWeekly);
+            
+            // Sync to DB
+            await supabase.from('arutha_user').update({ active_weekly_quests: updatedActiveWeekly }).eq('id', dbUserId);
+            
+            if (isFullyComplete) {
+              addXp(quest.xp, quest.stat as Dimension);
+              verification.feedback = `LUAR BIASA! Misi Mingguan Selesai. +${quest.xp} XP!`;
+            } else {
+              verification.feedback = `Laporan diterima! Progres: ${newCurrent}/${quest.steps.total}. Sampai jumpa besok!`;
+            }
+          }
+        } else {
+          // Regular Daily Quest Logic
+          const updatedDailies = quests.map(q => q.id === id ? { ...q, completed: true } : q);
+          setQuests(updatedDailies);
+          addXp(quest.xp, quest.stat as Dimension, updatedDailies);
+          
+          if (dbUserId) await resetFatigue(dbUserId);
+          setDecayResult(prev => prev ? { ...prev, status: 'ok', fatigueDays: 0 } : null);
+        }
+      }
+      return verification;
+    } catch (err) {
+      console.error(err);
+      return { success: false, feedback: "Gagal memproses verifikasi AI." };
+    }
+  };
+
+  const handleOnboardingComplete = async (answers: OnboardingAnswer[]) => {
+    if (!session) return;
+    setLoading(true);
+    try {
+      const analysis = await analyzeCharacter(answers, userContext);
+      let { data: users } = await supabase.from('arutha_user').select('id, talents').eq('supabase_id', session.user.id).limit(1);
+      
+      if (users?.[0]) {
+        const userData = users[0];
+        
+        // 1. Insert Character Profile
+        const { error: profileError } = await supabase.from('character_profile').insert({
+          id: crypto.randomUUID(), 
+          user_id: userData.id, 
+          personality_type: analysis.personality_type,
+          personality_title: analysis.personality_title, 
+          personality_desc: analysis.personality_desc,
+          character_summary: analysis.character_summary, 
+          jiwa: analysis.stats.JIWA, 
+          raga: analysis.stats.RAGA,
+          harta: analysis.stats.HARTA, 
+          ilmu: analysis.stats.ILMU, 
+          karma: analysis.stats.KARMA,
+          rationale: analysis.rationale,
+        });
+
+        if (profileError) {
+          console.error("Profile Insert Error:", profileError);
+          throw new Error(`Gagal menyimpan profil: ${profileError.message}`);
+        }
+
+        // 2. Grant Initial Talent Choice (Level 1 Milestone)
+        const initialTalentChoices = 1;
+        setTalentChoicesAvailable(initialTalentChoices);
+
+        // 3. Generate and Store Quests & Update User
+        const aiQuests = await generateDailyQuests(analysis.stats, undefined, false);
+        setQuests(aiQuests);
+        
+        const now = getLocalTimestamp();
+        const { error: questError } = await supabase.from('arutha_user').update({ 
+          active_quests: aiQuests, 
+          last_quest_update: now,
+          last_evolution_date: now,
+          talent_choices_available: initialTalentChoices
+        }).eq('id', userData.id);
+
+        if (questError) {
+          console.error("Quest/Talent Update Error:", questError);
+        } else {
+          setLastEvolutionDate(now);
+        }
+
+        setCharacterAnalysis(analysis);
+        setStats(analysis.stats);
+        setPage('CHARACTER_REVEAL');
+      } else {
+        throw new Error("Data user tidak ditemukan di sistem.");
+      }
+    } catch (err: any) {
+      console.error("Onboarding Error:", err);
+      alert(err.message || "Terjadi kesalahan saat penyelarasan jiwa.");
+    } finally { 
+      setLoading(false); 
+    }
+  };
+
+  const handleTakeRecovery = async () => {
+    if (!dbUserId || isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      const recQuests = await generateRecoveryQuests(decayResult?.fatigueDays || 1);
+      setQuests(recQuests);
+      await supabase.from('arutha_user').update({ active_quests: recQuests }).eq('id', dbUserId);
+      setDecayResult(prev => prev ? { ...prev, status: 'ok' } : null);
+    } finally { setIsRefreshing(false); }
+  };
+
+  const handleUpdateName = async (newName: string) => {
+    if (!session) return;
+    try {
+      await supabase.from('arutha_user').update({ username: newName }).eq('supabase_id', session.user.id);
+      setName(newName);
+    } catch (e) { console.error(e); }
+  };
+
+  const handleClaimStreak = async () => {
+    if (!session || !session.user) return;
+    
+    // Prevent double claim today
+    if (lastStreakDate && isToday(lastStreakDate)) {
+      console.warn("Streak sudah diklaim hari ini.");
+      return;
+    }
+
+    const now = getLocalTimestamp();
+    const newStreak = streak + 1;
+    setStreak(newStreak);
+    setLastStreakDate(now);
+    
+    try {
+      await supabase.from('arutha_user').update({ 
+        streak: newStreak, 
+        last_streak_date: now 
+      }).eq('supabase_id', session.user.id);
+      addXp(100);
+    } catch (err) {
+      console.error("Gagal update streak:", err);
+    }
+  };
+
+  const handleStartOnboarding = async (override?: any) => {
+    setLoading(true);
+    try {
+      const questions = await generateOnboardingQuestions(override || userContext);
+      setOnboardingQuestions(questions);
+      setPage('ONBOARDING');
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshQuests = async () => {
+    if (!dbUserId || refreshCount >= 1) return;
+    setIsRefreshing(true);
+    try {
+      const newQuests = await generateDailyQuests(stats);
+      setQuests(newQuests);
+      setRefreshCount(1);
+      await supabase.from('arutha_user').update({ active_quests: newQuests, refresh_count: 1, last_refresh_date: getLocalTimestamp() }).eq('id', dbUserId);
+    } catch (err) {
+      console.error(err);
+    } finally { setIsRefreshing(false); }
+  };
+
+  const generateInitialQuests = async (mood: string) => {
+    setLoading(true);
+    try {
+      const aiQuests = await generateDailyQuests(stats, mood, false);
+      setQuests(aiQuests);
+      await supabase.from('arutha_user').update({ active_quests: aiQuests, last_quest_update: getLocalTimestamp() }).eq('id', dbUserId);
+    } catch (err) {
+      console.error(err);
+    } finally { setLoading(false); }
+  };
+
+  const handleClaimGlobalQuest = async (questId: string) => {
+    if (!dbUserId || !session) return;
+    setLoading(true);
+    try {
+      const { data: quest } = await supabase.from('arutha_global_quests').select('*').eq('id', questId).single();
+      if (!quest || quest.is_claimed) { alert("Terlambat! Misi ini sudah diselesaikan pahlawan lain."); fetchGlobalQuests(); return; }
+      
+      // Check if already accepted
+      if (quests.find(q => q.id === questId)) {
+        alert("Kamu sudah menerima misi ini.");
+        return;
+      }
+
+      const normalizedQuest = {
+        ...quest,
+        xp: quest.reward_xp,
+        stat: quest.stat_type as Dimension,
+        is_global: true,
+        completed: false
+      };
+
+      const newQ = [...quests, normalizedQuest];
+      setQuests(newQ);
+      await supabase.from('arutha_user').update({ active_quests: newQ }).eq('id', dbUserId);
+      alert("Misi Diterima! Buktikan tantangan ini sebelum orang lain menyelesaikannya."); 
+    } catch (err) {
+      console.error(err);
+    } finally { setLoading(false); }
+  };
+
+  const handleClaimWeeklyQuest = async (questId: string) => {
+    if (!dbUserId) return;
+    const quest = availableWeeklyQuests.find(q => q.id === questId);
+    if (!quest) return;
+
+    // Check if user already has an active quest for this dimension
+    const existing = activeWeeklyQuests.find(q => q.stat === quest.stat && !q.completed);
+    if (existing) {
+      alert(`Kamu masih memiliki misi mingguan aktif untuk dimensi ${quest.stat}. Selesaikan dulu atau tunggu minggu depan!`);
+      return;
+    }
+
+    const updatedAvailable = availableWeeklyQuests.filter(q => q.id !== questId);
+    const updatedActive = [...activeWeeklyQuests, quest];
+    
+    setAvailableWeeklyQuests(updatedAvailable);
+    setActiveWeeklyQuests(updatedActive);
+    
+    try {
+      await supabase.from('arutha_user').update({
+        available_weekly_quests: updatedAvailable,
+        active_weekly_quests: updatedActive
+      }).eq('id', dbUserId);
+      alert(`Misi "${quest.title}" diterima! Semoga disiplinmu membawamu pada kemenangan.`);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleTalentSelection = async (selectedTalentId: string, replacedTalentId?: string) => {
+    if (!dbUserId || talentChoicesAvailable <= 0) return;
+
+    let newTalents = [...talents];
+    if (replacedTalentId) {
+      newTalents = newTalents.filter(id => id !== replacedTalentId);
+    }
+    
+    if (!newTalents.includes(selectedTalentId)) {
+      newTalents.push(selectedTalentId);
+    }
+
+    // Keep only latest 3 if somehow it exceeds (safety)
+    if (newTalents.length > 3) {
+      newTalents = newTalents.slice(-3);
+    }
+
+    const nextChoices = talentChoicesAvailable - 1;
+    setTalents(newTalents);
+    setTalentChoicesAvailable(nextChoices);
+
+    await supabase.from('arutha_user').update({
+      talents: newTalents,
+      talent_choices_available: nextChoices
+    }).eq('id', dbUserId);
+  };
+
+  return {
+    loading, setLoading, levelUpStage, setLevelUpStage,
+    initializeUserData, fetchGlobalQuests, handleClaimGlobalQuest,
+    addXp, completeQuest, refreshQuests, syncProgress,
+    handleOnboardingComplete, handleTakeRecovery, handleUpdateName,
+    handleClaimStreak, handleStartOnboarding, generateInitialQuests,
+    handleClaimWeeklyQuest, handleTalentSelection
+  };
+}
