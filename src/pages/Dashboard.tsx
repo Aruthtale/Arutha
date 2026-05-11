@@ -58,13 +58,16 @@ interface DashboardProps {
   onClaimWeeklyQuest: (id: string) => void;
   talentChoicesAvailable: number;
   onSelectTalent: (selectedId: string, replacedId?: string) => Promise<void>;
+  pendingTalentPool: any[];
+  onSaveTalentPool: (pool: any[]) => void;
+  onSkipTalent: () => Promise<void>;
 }
 
 const EMOJIS = ['😡', '😔', '😐', '😊', '🤩'];
 
 export const Dashboard: React.FC<DashboardProps> = ({
-  session, userId, name, level, xp, stats, quests, analysis, streak, lastStreakDate, onClaimStreak, statHistory, completeQuest, handleLogout, onReOnboard, onRefreshQuests, onGenerateInitialQuests, isRefreshing, lastEvolutionDate, refreshCount, decayResult, onTakeRecovery, setPage, talents, onClaimGlobalQuest,
-  availableWeeklyQuests, activeWeeklyQuests, onClaimWeeklyQuest, talentChoicesAvailable, onSelectTalent
+  session, userId, name, level, xp, stats, quests, analysis, streak, lastStreakDate, onClaimStreak, statHistory, completeQuest, handleLogout, addXp, onReOnboard, onRefreshQuests, onGenerateInitialQuests, isRefreshing, lastEvolutionDate, refreshCount, decayResult, onTakeRecovery, setPage, talents, onClaimGlobalQuest,
+  availableWeeklyQuests, activeWeeklyQuests, onClaimWeeklyQuest, talentChoicesAvailable, onSelectTalent, pendingTalentPool, onSaveTalentPool, onSkipTalent
 }) => {
   const [isMounted, setIsMounted] = useState(false);
   const [isChartVisible, setIsChartVisible] = useState(false);
@@ -108,15 +111,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   useEffect(() => {
     if (talentChoicesAvailable > 0 && !showTalentModal) {
-      // Prepare 3 random talents that are NOT currently owned
-      const unowned = TALENTS.filter(t => !talents.includes(t.id));
-      const pool = [...unowned].sort(() => 0.5 - Math.random()).slice(0, 3);
-      setTalentPool(pool);
+      if (pendingTalentPool && pendingTalentPool.length > 0) {
+        // Use existing pool from DB
+        setTalentPool(pendingTalentPool);
+      } else {
+        // Generate and save new pool
+        const unowned = TALENTS.filter(t => !talents.includes(t.id));
+        const pool = [...unowned].sort(() => 0.5 - Math.random()).slice(0, 3);
+        setTalentPool(pool);
+        onSaveTalentPool(pool);
+      }
       setShowTalentModal(true);
       setReplacingTalentId(null);
       setSelectedNewTalentId(null);
     }
-  }, [talentChoicesAvailable, talents, showTalentModal]);
+  }, [talentChoicesAvailable, talents, showTalentModal, pendingTalentPool]);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -845,6 +854,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <p className="text-sm text-neutral-400 max-w-lg mx-auto">Satu pilihan akan mengubah jalannya sejarah. Pilih dengan bijak, Pahlawan.</p>
               </div>
 
+              {/* SLOT STATUS WITH MORE DETAIL */}
+              <div className="mt-12 mb-4 text-center">
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-6 flex items-center justify-center gap-4">
+                  <div className="h-px w-12 bg-white/10"></div>
+                  {talents.length >= 3 ? "Pilih Talenta yang Ingin Diganti" : "Slot Talenta Anda"}
+                  <div className="h-px w-12 bg-white/10"></div>
+                </div>
+              </div>
+
               <div className="flex justify-center gap-4">
                 {[0, 1, 2].map((i) => {
                   const talentId = talents[i];
@@ -864,21 +882,38 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       whileHover={talent ? { scale: 1.05, y: -5 } : {}}
                       onClick={() => talents.length >= 3 && talentId && setReplacingTalentId(talentId)}
                       className={cn(
-                        "w-24 h-24 md:w-32 md:h-32 rounded-3xl border-2 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer relative overflow-hidden",
+                        "w-24 h-28 md:w-36 md:h-40 rounded-3xl border-2 flex flex-col items-center justify-center gap-1 transition-all cursor-pointer relative overflow-hidden p-2",
                         colors,
                         replacingTalentId === talentId && talentId ? "border-white ring-4 ring-white/20 bg-white text-black" : ""
                       )}
                     >
                       {talent ? (
                         <>
-                          <div className="text-2xl">{talent.rarity === 'Legendary' ? '🔱' : talent.rarity === 'Epic' ? '💎' : talent.rarity === 'Rare' ? '⚔️' : '✨'}</div>
-                          <div className={cn("text-[8px] font-black uppercase tracking-widest text-center px-2", replacingTalentId === talentId ? "text-black" : "text-white/40")}>{talent.name}</div>
-                          <div className={cn("absolute bottom-2 px-1.5 py-0.5 rounded-[4px] text-[6px] font-bold uppercase tracking-widest", replacingTalentId === talentId ? "bg-black text-white" : "bg-white/10 text-white")}>
+                          <div className="text-xl md:text-2xl mb-1">{talent.rarity === 'Legendary' ? '🔱' : talent.rarity === 'Epic' ? '💎' : talent.rarity === 'Rare' ? '⚔️' : '✨'}</div>
+                          <div className={cn("text-[7px] md:text-[9px] font-black uppercase tracking-widest text-center leading-tight mb-1", replacingTalentId === talentId ? "text-black" : "text-white")}>
+                            {talent.name}
+                          </div>
+                          
+                          {/* Mini Stats for existing talents */}
+                          <div className="flex flex-col gap-0.5 items-center mt-1">
+                            {talent.statBoost && (
+                              <div className={cn("text-[6px] md:text-[8px] font-bold", replacingTalentId === talentId ? "text-black/60" : "text-white/40")}>
+                                +{Math.round(talent.statBoost.value * 100)}% {talent.statBoost.stat}
+                              </div>
+                            )}
+                            {talent.xpBoost && (
+                              <div className={cn("text-[6px] md:text-[8px] font-bold", replacingTalentId === talentId ? "text-black/60" : "text-white/40")}>
+                                +{Math.round(talent.xpBoost.value * 100)}% XP
+                              </div>
+                            )}
+                          </div>
+
+                          <div className={cn("absolute bottom-2 px-1.5 py-0.5 rounded-[4px] text-[5px] md:text-[6px] font-bold uppercase tracking-widest", replacingTalentId === talentId ? "bg-black text-white" : "bg-white/10 text-white")}>
                             {talent.rarity}
                           </div>
                         </>
                       ) : (
-                        <div className="text-[8px] font-black uppercase tracking-widest">Slot Kosong</div>
+                        <div className="text-[8px] font-black uppercase tracking-widest opacity-20 text-center px-4">Slot Kosong</div>
                       )}
                     </motion.div>
                   );
@@ -944,17 +979,33 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       </div>
 
                       {/* BONUS INFO */}
-                      <div className="pt-2 flex flex-wrap gap-2">
+                      <div className="pt-3 flex flex-col gap-1.5">
                         {t.statBoost && (
-                          <div className={cn("px-2 py-1 rounded bg-black/20 text-[9px] font-bold flex items-center gap-1", selectedNewTalentId === t.id ? "bg-black/10 text-black" : "text-white/60")}>
-                            <span className="opacity-50">BUFF:</span>
-                            <span className="text-white">+{Math.round(t.statBoost.value * 100)}% {t.statBoost.stat}</span>
+                          <div className={cn(
+                            "px-3 py-2 rounded-xl flex items-center justify-between transition-all",
+                            selectedNewTalentId === t.id ? "bg-black/10 border border-black/10" : "bg-white/5 border border-white/5"
+                          )}>
+                            <div className="flex items-center gap-2">
+                              <div className={cn("w-1.5 h-1.5 rounded-full", selectedNewTalentId === t.id ? "bg-black" : "bg-jiwa")}></div>
+                              <span className={cn("text-[10px] font-black uppercase tracking-wider", selectedNewTalentId === t.id ? "text-black/60" : "text-white/40")}>Stat Buff</span>
+                            </div>
+                            <span className={cn("text-xs font-black", selectedNewTalentId === t.id ? "text-black" : "text-white")}>
+                              +{Math.round(t.statBoost.value * 100)}% {t.statBoost.stat}
+                            </span>
                           </div>
                         )}
                         {t.xpBoost && (
-                          <div className={cn("px-2 py-1 rounded bg-black/20 text-[9px] font-bold flex items-center gap-1", selectedNewTalentId === t.id ? "bg-black/10 text-black" : "text-white/60")}>
-                            <span className="opacity-50">XP:</span>
-                            <span className="text-white">+{Math.round(t.xpBoost.value * 100)}% ({t.xpBoost.condition})</span>
+                          <div className={cn(
+                            "px-3 py-2 rounded-xl flex items-center justify-between transition-all",
+                            selectedNewTalentId === t.id ? "bg-black/10 border border-black/10" : "bg-white/5 border border-white/5"
+                          )}>
+                            <div className="flex items-center gap-2">
+                              <div className={cn("w-1.5 h-1.5 rounded-full", selectedNewTalentId === t.id ? "bg-black" : "bg-amber-400")}></div>
+                              <span className={cn("text-[10px] font-black uppercase tracking-wider", selectedNewTalentId === t.id ? "text-black/60" : "text-white/40")}>XP Boost</span>
+                            </div>
+                            <span className={cn("text-xs font-black", selectedNewTalentId === t.id ? "text-black" : "text-white")}>
+                              +{Math.round(t.xpBoost.value * 100)}% <span className="text-[8px] opacity-60">({t.xpBoost.condition})</span>
+                            </span>
                           </div>
                         )}
                       </div>
@@ -963,16 +1014,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 })}
               </div>
 
-              <div className="flex justify-center pt-8">
+              <div className="flex flex-col md:flex-row justify-center gap-4 pt-8">
                 <button 
                   disabled={!selectedNewTalentId || (talents.length >= 3 && !replacingTalentId)}
                   onClick={async () => {
                     await onSelectTalent(selectedNewTalentId!, replacingTalentId || undefined);
                     setShowTalentModal(false);
                   }}
-                  className="px-12 py-5 bg-white text-black rounded-2xl font-black italic tracking-widest hover:scale-110 active:scale-95 transition-all disabled:opacity-20 shadow-[0_0_50px_rgba(255,255,255,0.3)]"
+                  className="flex-1 max-w-xs px-8 py-4 bg-white text-black rounded-2xl font-black italic tracking-widest hover:scale-105 active:scale-95 transition-all disabled:opacity-20 shadow-[0_0_50px_rgba(255,255,255,0.3)]"
                 >
                   KONFIRMASI TAKDIR
+                </button>
+
+                <button 
+                  onClick={async () => {
+                    if (confirm("Apakah Anda yakin ingin melewati pilihan talenta ini? Jatah pilihan Anda untuk tingkat ini akan hangus.")) {
+                      await onSkipTalent();
+                      setShowTalentModal(false);
+                    }
+                  }}
+                  className="px-8 py-4 bg-white/5 border border-white/10 text-white/40 rounded-2xl font-black italic tracking-widest hover:bg-red-500/20 hover:text-red-500 hover:border-red-500/50 transition-all"
+                >
+                  LEWATI PILIHAN
                 </button>
               </div>
             </motion.div>

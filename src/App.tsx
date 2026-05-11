@@ -53,7 +53,8 @@ export default function App() {
     addXp, completeQuest, refreshQuests,
     handleOnboardingComplete, handleTakeRecovery, handleUpdateName,
     handleClaimStreak, handleStartOnboarding, generateInitialQuests,
-    handleClaimWeeklyQuest, handleTalentSelection
+    handleClaimWeeklyQuest, handleTalentSelection, saveTalentPool,
+    handleSkipTalent
   } = useAppCore();
 
   const {
@@ -63,7 +64,8 @@ export default function App() {
     streak, lastStreakDate, showLevelUp, setShowLevelUp,
     nameChangeCount, lastNameChange, userContext, setUserContext,
     talents, onboardingQuestions, globalQuests,
-    availableWeeklyQuests, activeWeeklyQuests, talentChoicesAvailable
+    availableWeeklyQuests, activeWeeklyQuests, talentChoicesAvailable,
+    pendingTalentPool
   } = useStore();
 
   useEffect(() => {
@@ -164,6 +166,8 @@ export default function App() {
                 onClaimGlobalQuest={handleClaimGlobalQuest}
                 availableWeeklyQuests={availableWeeklyQuests} activeWeeklyQuests={activeWeeklyQuests} onClaimWeeklyQuest={handleClaimWeeklyQuest}
                 talentChoicesAvailable={talentChoicesAvailable} onSelectTalent={handleTalentSelection}
+                pendingTalentPool={pendingTalentPool} onSaveTalentPool={saveTalentPool}
+                onSkipTalent={handleSkipTalent}
               />
             )}
             {page === 'SETTINGS' && session && (

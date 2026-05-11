@@ -23,6 +23,7 @@ interface AppState {
   lastNameChange: string | null;
   talents: string[];
   talentChoicesAvailable: number;
+  totalChoicesGranted: number;
   
   setSession: (session: Session | null | ((prev: Session | null) => Session | null)) => void;
   setDbUserId: (id: string | null | ((prev: string | null) => string | null)) => void;
@@ -36,6 +37,7 @@ interface AppState {
   setLastNameChange: (date: string | null | ((prev: string | null) => string | null)) => void;
   setTalents: (talents: string[] | ((prev: string[]) => string[])) => void;
   setTalentChoicesAvailable: (count: number | ((prev: number) => number)) => void;
+  setTotalChoicesGranted: (count: number | ((prev: number) => number)) => void;
 
   // Game Data
   stats: Stats;
@@ -81,6 +83,10 @@ interface AppState {
   setMailToast: (msg: string | null) => void;
   lastMailSeenAt: string | null;
   setLastMailSeenAt: (ts: string) => void;
+
+  // Talent Persistence
+  pendingTalentPool: any[];
+  setPendingTalentPool: (pool: any[]) => void;
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -110,6 +116,7 @@ export const useStore = create<AppState>((set) => ({
   lastNameChange: null,
   talents: [],
   talentChoicesAvailable: 0,
+  totalChoicesGranted: 0,
 
   setSession: (session) => set((state) => ({ session: typeof session === 'function' ? session(state.session) : session })),
   setDbUserId: (dbUserId) => set((state) => ({ dbUserId: typeof dbUserId === 'function' ? dbUserId(state.dbUserId) : dbUserId })),
@@ -123,6 +130,7 @@ export const useStore = create<AppState>((set) => ({
   setLastNameChange: (lastNameChange) => set((state) => ({ lastNameChange: typeof lastNameChange === 'function' ? lastNameChange(state.lastNameChange) : lastNameChange })),
   setTalents: (talents) => set((state) => ({ talents: typeof talents === 'function' ? talents(state.talents) : talents })),
   setTalentChoicesAvailable: (talentChoicesAvailable) => set((state) => ({ talentChoicesAvailable: typeof talentChoicesAvailable === 'function' ? talentChoicesAvailable(state.talentChoicesAvailable) : talentChoicesAvailable })),
+  setTotalChoicesGranted: (totalChoicesGranted) => set((state) => ({ totalChoicesGranted: typeof totalChoicesGranted === 'function' ? totalChoicesGranted(state.totalChoicesGranted) : totalChoicesGranted })),
 
   // Game Data
   stats: {
@@ -174,4 +182,8 @@ export const useStore = create<AppState>((set) => ({
   setMailToast: (msg) => set({ mailToast: msg }),
   lastMailSeenAt: null,
   setLastMailSeenAt: (ts) => set({ lastMailSeenAt: ts }),
+
+  // Talent Persistence
+  pendingTalentPool: [],
+  setPendingTalentPool: (pool) => set({ pendingTalentPool: pool }),
 }));

@@ -45,7 +45,9 @@ export function useAppCore() {
     activeWeeklyQuests, setActiveWeeklyQuests,
     lastWeeklyReset, setLastWeeklyReset,
     globalQuests, setGlobalQuests,
-    talentChoicesAvailable, setTalentChoicesAvailable
+    talentChoicesAvailable, setTalentChoicesAvailable,
+    totalChoicesGranted, setTotalChoicesGranted,
+    pendingTalentPool, setPendingTalentPool
   } = useStore();
 
   const [loading, setLoading] = useState(false);
@@ -90,7 +92,7 @@ export function useAppCore() {
     }
   };
 
-  const syncProgress = async (newLevel: number, newXp: number, newStats: Stats, updatedQuests?: Quest[], newTalents?: string[], newTalentChoicesAvailable?: number) => {
+  const syncProgress = async (newLevel: number, newXp: number, newStats: Stats, updatedQuests?: Quest[], newTalents?: string[], newTalentChoicesAvailable?: number, newTotalChoicesGranted?: number) => {
     if (!session || !dbUserId) return;
     try {
       const sanitizedLevel = isNaN(newLevel) ? 1 : Math.max(1, newLevel);
@@ -105,6 +107,7 @@ export function useAppCore() {
       if (updatedQuests) updateData.active_quests = updatedQuests;
       if (newTalents) updateData.talents = newTalents;
       if (newTalentChoicesAvailable !== undefined) updateData.talent_choices_available = newTalentChoicesAvailable;
+      if (newTotalChoicesGranted !== undefined) updateData.total_choices_granted = newTotalChoicesGranted;
       
       const { error } = await supabase.from('arutha_user').update(updateData).eq('supabase_id', session.user.id);
       if (error) console.error("Sync Progress Error (arutha_user):", error);
@@ -169,26 +172,35 @@ export function useAppCore() {
         setTalents(userData.talents || []);
         setLastWeeklyReset(userData.last_weekly_reset);
 
-        // Catch-up logic for talents based on level milestones
+        // Catch-up logic for talents based on level milestones (loop-safe)
         const MILESTONES = [1, 3, 5, 10, 15, 20, 25, 30];
         const userLevel = userData.level || 1;
-        const currentTalentsCount = (userData.talents || []).length;
+        const choicesAlreadyGranted = userData.total_choices_granted || 0;
         const currentChoicesAvailable = userData.talent_choices_available || 0;
         const expectedTotalChoices = MILESTONES.filter(m => m <= userLevel).length;
-        const actualTotalChoices = currentTalentsCount + currentChoicesAvailable;
         
-        if (actualTotalChoices < expectedTotalChoices) {
-          const diff = expectedTotalChoices - actualTotalChoices;
+        setTotalChoicesGranted(choicesAlreadyGranted);
+
+        if (choicesAlreadyGranted < expectedTotalChoices) {
+          const diff = expectedTotalChoices - choicesAlreadyGranted;
           const newChoices = currentChoicesAvailable + diff;
+          const newTotalGranted = choicesAlreadyGranted + diff;
+          
           setTalentChoicesAvailable(newChoices);
+          setTotalChoicesGranted(newTotalGranted);
+          
           // Sync to DB immediately
-          await supabase.from('arutha_user').update({ talent_choices_available: newChoices }).eq('id', userData.id);
+          await supabase.from('arutha_user').update({ 
+            talent_choices_available: newChoices,
+            total_choices_granted: newTotalGranted
+          }).eq('id', userData.id);
         } else {
           setTalentChoicesAvailable(currentChoicesAvailable);
         }
 
         setAvailableWeeklyQuests(userData.available_weekly_quests || []);
         setActiveWeeklyQuests(userData.active_weekly_quests || []);
+        setPendingTalentPool(userData.pending_talent_pool || []);
         setDecayResult(await checkAndApplyDecay(userData.id));
 
         setUserContext({ 
@@ -271,6 +283,7 @@ export function useAppCore() {
     let nextXp = xp + finalXpAmount;
     let nextStats = { ...stats };
     let nextTalentChoicesAvailable = talentChoicesAvailable;
+    let nextTotalChoicesGranted = totalChoicesGranted;
 
     if (stat) {
       let statMultiplier = 1;
@@ -285,7 +298,9 @@ export function useAppCore() {
       const MILESTONES = [1, 3, 5, 10, 15, 20, 25, 30];
       if (MILESTONES.includes(nextLevel)) {
         nextTalentChoicesAvailable += 1;
+        nextTotalChoicesGranted += 1;
         setTalentChoicesAvailable(nextTalentChoicesAvailable);
+        setTotalChoicesGranted(nextTotalChoicesGranted);
       }
 
       setLevelUpStage(1);
@@ -293,7 +308,7 @@ export function useAppCore() {
     }
 
     setLevel(nextLevel); setXp(nextXp); setStats(nextStats);
-    syncProgress(nextLevel, nextXp, nextStats, updatedQuests, undefined, nextTalentChoicesAvailable);
+    syncProgress(nextLevel, nextXp, nextStats, updatedQuests, undefined, nextTalentChoicesAvailable, nextTotalChoicesGranted);
   };
 
   const completeQuest = async (id: string, note: string, photoBase64?: string, photoMimeType?: string) => {
@@ -414,6 +429,7 @@ export function useAppCore() {
         // 2. Grant Initial Talent Choice (Level 1 Milestone)
         const initialTalentChoices = 1;
         setTalentChoicesAvailable(initialTalentChoices);
+        setTotalChoicesGranted(1);
 
         // 3. Generate and Store Quests & Update User
         const aiQuests = await generateDailyQuests(analysis.stats, undefined, false);
@@ -423,8 +439,10 @@ export function useAppCore() {
         const { error: questError } = await supabase.from('arutha_user').update({ 
           active_quests: aiQuests, 
           last_quest_update: now,
+          last_refresh_date: now,
           last_evolution_date: now,
-          talent_choices_available: initialTalentChoices
+          talent_choices_available: initialTalentChoices,
+          total_choices_granted: 1
         }).eq('id', userData.id);
 
         if (questError) {
@@ -607,10 +625,31 @@ export function useAppCore() {
     const nextChoices = talentChoicesAvailable - 1;
     setTalents(newTalents);
     setTalentChoicesAvailable(nextChoices);
+    setPendingTalentPool([]);
 
     await supabase.from('arutha_user').update({
       talents: newTalents,
-      talent_choices_available: nextChoices
+      talent_choices_available: nextChoices,
+      pending_talent_pool: []
+    }).eq('id', dbUserId);
+  };
+
+  const saveTalentPool = async (pool: any[]) => {
+    if (!dbUserId) return;
+    setPendingTalentPool(pool);
+    await supabase.from('arutha_user').update({
+      pending_talent_pool: pool
+    }).eq('id', dbUserId);
+  };
+
+  const handleSkipTalent = async () => {
+    if (!dbUserId || talentChoicesAvailable <= 0) return;
+    const nextChoices = talentChoicesAvailable - 1;
+    setTalentChoicesAvailable(nextChoices);
+    setPendingTalentPool([]);
+    await supabase.from('arutha_user').update({
+      talent_choices_available: nextChoices,
+      pending_talent_pool: []
     }).eq('id', dbUserId);
   };
 
@@ -620,6 +659,7 @@ export function useAppCore() {
     addXp, completeQuest, refreshQuests, syncProgress,
     handleOnboardingComplete, handleTakeRecovery, handleUpdateName,
     handleClaimStreak, handleStartOnboarding, generateInitialQuests,
-    handleClaimWeeklyQuest, handleTalentSelection
+    handleClaimWeeklyQuest, handleTalentSelection, saveTalentPool,
+    handleSkipTalent
   };
 }
