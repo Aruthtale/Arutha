@@ -3,7 +3,7 @@ import { Session } from '@supabase/supabase-js';
 import { type Stats, type Quest, type CharacterAnalysis } from '../lib/gemini';
 import { type DecayResult } from '../lib/decaySystem';
 
-export type Page = 'LANDING' | 'LOGIN' | 'REGISTER' | 'COMPLETE_PROFILE' | 'ONBOARDING' | 'CHARACTER_REVEAL' | 'DASHBOARD' | 'SETTINGS' | 'PROFILE' | 'ADMIN' | 'LEADERBOARD' | 'CODEX' | 'MAIL' | 'SOUL_GUARD';
+export type Page = 'LANDING' | 'LOGIN' | 'REGISTER' | 'COMPLETE_PROFILE' | 'COMPLETE_GOOGLE_PROFILE' | 'ONBOARDING' | 'CHARACTER_REVEAL' | 'DASHBOARD' | 'SETTINGS' | 'PROFILE' | 'ADMIN' | 'LEADERBOARD' | 'CODEX' | 'MAIL' | 'SOUL_GUARD';
 
 interface AppState {
   // Navigation
@@ -46,6 +46,7 @@ interface AppState {
   decayResult: DecayResult | null;
   showLevelUp: boolean;
   isDataReady: boolean;
+  onboardingQuestions: string[];
 
   setStats: (stats: Stats | ((prev: Stats) => Stats)) => void;
   setCharacterAnalysis: (analysis: CharacterAnalysis | null | ((prev: CharacterAnalysis | null) => CharacterAnalysis | null)) => void;
@@ -57,6 +58,7 @@ interface AppState {
   setDecayResult: (result: DecayResult | null | ((prev: DecayResult | null) => DecayResult | null)) => void;
   setShowLevelUp: (show: boolean | ((prev: boolean) => boolean)) => void;
   setIsDataReady: (ready: boolean | ((prev: boolean) => boolean)) => void;
+  setOnboardingQuestions: (questions: string[] | ((prev: string[]) => string[])) => void;
 
   // Mail
   unreadMailCount: number;
@@ -123,6 +125,7 @@ export const useStore = create<AppState>((set) => ({
   decayResult: null,
   showLevelUp: false,
   isDataReady: false,
+  onboardingQuestions: [],
 
   setStats: (stats) => set((state) => ({ stats: typeof stats === 'function' ? stats(state.stats) : stats })),
   setCharacterAnalysis: (characterAnalysis) => set((state) => ({ characterAnalysis: typeof characterAnalysis === 'function' ? characterAnalysis(state.characterAnalysis) : characterAnalysis })),
@@ -134,6 +137,7 @@ export const useStore = create<AppState>((set) => ({
   setDecayResult: (decayResult) => set((state) => ({ decayResult: typeof decayResult === 'function' ? decayResult(state.decayResult) : decayResult })),
   setShowLevelUp: (showLevelUp) => set((state) => ({ showLevelUp: typeof showLevelUp === 'function' ? showLevelUp(state.showLevelUp) : showLevelUp })),
   setIsDataReady: (isDataReady) => set((state) => ({ isDataReady: typeof isDataReady === 'function' ? isDataReady(state.isDataReady) : isDataReady })),
+  setOnboardingQuestions: (questions) => set((state) => ({ onboardingQuestions: typeof questions === 'function' ? questions(state.onboardingQuestions) : questions })),
 
   // Mail
   unreadMailCount: 0,

@@ -116,7 +116,7 @@ export const CompleteGoogleProfile: React.FC<CompleteGoogleProfileProps> = ({ us
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] ml-2">Waktu Kelahiran (Takdir)</label>
+            <label className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] ml-2">Time of Arrival (Birth Date)</label>
             <div className="grid grid-cols-3 gap-3">
               <div className="relative group">
                 <select
@@ -167,7 +167,7 @@ export const CompleteGoogleProfile: React.FC<CompleteGoogleProfileProps> = ({ us
             className="w-full py-5 mt-6 bg-jiwa text-white font-black rounded-2xl hover:bg-jiwa/80 transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-lg shadow-jiwa/20 group"
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5 group-hover:scale-110 transition-transform" />}
-            <span className="tracking-widest">{loading ? 'MENYEGEL TAKDIR...' : 'LANJUTKAN PERJALANAN'}</span>
+            <span className="tracking-widest">{loading ? 'SYNCING DATA...' : 'INITIALIZE PROFILE'}</span>
           </button>
         </form>
       </motion.div>

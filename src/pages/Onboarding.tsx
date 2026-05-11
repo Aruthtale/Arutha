@@ -17,13 +17,14 @@ const FALLBACK_QUESTIONS = [
 ];
 
 interface OnboardingProps {
-  onComplete: (analysis: CharacterAnalysis) => void;
-  userContext?: { usia?: number; gender?: string; username?: string };
+  onComplete: (answers: OnboardingAnswer[]) => void;
+  userContext?: { usia?: number; gender?: string; username?: string; zodiac?: string };
+  questions?: string[];
 }
 
-export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext }) => {
-  const [step, setStep] = useState(-1); // -1 is Intro
-  const [questions, setQuestions] = useState<string[]>(FALLBACK_QUESTIONS);
+export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext, questions: providedQuestions }) => {
+  const [step, setStep] = useState(providedQuestions ? 0 : -1); // -1 is Intro if questions not provided
+  const [questions, setQuestions] = useState<string[]>(providedQuestions || FALLBACK_QUESTIONS);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [answers, setAnswers] = useState<OnboardingAnswer[]>([]);
@@ -44,11 +45,10 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext 
   const handleStart = async () => {
     setIsLoadingQuestions(true);
     try {
-      const generated = await generateOnboardingQuestions();
+      const generated = await generateOnboardingQuestions(userContext);
       setQuestions(generated);
     } catch (e) {
       console.warn("Failed to fetch questions, using fallback.");
-      // fallback already set in state
     } finally {
       setIsLoadingQuestions(false);
       setStep(0);
@@ -69,17 +69,8 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext 
     if (step < questions.length - 1) {
       setStep(s => s + 1);
     } else {
-      // All questions answered — analyze with AI
-      setIsAnalyzing(true);
-      setAnalyzeError(null);
-      try {
-        const analysis = await analyzeCharacter(updatedAnswers, userContext);
-        onComplete(analysis);
-      } catch (err: any) {
-        console.error('Analysis failed:', err);
-        setAnalyzeError(err.message || 'Gagal menganalisis. Coba lagi.');
-        setIsAnalyzing(false);
-      }
+      // All questions answered — send to parent for analysis
+      onComplete(updatedAnswers);
     }
   };
 
@@ -107,7 +98,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext 
             <Sparkles className="w-8 h-8 text-jiwa" />
           </div>
           <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight text-neutral-100">
-            Kenali Dirimu Lebih Dalam
+            Soul Initialization
           </h1>
           <div className="space-y-4 text-neutral-400 text-sm md:text-base leading-relaxed">
             <p>
@@ -127,7 +118,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext 
             className="w-full md:w-auto px-8 py-4 bg-white text-black font-black rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 mx-auto disabled:opacity-50 disabled:hover:scale-100"
           >
             {isLoadingQuestions ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-            {isLoadingQuestions ? 'Meracik Pertanyaan...' : 'Mulai Analisis'}
+            {isLoadingQuestions ? 'Syncing Dimensions...' : 'START CALIBRATION'}
           </button>
         </motion.div>
       </div>
@@ -162,11 +153,11 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext 
           />
           
           <div className="text-center space-y-3">
-            <h2 className="text-2xl md:text-3xl font-black tracking-tight text-neutral-100">
-              Menganalisis Karaktermu...
+            <h2 className="text-2xl md:text-3xl font-black tracking-tight text-neutral-100 uppercase">
+              Analyzing Soul Pattern...
             </h2>
             <p className="text-neutral-500 text-sm max-w-sm">
-              AI sedang membaca pola dari jawabanmu untuk menentukan profil karakter awal.
+              The Arbiter is reading your frequency to determine your initial RPG Profile.
             </p>
           </div>
 
@@ -202,7 +193,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext 
             />
           </div>
           <div className="flex justify-between mt-2">
-            <span className="text-[8px] md:text-[10px] font-mono text-neutral-600 uppercase tracking-widest">Analisis Profil</span>
+            <span className="text-[8px] md:text-[10px] font-mono text-neutral-600 uppercase tracking-widest">Profile Calibration</span>
             <span className="text-[8px] md:text-[10px] font-mono text-neutral-600">{step + 1} / {questions.length}</span>
           </div>
         </div>

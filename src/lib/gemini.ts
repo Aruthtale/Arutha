@@ -45,9 +45,10 @@ const MODELS_3X = [
   'gemini-3-flash-preview'
 ];
 
-export async function generateOnboardingQuestions(): Promise<string[]> {
+export async function generateOnboardingQuestions(userContext?: { usia?: number; gender?: string; username?: string; zodiac?: string }): Promise<string[]> {
   const aiClient = getClient();
-  const prompt = `Buatkan 10 pertanyaan pendek, simpel, dan cepat dijawab dalam bahasa Indonesia yang digunakan untuk menganalisis kepribadian seseorang layaknya karakter RPG. 
+  const contextText = userContext ? `\nTarget User: ${userContext.gender || 'Unknown'}, ${userContext.usia || '??'} tahun, Zodiak: ${userContext.zodiac || 'Unknown'}.` : '';
+  const prompt = `Buatkan 10 pertanyaan pendek, simpel, dan cepat dijawab dalam bahasa Indonesia yang digunakan untuk menganalisis kepribadian seseorang layaknya karakter RPG. ${contextText}
 Tujuan dari 10 pertanyaan ini adalah untuk memetakan orang tersebut ke dalam 5 dimensi:
 - JIWA (Mental, spiritual, kedamaian batin)
 - RAGA (Fisik, kesehatan, kekuatan)
@@ -55,7 +56,7 @@ Tujuan dari 10 pertanyaan ini adalah untuk memetakan orang tersebut ke dalam 5 d
 - ILMU (Pengetahuan, kebijaksanaan, rasa ingin tahu)
 - KARMA (Hubungan sosial, empati, dampak pada orang lain)
 
-Pertanyaan harus sangat pendek, santai (casual), dan mudah dimengerti remaja (literasi rendah). Hindari pertanyaan filosofis yang terlalu dalam.
+Pertanyaan harus sangat pendek, santai (casual), dan disesuaikan dengan konteks usia/gender/zodiak user jika tersedia agar terasa lebih personal. Hindari pertanyaan filosofis yang terlalu dalam.
 Kembalikan HANYA array JSON berisi 10 string pertanyaan, tanpa markdown tambahan.`;
 
   for (const modelName of MODELS_3X) {
@@ -102,11 +103,11 @@ export interface CharacterAnalysis {
   };
 }
 
-export async function analyzeCharacter(answers: OnboardingAnswer[], userContext?: { usia?: number; gender?: string; username?: string }): Promise<CharacterAnalysis> {
+export async function analyzeCharacter(answers: OnboardingAnswer[], userContext?: { usia?: number; gender?: string; username?: string; zodiac?: string }): Promise<CharacterAnalysis> {
   const aiClient = getClient();
   const qaBlock = answers.map((a, i) => `Pertanyaan ${i + 1}: "${a.question}"\nJawaban: "${a.answer}"`).join('\n\n');
   const validMBTI = ["INTJ", "INTP", "ENTJ", "ENTP", "INFJ", "INFP", "ENFJ", "ENFP", "ISTJ", "ISFJ", "ESTJ", "ESFJ", "ISTP", "ISFP", "ESTP", "ESFP"];
-  const contextBlock = userContext ? `Data User: Nama: ${userContext.username}, Usia: ${userContext.usia}, Gender: ${userContext.gender}\n\n` : '';
+  const contextBlock = userContext ? `Data User: Nama: ${userContext.username}, Usia: ${userContext.usia}, Gender: ${userContext.gender}, Zodiak: ${userContext.zodiac}\n\n` : '';
   const prompt = `Kamu adalah AI psikolog dan game designer ARUTHA. Analisis data user berikut dan berikan JSON. 
 Max stats adalah 50. PENTING: Jangan memberikan angka yang sama atau hampir sama untuk semua statistik. 
 Analisis setiap jawaban secara mendalam untuk menentukan bobot yang akurat pada 5 dimensi:

@@ -7,7 +7,18 @@ import { AnimatePresence, motion, LazyMotion, domMax } from 'framer-motion';
 import { supabase } from './lib/supabase';
 import { getLocalTimestamp, getTodayDate, isToday, isNewDay, extractDate } from './lib/dateUtils';
 import { TALENTS } from './lib/talents';
-import { generateDailyQuests, verifyQuestCompletion, generateRecoveryQuests, type CharacterAnalysis, type Quest, type Stats, type Dimension } from './lib/gemini';
+import { 
+  generateDailyQuests, 
+  verifyQuestCompletion, 
+  generateRecoveryQuests, 
+  analyzeCharacter,
+  generateOnboardingQuestions,
+  type CharacterAnalysis, 
+  type Quest, 
+  type Stats, 
+  type Dimension,
+  type OnboardingAnswer 
+} from './lib/gemini';
 import { Navbar } from './components/Navbar';
 import { TalentSelector } from './components/TalentSelector';
 import { checkAndApplyDecay, resetFatigue } from './lib/decaySystem';
@@ -79,10 +90,12 @@ export default function App() {
     nameChangeCount, setNameChangeCount,
     lastNameChange, setLastNameChange,
     userContext, setUserContext,
-    talents, setTalents
+    talents, setTalents,
+    onboardingQuestions, setOnboardingQuestions
   } = useStore();
 
   const [levelUpStage, setLevelUpStage] = React.useState<1 | 2>(1);
+  const [loading, setLoading] = React.useState(false);
 
   const refreshLockRef = useRef(false);
   const initLockRef = useRef(false);
@@ -447,9 +460,13 @@ export default function App() {
     }
   };
 
-  const handleOnboardingComplete = async (analysis: CharacterAnalysis) => {
+  const handleOnboardingComplete = async (answers: OnboardingAnswer[]) => {
     if (!session) return;
+    setLoading(true);
     try {
+      // 1. Jalankan Analisis AI dengan Konteks User (Zodiak, Usia, dll)
+      const analysis = await analyzeCharacter(answers, userContext);
+      
       let { data: users } = await supabase
         .from('arutha_user')
         .select('id, level, xp, active_quests, last_quest_update, refresh_count, last_refresh_date')
@@ -459,6 +476,7 @@ export default function App() {
       const userData = users?.[0];
 
       if (userData) {
+        // 2. Simpan Profil Karakter ke Database
         const { data: altProfiles } = await supabase
           .from('character_profile')
           .select('*')
@@ -467,89 +485,51 @@ export default function App() {
           .limit(1);
         const latestProfileData = altProfiles?.[0];
 
-        let profilePayload: any;
-        if (latestProfileData) {
-          profilePayload = {
-            jiwa: analysis.stats.JIWA,
-            raga: analysis.stats.RAGA,
-            harta: analysis.stats.HARTA,
-            ilmu: analysis.stats.ILMU,
-            karma: analysis.stats.KARMA,
-          };
-        } else {
-          profilePayload = {
-            user_id: userData.id,
-            personality_type: analysis.personality_type,
-            personality_title: analysis.personality_title,
-            personality_desc: analysis.personality_desc,
-            character_summary: analysis.character_summary,
-            jiwa: analysis.stats.JIWA,
-            raga: analysis.stats.RAGA,
-            harta: analysis.stats.HARTA,
-            ilmu: analysis.stats.ILMU,
-            karma: analysis.stats.KARMA,
-          };
-        }
-
-        let profileDate = new Date().toISOString();
+        const profilePayload = {
+          user_id: userData.id,
+          personality_type: analysis.personality_type,
+          personality_title: analysis.personality_title,
+          personality_desc: analysis.personality_desc,
+          character_summary: analysis.character_summary,
+          jiwa: analysis.stats.JIWA,
+          raga: analysis.stats.RAGA,
+          harta: analysis.stats.HARTA,
+          ilmu: analysis.stats.ILMU,
+          karma: analysis.stats.KARMA,
+        };
 
         if (latestProfileData) {
-          const { data: updated, error: updateErr } = await supabase
-            .from('character_profile')
-            .update(profilePayload)
-            .eq('id', latestProfileData.id)
-            .select();
-          if (updateErr) {
-            console.error('character_profile UPDATE failed:', updateErr);
-            alert(`Gagal menyimpan profil karakter: ${updateErr.message}`);
-          }
-          if (updated?.[0]) profileDate = updated[0].created_at;
+          await supabase.from('character_profile').update(profilePayload).eq('id', latestProfileData.id);
         } else {
-          const { data: inserted, error: insertErr } = await supabase
-            .from('character_profile')
-            .insert({
-              id: crypto.randomUUID(),
-              ...profilePayload
-            })
-            .select();
-          if (insertErr) {
-            console.error('character_profile INSERT failed:', insertErr);
-            alert(`Gagal menyimpan profil karakter: ${insertErr.message}. Cek RLS policy di Supabase.`);
-          }
-          if (inserted?.[0]) profileDate = inserted[0].created_at;
+          await supabase.from('character_profile').insert({ id: crypto.randomUUID(), ...profilePayload });
         }
 
-        setLastEvolutionDate(profileDate);
-
-        // checkIsBurnout needs dbUserId which is userData.id
-        let isBurnout = false;
-        try {
-          const { data } = await supabase.from('dimension_reflections').select('reflection_text').eq('user_id', userData.id).order('created_at', { ascending: false }).limit(3);
-          if (data && data.length >= 2) {
-            let burnoutCount = 0;
-            data.forEach(ref => {
-              if (['stres', 'depresi', 'burnout', 'lelah', 'tertekan', 'cemas', 'berat'].some(kw => ref.reflection_text.toLowerCase().includes(kw))) {
-                burnoutCount++;
-              }
-            });
-            isBurnout = burnoutCount >= 2;
-          }
-        } catch(e) {}
-
-        const aiQuests = await generateDailyQuests(analysis.stats, undefined, isBurnout);
+        // 3. Buat Quest Harian Pertama
+        const aiQuests = await generateDailyQuests(analysis.stats, undefined, false);
         setQuests(aiQuests);
 
         await supabase
           .from('arutha_user')
-          .update({ active_quests: aiQuests, last_quest_update: getLocalTimestamp() })
+          .update({ 
+            active_quests: aiQuests, 
+            last_quest_update: getLocalTimestamp(),
+            usia: userContext?.usia,
+            zodiac: userContext?.zodiac
+          })
           .eq('id', userData.id);
       }
-    } catch (err) {
-      console.error("Save error:", err);
+
+      // 4. Update State UI
+      setCharacterAnalysis(analysis);
+      setStats(analysis.stats);
+      setPage('CHARACTER_REVEAL');
+
+    } catch (err: any) {
+      console.error("Onboarding complete error:", err);
+      alert("System Error during Soul Alignment. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    setCharacterAnalysis(analysis);
-    setStats(analysis.stats);
-    setPage('CHARACTER_REVEAL');
   };
 
 
@@ -567,6 +547,24 @@ export default function App() {
       console.error("Take recovery error:", err);
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+
+
+  const handleStartOnboarding = async (contextOverride?: typeof userContext) => {
+    setLoading(true);
+    try {
+      // Gunakan contextOverride jika ada (untuk menghindari race condition state)
+      const activeContext = contextOverride || userContext;
+      const questions = await generateOnboardingQuestions(activeContext);
+      setOnboardingQuestions(questions);
+      setPage('ONBOARDING');
+    } catch (e) {
+      console.error(e);
+      alert("Failed to initialize Soul Calibration. Please check your connection.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -833,7 +831,7 @@ export default function App() {
     setPage('ONBOARDING');
   };
 
-  const hideNavbar = !session || page === 'ONBOARDING' || page === 'CHARACTER_REVEAL' || page === 'LOGIN' || page === 'REGISTER' || page === 'COMPLETE_PROFILE' || page === 'SOUL_GUARD';
+  const hideNavbar = !session || page === 'ONBOARDING' || page === 'CHARACTER_REVEAL' || page === 'LOGIN' || page === 'REGISTER' || page === 'COMPLETE_PROFILE' || page === 'COMPLETE_GOOGLE_PROFILE' || page === 'SOUL_GUARD';
 
   return (
     <LazyMotion features={domMax}>
@@ -843,6 +841,24 @@ export default function App() {
       {/* Optimized Static Background */}
       <div className="bg-premium-glow" />
       <div className="noise-overlay" />
+
+      {/* Global Loading Overlay */}
+      <AnimatePresence>
+        {loading && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] bg-rpg-black/80 backdrop-blur-md flex flex-col items-center justify-center gap-6"
+          >
+            <div className="w-12 h-12 border-4 border-jiwa/20 border-t-jiwa rounded-full animate-spin" />
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-black tracking-widest text-white uppercase italic">Soul Alignment in Progress</h3>
+              <p className="text-xs text-neutral-500 font-mono">PLEASE WAIT FOR THE ARBITER</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {!hideNavbar && (
         <Navbar session={session} userName={name} onNavigate={(p) => setPage(p as any)} currentPage={page} stats={stats} />
@@ -862,14 +878,15 @@ export default function App() {
             )}
             {page === 'LOGIN' && <Login onBack={() => setPage('LANDING')} />}
             {page === 'REGISTER' && <Register onBack={() => setPage('LANDING')} />}
-            {page === 'COMPLETE_PROFILE' && dbUserId && (
-              <CompleteGoogleProfile
-                userId={dbUserId}
-                initialUsername={name}
-                onComplete={handleProfileComplete}
+            {page === 'COMPLETE_GOOGLE_PROFILE' && (
+              <CompleteGoogleProfile 
+                onComplete={(context) => {
+                  setUserContext(context);
+                  handleStartOnboarding(context);
+                }} 
               />
             )}
-            {page === 'ONBOARDING' && <Onboarding onComplete={handleOnboardingComplete} userContext={userContext} />}
+            {page === 'ONBOARDING' && <Onboarding onComplete={handleOnboardingComplete} userContext={userContext} questions={onboardingQuestions} />}
             {page === 'CHARACTER_REVEAL' && characterAnalysis && (
               <CharacterReveal analysis={characterAnalysis} onContinue={() => setPage('DASHBOARD')} />
             )}

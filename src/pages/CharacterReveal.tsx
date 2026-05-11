@@ -73,7 +73,7 @@ export const CharacterReveal: React.FC<CharacterRevealProps> = ({ analysis, onCo
                 className="flex items-center justify-center gap-2"
               >
                 <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-jiwa" />
-                <span className="text-[8px] md:text-[10px] font-black tracking-[0.4em] text-neutral-500 uppercase">Karakter Terdeteksi</span>
+                <span className="text-[8px] md:text-[10px] font-black tracking-[0.4em] text-neutral-500 uppercase">Identity Detected</span>
                 <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-ilmu" />
               </motion.div>
 
@@ -211,7 +211,7 @@ export const CharacterReveal: React.FC<CharacterRevealProps> = ({ analysis, onCo
                   onClick={onContinue}
                   className="w-full sm:w-auto px-10 py-4 md:px-12 md:py-5 bg-white text-black font-black rounded-full hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 group shadow-[0_0_40px_rgba(255,255,255,0.25)] text-xs md:text-sm"
                 >
-                  MULAI PETUALANGAN
+                  BEGIN JOURNEY
                   <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
               </motion.div>
