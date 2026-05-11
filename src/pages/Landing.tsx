@@ -269,7 +269,7 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
              <div className="text-[10px] font-black text-jiwa tracking-[0.5em] uppercase font-sans">The Pantheon</div>
              <h2 className="text-6xl font-serif font-bold italic">Top Players</h2>
           </div>
-          <Leaderboard isPreview={true} onJoin={() => setPage('LEADERBOARD')} />
+          <Leaderboard isPreview={true} onJoin={() => setPage('REGISTER')} />
         </div>
 
         <div className="relative py-40 flex flex-col items-center">

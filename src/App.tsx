@@ -824,7 +824,7 @@ export default function App() {
             {page === 'LEADERBOARD' && (
               <Leaderboard 
                 currentUserId={dbUserId || ''} 
-                onBack={() => setPage('DASHBOARD')} 
+                onBack={() => setPage(session ? 'DASHBOARD' : 'LANDING')} 
               />
             )}
             {page === 'ADMIN' && isAdmin(session?.user.email) && (
