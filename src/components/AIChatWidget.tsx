@@ -124,20 +124,20 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ userId, username, st
             className="fixed inset-x-4 bottom-24 top-20 sm:absolute sm:inset-auto sm:bottom-20 sm:right-0 sm:w-[400px] sm:h-[550px] glass-panel border-white/10 shadow-2xl flex flex-col overflow-hidden rounded-[2rem] sm:rounded-3xl z-[100]"
           >
             {/* Header */}
-            <div className="p-5 border-b border-white/5 bg-white/5 flex justify-between items-center">
+            <div className="p-5 border-b border-rpg-border/50 bg-rpg-border/5 flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-jiwa to-ilmu flex items-center justify-center shadow-lg shadow-jiwa/20">
-                  <Sparkles className="w-5 h-5 text-white" />
+                  <Sparkles className="w-5 h-5 text-rpg-primary-text" />
                 </div>
                 <div>
-                  <h3 className="font-serif font-bold text-lg text-white tracking-tight">The Arbiter</h3>
+                  <h3 className="font-serif font-bold text-lg text-rpg-text tracking-tight">The Arbiter</h3>
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em]">Watching over you</span>
+                    <span className="text-[10px] font-black text-rpg-text/40 uppercase tracking-[0.2em]">Watching over you</span>
                   </div>
                 </div>
               </div>
-              <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors text-neutral-500">
+              <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-rpg-border/10 rounded-full transition-colors text-rpg-text/40">
                 <X className="w-6 h-6" />
               </button>
             </div>
@@ -147,10 +147,10 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ userId, username, st
               {messages.map((msg, i) => (
                 <div key={i} className={cn("flex flex-col", msg.role === 'user' ? "items-end" : "items-start")}>
                   <div className={cn(
-                    "max-w-[90%] p-3 sm:p-4 rounded-2xl text-xs sm:text-sm leading-relaxed shadow-sm transition-all",
+                    "max-w-[90%] p-3 sm:p-4 rounded-2xl text-sm sm:text-base leading-relaxed shadow-sm transition-all",
                     msg.role === 'user' 
-                      ? "bg-white text-black rounded-tr-none font-bold" 
-                      : "bg-white/10 border border-white/10 text-white rounded-tl-none font-medium"
+                      ? "bg-rpg-primary text-rpg-primary-text rounded-tr-none font-bold" 
+                      : "bg-rpg-border/20 border border-rpg-border/50 text-rpg-text rounded-tl-none font-medium"
                   )}>
                     {msg.content}
                   </div>
@@ -179,12 +179,12 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ userId, username, st
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                   placeholder="Bisikkan sesuatu..."
-                  className="w-full bg-white/5 border border-white/10 rounded-full py-3 pl-5 pr-12 text-xs text-white placeholder:text-neutral-600 focus:outline-none focus:border-white/30 transition-all"
+                  className="w-full bg-rpg-border/5 border border-rpg-border/50 rounded-full py-3 pl-5 pr-12 text-sm text-rpg-text placeholder:text-rpg-text/30 focus:outline-none focus:border-rpg-primary/30 transition-all"
                 />
                 <button
                   onClick={handleSend}
                   disabled={!input.trim() || isLoading}
-                  className="absolute right-2 top-2 p-2 bg-white text-black rounded-full hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all"
+                  className="absolute right-2 top-2 p-2 bg-rpg-primary text-rpg-primary-text rounded-full hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all"
                 >
                   <Send className="w-5 h-5" />
                 </button>

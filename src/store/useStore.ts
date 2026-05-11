@@ -84,6 +84,10 @@ interface AppState {
   lastMailSeenAt: string | null;
   setLastMailSeenAt: (ts: string) => void;
 
+  // Theme
+  theme: 'VOID' | 'DIVINE' | 'CYBER' | 'EMERALD';
+  setTheme: (theme: 'VOID' | 'DIVINE' | 'CYBER' | 'EMERALD') => void;
+
   // Talent Persistence
   pendingTalentPool: any[];
   setPendingTalentPool: (pool: any[]) => void;
@@ -182,6 +186,13 @@ export const useStore = create<AppState>((set) => ({
   setMailToast: (msg) => set({ mailToast: msg }),
   lastMailSeenAt: null,
   setLastMailSeenAt: (ts) => set({ lastMailSeenAt: ts }),
+
+  // Theme
+  theme: (localStorage.getItem('arutha_theme') as any) || 'VOID',
+  setTheme: (theme) => set(() => {
+    localStorage.setItem('arutha_theme', theme);
+    return { theme };
+  }),
 
   // Talent Persistence
   pendingTalentPool: [],

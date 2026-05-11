@@ -399,13 +399,13 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-rpg-black text-white p-4 md:p-8 pb-32 pt-24 md:pt-8">
+    <div className="min-h-screen bg-rpg-black text-rpg-text p-4 md:p-8 pb-32 pt-24 md:pt-8">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Header */}
-        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-rpg-card p-6 md:p-8 rounded-[32px] border border-white/5 shadow-2xl">
+        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-rpg-card p-6 md:p-8 rounded-[32px] border border-rpg-border/50 shadow-2xl">
           <div className="flex items-center gap-4">
-            <button onClick={onBack} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all group">
+            <button onClick={onBack} className="p-3 bg-rpg-border/10 hover:bg-white/10 rounded-2xl transition-all group">
               <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
             </button>
             <div>
@@ -423,7 +423,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
               <input 
                 type="text" 
                 placeholder="Search players..."
-                className="w-full pl-12 pr-4 py-3 bg-rpg-black/50 border border-white/5 rounded-2xl outline-none focus:border-jiwa/30 transition-all text-sm"
+                className="w-full pl-12 pr-4 py-3 bg-rpg-black/50 border border-rpg-border/50 rounded-2xl outline-none focus:border-rpg-primary transition-all text-sm"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
               />
@@ -435,7 +435,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
         </header>
 
         {/* Tab Navigation */}
-        <div className="flex p-1.5 bg-rpg-card rounded-2xl border border-white/5 gap-2 overflow-x-auto no-scrollbar">
+        <div className="flex p-1.5 bg-rpg-card rounded-2xl border border-rpg-border/50 gap-2 overflow-x-auto no-scrollbar">
           {[
             { id: 'PLAYERS', label: 'Players', icon: Users },
             { id: 'GLOBAL_QUESTS', label: 'Global Quests', icon: Globe },
@@ -447,8 +447,8 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
               className={cn(
                 "flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all whitespace-nowrap",
                 activeTab === tab.id 
-                  ? "bg-jiwa text-black shadow-[0_0_20px_rgba(167,139,250,0.3)]" 
-                  : "text-neutral-500 hover:text-white hover:bg-white/5"
+                  ? "bg-jiwa text-rpg-primary-text shadow-[rgba(var(--rpg-primary-rgb),0.2)]" 
+                  : "text-neutral-500 hover:text-rpg-text hover:bg-rpg-border/10"
               )}
             >
               <tab.icon className="w-4 h-4" />
@@ -467,14 +467,14 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
             <input 
               type="text" 
               placeholder="Tulis pesan pengumuman untuk Kotak Surat seluruh pemain..."
-              className="flex-1 px-4 py-3 bg-rpg-black/50 border border-white/5 rounded-xl outline-none focus:border-jiwa/30 transition-all text-sm"
+              className="flex-1 px-4 py-3 bg-rpg-black/50 border border-rpg-border/50 rounded-xl outline-none focus:border-rpg-primary transition-all text-sm"
               value={broadcastMessage}
               onChange={e => setBroadcastMessage(e.target.value)}
             />
             <button 
               onClick={handleBroadcast}
               disabled={isBroadcasting || !broadcastMessage.trim()}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-jiwa text-black font-black italic uppercase rounded-xl hover:bg-jiwa/90 transition-all disabled:opacity-50 whitespace-nowrap"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-jiwa text-rpg-primary-text font-black italic uppercase rounded-xl hover:bg-jiwa/90 transition-all disabled:opacity-50 whitespace-nowrap"
             >
               <Send className={cn("w-4 h-4", isBroadcasting && "animate-pulse")} />
               <span>Kirim ke Kotak Surat</span>
@@ -500,11 +500,11 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
             </div>
 
             {/* Desktop Table View */}
-            <div className="hidden md:block glass-panel overflow-hidden border-white/5">
+            <div className="hidden md:block glass-panel overflow-hidden border-rpg-border/50">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500">
+                    <tr className="bg-rpg-border/10 text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500">
                       <th className="px-6 py-4">Player</th>
                       <th className="px-6 py-4">Profile</th>
                       <th className="px-6 py-4">Status</th>
@@ -521,7 +521,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
                           key={user.id} 
-                          className="group hover:bg-white/[0.02] transition-colors"
+                          className="group hover:bg-rpg-border/5 transition-colors"
                         >
                           <td className="px-6 py-5">
                             <div className="flex items-center gap-4">
@@ -529,7 +529,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                                 {user.username?.[0].toUpperCase() || '?'}
                               </div>
                               <div>
-                                <p className="font-bold text-sm text-white line-clamp-1">{user.username || 'Anonymous'}</p>
+                                <p className="font-bold text-sm text-rpg-text line-clamp-1">{user.username || 'Anonymous'}</p>
                                 <p className="text-[10px] text-neutral-500 font-medium line-clamp-1">{user.email}</p>
                               </div>
                             </div>
@@ -537,7 +537,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                           <td className="px-6 py-5">
                             {user.usia ? (
                               <div className="flex flex-col">
-                                <span className="text-xs font-bold text-white capitalize">{user.gender || 'Unknown'}</span>
+                                <span className="text-xs font-bold text-rpg-text capitalize">{user.gender || 'Unknown'}</span>
                                 <span className="text-[10px] text-neutral-500">{user.usia} Tahun</span>
                               </div>
                             ) : (
@@ -548,7 +548,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                             <div className="flex items-center gap-3">
                               <div className="flex flex-col">
                                 <span className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter">LVL</span>
-                                <span className="font-black text-white italic">{user.level}</span>
+                                <span className="font-black text-rpg-text italic">{user.level}</span>
                               </div>
                               <div className="w-px h-6 bg-white/10" />
                               <div className="flex flex-col">
@@ -626,7 +626,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="bg-rpg-card border border-white/5 rounded-3xl p-5 space-y-5"
+                    className="bg-rpg-card border border-rpg-border/50 rounded-3xl p-5 space-y-5"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -634,17 +634,17 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                           {user.username?.[0].toUpperCase() || '?'}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-bold text-sm text-white truncate">{user.username || 'Anonymous'}</p>
+                          <p className="font-bold text-sm text-rpg-text truncate">{user.username || 'Anonymous'}</p>
                           <p className="text-[10px] text-neutral-500 font-medium truncate">{user.email}</p>
                         </div>
                       </div>
                       <div className="text-right">
                         <span className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter block">LVL</span>
-                        <span className="font-black text-white italic text-lg leading-none">{user.level}</span>
+                        <span className="font-black text-rpg-text italic text-lg leading-none">{user.level}</span>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 py-4 border-y border-white/5">
+                    <div className="grid grid-cols-2 gap-4 py-4 border-y border-rpg-border/50">
                       <div>
                         <span className="text-[9px] font-black text-neutral-600 uppercase tracking-widest block mb-1">XP Points</span>
                         <span className="text-xs font-bold text-harta">{user.xp} XP</span>
@@ -712,7 +712,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
               <h2 className="text-sm font-black uppercase tracking-[0.3em] text-neutral-500">World Anomaly Quests</h2>
               <button 
                 onClick={() => setEditingQuest({ title: '', desc: '', stat_type: 'JIWA', reward_xp: 500, expires_at: new Date(Date.now() + 86400000).toISOString() })}
-                className="px-6 py-3 bg-jiwa text-black font-black uppercase text-[10px] tracking-widest rounded-xl hover:bg-jiwa/90 transition-all"
+                className="px-6 py-3 bg-jiwa text-rpg-primary-text font-black uppercase text-[10px] tracking-widest rounded-xl hover:bg-jiwa/90 transition-all"
               >
                 + Create New Quest
               </button>
@@ -720,20 +720,20 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {globalQuests.map((quest) => (
-                <motion.div key={quest.id} layout className="bg-rpg-card border border-white/5 rounded-3xl p-6 space-y-4 relative overflow-hidden group">
+                <motion.div key={quest.id} layout className="bg-rpg-card border border-rpg-border/50 rounded-3xl p-6 space-y-4 relative overflow-hidden group">
                   <div className="flex justify-between items-start relative z-10">
                     <span className={cn("px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em]", 
                       quest.is_claimed ? "bg-red-500/20 text-red-400" : "bg-green-500/20 text-green-400")}>
                       {quest.is_claimed ? 'CLAIMED' : 'ACTIVE'}
                     </span>
                     <div className="flex gap-2">
-                      <button onClick={() => setEditingQuest(quest)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-all"><TrendingUp className="w-4 h-4 text-ilmu" /></button>
-                      <button onClick={() => handleDeleteGlobalQuest(quest.id)} className="p-2 bg-white/5 hover:bg-red-500/10 rounded-lg transition-all group-hover:bg-red-500/20"><Trash2 className="w-4 h-4 text-red-500" /></button>
+                      <button onClick={() => setEditingQuest(quest)} className="p-2 bg-rpg-border/10 hover:bg-white/10 rounded-lg transition-all"><TrendingUp className="w-4 h-4 text-ilmu" /></button>
+                      <button onClick={() => handleDeleteGlobalQuest(quest.id)} className="p-2 bg-rpg-border/10 hover:bg-red-500/10 rounded-lg transition-all group-hover:bg-red-500/20"><Trash2 className="w-4 h-4 text-red-500" /></button>
                     </div>
                   </div>
-                  <h3 className="text-lg font-black text-white italic">"{quest.title}"</h3>
+                  <h3 className="text-lg font-black text-rpg-text italic">"{quest.title}"</h3>
                   <p className="text-xs text-neutral-500 line-clamp-2">{quest.description || quest.desc}</p>
-                  <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                  <div className="flex items-center justify-between pt-4 border-t border-rpg-border/50">
                     <div className="flex flex-col">
                       <span className="text-[8px] font-black text-neutral-600 uppercase tracking-widest">Reward</span>
                       <span className="text-xs font-bold text-harta">{quest.reward_xp} XP + {quest.stat_type}</span>
@@ -762,7 +762,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                         {sub.arutha_user?.username?.[0].toUpperCase() || 'P'}
                       </div>
                       <div>
-                        <p className="font-bold text-sm text-white">{sub.arutha_user?.username || 'Unknown Player'}</p>
+                        <p className="font-bold text-sm text-rpg-text">{sub.arutha_user?.username || 'Unknown Player'}</p>
                         <p className="text-[10px] text-neutral-500">{new Date(sub.created_at).toLocaleString()}</p>
                       </div>
                     </div>
@@ -770,11 +770,11 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                   </div>
 
                   <div className="space-y-3">
-                    <p className="text-sm text-neutral-300 bg-white/5 p-4 rounded-2xl border border-white/5 italic">
+                    <p className="text-sm text-neutral-300 bg-rpg-border/10 p-4 rounded-2xl border border-rpg-border/50 italic">
                       "{sub.proof_note}"
                     </p>
                     {sub.proof_photo && (
-                      <div className="relative aspect-video bg-black rounded-2xl overflow-hidden border border-white/10">
+                      <div className="relative aspect-video bg-black rounded-2xl overflow-hidden border border-rpg-border/50">
                         <img src={sub.proof_photo} alt="Proof" className="w-full h-full object-contain" />
                       </div>
                     )}
@@ -786,13 +786,13 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                         const quest = globalQuests.find(q => q.id === sub.quest_id);
                         handleReviewSubmission(sub.id, 'APPROVED', sub.user_id, quest?.reward_xp || 500, quest?.stat_type || 'JIWA', sub.quest_id);
                       }}
-                      className="flex-1 py-4 bg-green-500 text-black font-black uppercase text-xs tracking-widest rounded-2xl hover:bg-green-400 transition-all shadow-[0_10px_30px_rgba(34,197,94,0.3)]"
+                      className="flex-1 py-4 bg-green-500 text-rpg-primary-text font-black uppercase text-xs tracking-widest rounded-2xl hover:bg-green-400 transition-all shadow-[rgba(34,197,94,0.3)]"
                     >
                       Approve & Grant Reward
                     </button>
                     <button 
                       onClick={() => handleReviewSubmission(sub.id, 'REJECTED', sub.user_id, 0, 'JIWA', sub.quest_id)}
-                      className="px-6 py-4 bg-red-500/10 text-red-500 font-black uppercase text-xs tracking-widest rounded-2xl hover:bg-red-500 hover:text-white transition-all border border-red-500/20"
+                      className="px-6 py-4 bg-red-500/10 text-red-500 font-black uppercase text-xs tracking-widest rounded-2xl hover:bg-red-500 hover:text-rpg-text transition-all border border-red-500/20"
                     >
                       Reject
                     </button>
@@ -800,7 +800,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                 </div>
               ))}
               {submissions.filter(s => s.status === 'PENDING').length === 0 && (
-                <div className="col-span-full py-20 flex flex-col items-center justify-center text-neutral-600 bg-white/[0.02] border border-dashed border-white/10 rounded-3xl">
+                <div className="col-span-full py-20 flex flex-col items-center justify-center text-neutral-600 bg-rpg-border/5 border border-dashed border-rpg-border/50 rounded-3xl">
                   <ShieldCheck className="w-12 h-12 mb-4 opacity-20" />
                   <p className="font-bold uppercase tracking-widest text-xs">No pending submissions</p>
                 </div>
@@ -820,15 +820,15 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
           >
             <motion.div 
               initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
-              className="w-full max-w-2xl bg-rpg-card border border-white/10 rounded-3xl overflow-hidden flex flex-col max-h-[90vh]"
+              className="w-full max-w-2xl bg-rpg-card border border-rpg-border/50 rounded-3xl overflow-hidden flex flex-col max-h-[90vh]"
             >
-              <div className="p-6 border-b border-white/5 flex items-center justify-between shrink-0 bg-white/5">
+              <div className="p-6 border-b border-rpg-border/50 flex items-center justify-between shrink-0 bg-rpg-border/10">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-jiwa/20 to-ilmu/20 flex items-center justify-center font-black text-jiwa text-xl">
                     {selectedUser.username?.[0].toUpperCase() || '?'}
                   </div>
                   <div>
-                    <h3 className="font-black text-white text-lg">{selectedUser.username}</h3>
+                    <h3 className="font-black text-rpg-text text-lg">{selectedUser.username}</h3>
                     <p className="text-xs text-neutral-500 font-medium">{selectedUser.email}</p>
                   </div>
                 </div>
@@ -854,7 +854,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                         <span className="text-[10px] font-black text-jiwa uppercase tracking-[0.3em] bg-jiwa/10 px-3 py-1 rounded-full">
                           {userProfile.personality_type}
                         </span>
-                        <h4 className="text-2xl font-black text-white mt-4 mb-2">{userProfile.personality_title}</h4>
+                        <h4 className="text-2xl font-black text-rpg-text mt-4 mb-2">{userProfile.personality_title}</h4>
                         <p className="text-sm text-neutral-400 leading-relaxed">
                           {userProfile.personality_desc}
                         </p>
@@ -872,7 +872,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                       </div>
                     </div>
 
-                    <div className="glass-panel p-5 bg-white/5 space-y-2">
+                    <div className="glass-panel p-5 bg-rpg-border/10 space-y-2">
                       <h5 className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Character Summary</h5>
                       <p className="text-sm text-neutral-300 italic">"{userProfile.character_summary}"</p>
                     </div>
@@ -899,14 +899,14 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
           >
             <motion.div 
               initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
-              className="w-full max-w-sm bg-rpg-card border border-white/10 rounded-3xl p-6 shadow-2xl flex flex-col gap-4"
+              className="w-full max-w-sm bg-rpg-card border border-rpg-border/50 rounded-3xl p-6 shadow-2xl flex flex-col gap-4"
             >
               <div className="flex items-center gap-3">
                 {confirmModal.variant === 'danger' && <AlertTriangle className="w-6 h-6 text-red-500" />}
                 {confirmModal.variant === 'success' && <Gift className="w-6 h-6 text-green-500" />}
                 {confirmModal.variant === 'warning' && <Megaphone className="w-6 h-6 text-amber-500" />}
                 {confirmModal.variant === 'info' && <ShieldCheck className="w-6 h-6 text-blue-500" />}
-                <h3 className="font-black text-lg text-white">{confirmModal.title}</h3>
+                <h3 className="font-black text-lg text-rpg-text">{confirmModal.title}</h3>
               </div>
               <p className="text-sm text-neutral-400 leading-relaxed">{confirmModal.message}</p>
               
@@ -916,7 +916,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                     id="modal-prompt-input"
                     placeholder={confirmModal.placeholder}
                     rows={3}
-                    className="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-xl text-white outline-none focus:border-jiwa/50 mt-2 resize-none"
+                    className="w-full px-4 py-3 bg-black/50 border border-rpg-border/50 rounded-xl text-rpg-text outline-none focus:border-jiwa/50 mt-2 resize-none"
                     autoFocus
                   />
                 ) : (
@@ -924,7 +924,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                     type="number"
                     id="modal-prompt-input"
                     placeholder={confirmModal.placeholder}
-                    className="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-xl text-white outline-none focus:border-jiwa/50 mt-2 font-mono"
+                    className="w-full px-4 py-3 bg-black/50 border border-rpg-border/50 rounded-xl text-rpg-text outline-none focus:border-jiwa/50 mt-2 font-mono"
                     autoFocus
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
@@ -941,7 +941,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                 {confirmModal.type !== 'alert' && (
                   <button 
                     onClick={() => setConfirmModal(null)}
-                    className="px-4 py-2 text-xs font-bold text-neutral-400 hover:text-white transition-colors uppercase tracking-wider"
+                    className="px-4 py-2 text-xs font-bold text-neutral-400 hover:text-rpg-text transition-colors uppercase tracking-wider"
                   >
                     Batal
                   </button>
@@ -958,7 +958,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                     }
                   }}
                   className={cn(
-                    "px-6 py-2 text-xs font-black rounded-xl text-black uppercase tracking-wider transition-all",
+                    "px-6 py-2 text-xs font-black rounded-xl text-rpg-primary-text uppercase tracking-wider transition-all",
                     confirmModal.variant === 'danger' ? "bg-red-500 hover:bg-red-400" :
                     confirmModal.variant === 'success' ? "bg-green-500 hover:bg-green-400" :
                     confirmModal.variant === 'warning' ? "bg-amber-500 hover:bg-amber-400" :
@@ -982,7 +982,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
           >
             <motion.div 
               initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
-              className="w-full max-w-lg bg-rpg-card border border-white/10 rounded-[32px] p-8 space-y-6 shadow-2xl"
+              className="w-full max-w-lg bg-rpg-card border border-rpg-border/50 rounded-[32px] p-8 space-y-6 shadow-2xl"
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-black italic tracking-tight">
@@ -997,7 +997,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                   <input 
                     type="text" 
                     placeholder="Contoh: Sang Pencuri Bintang"
-                    className="w-full px-4 py-3 bg-black/50 border border-white/5 rounded-xl outline-none focus:border-jiwa/30 transition-all text-sm"
+                    className="w-full px-4 py-3 bg-black/50 border border-rpg-border/50 rounded-xl outline-none focus:border-rpg-primary transition-all text-sm"
                     value={editingQuest.title}
                     onChange={e => setEditingQuest({ ...editingQuest, title: e.target.value })}
                   />
@@ -1007,7 +1007,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                   <textarea 
                     placeholder="Apa yang harus dilakukan pemain? Ceritakan narasinya..."
                     rows={3}
-                    className="w-full px-4 py-3 bg-black/50 border border-white/5 rounded-xl outline-none focus:border-jiwa/30 transition-all text-sm resize-none"
+                    className="w-full px-4 py-3 bg-black/50 border border-rpg-border/50 rounded-xl outline-none focus:border-rpg-primary transition-all text-sm resize-none"
                     value={editingQuest.desc}
                     onChange={e => setEditingQuest({ ...editingQuest, desc: e.target.value })}
                   />
@@ -1016,7 +1016,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest px-1">Stat Affinity</label>
                     <select 
-                      className="w-full px-4 py-3 bg-black/50 border border-white/5 rounded-xl outline-none focus:border-jiwa/30 transition-all text-sm appearance-none"
+                      className="w-full px-4 py-3 bg-black/50 border border-rpg-border/50 rounded-xl outline-none focus:border-rpg-primary transition-all text-sm appearance-none"
                       value={editingQuest.stat_type || 'JIWA'}
                       onChange={e => setEditingQuest({ ...editingQuest, stat_type: e.target.value })}
                     >
@@ -1031,7 +1031,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                     <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest px-1">XP Reward</label>
                     <input 
                       type="number" 
-                      className="w-full px-4 py-3 bg-black/50 border border-white/5 rounded-xl outline-none focus:border-jiwa/30 transition-all text-sm"
+                      className="w-full px-4 py-3 bg-black/50 border border-rpg-border/50 rounded-xl outline-none focus:border-rpg-primary transition-all text-sm"
                       value={editingQuest.reward_xp ?? ''}
                       onChange={e => {
                         const val = parseInt(e.target.value);
@@ -1044,7 +1044,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                   <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest px-1">Expires At</label>
                   <input 
                     type="datetime-local" 
-                    className="w-full px-4 py-3 bg-black/50 border border-white/5 rounded-xl outline-none focus:border-jiwa/30 transition-all text-sm"
+                    className="w-full px-4 py-3 bg-black/50 border border-rpg-border/50 rounded-xl outline-none focus:border-rpg-primary transition-all text-sm"
                     value={editingQuest.expires_at ? editingQuest.expires_at.slice(0, 16) : ''}
                     onChange={e => setEditingQuest({ ...editingQuest, expires_at: e.target.value ? new Date(e.target.value).toISOString() : null })}
                   />
@@ -1055,7 +1055,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
                 <button 
                   onClick={() => handleSaveGlobalQuest(editingQuest)}
                   disabled={actionLoading === 'save-quest'}
-                  className="flex-1 py-4 bg-jiwa text-black font-black uppercase text-xs tracking-[0.2em] rounded-2xl hover:bg-jiwa/90 transition-all shadow-[0_10px_30px_rgba(167,139,250,0.3)] disabled:opacity-50"
+                  className="flex-1 py-4 bg-jiwa text-rpg-primary-text font-black uppercase text-xs tracking-[0.2em] rounded-2xl hover:bg-jiwa/90 transition-all shadow-[rgba(var(--rpg-primary-rgb),0.2)] disabled:opacity-50"
                 >
                   {actionLoading === 'save-quest' ? 'MEMPROSES...' : 'SIMPAN MISI DUNIA'}
                 </button>
@@ -1070,14 +1070,14 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
 
 const StatBox = ({ label, value, color, bg, border }: any) => (
   <div className={cn("flex flex-col items-center justify-center p-3 rounded-2xl border", bg, border)}>
-    <span className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">{label}</span>
+    <span className="text-[10px] font-black text-rpg-text/50 uppercase tracking-widest mb-1">{label}</span>
     <span className={cn("text-xl font-black", color)}>{value}</span>
   </div>
 );
 
 const StatCard = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: number | string }) => (
-  <div className="bg-rpg-card border border-white/5 p-5 rounded-[24px] space-y-2">
-    <div className="p-2 bg-white/5 w-fit rounded-lg">{icon}</div>
+  <div className="bg-rpg-card border border-rpg-border/50 p-5 rounded-[24px] space-y-2">
+    <div className="p-2 bg-rpg-border/10 w-fit rounded-lg">{icon}</div>
     <div>
       <p className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">{label}</p>
       <p className="text-2xl font-black italic">{value}</p>

@@ -105,7 +105,7 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
     <>
       {/* Desktop Left Sidebar */}
       <nav className={cn(
-        "hidden md:flex fixed top-0 left-0 bottom-0 z-50 bg-rpg-black/95 border-r border-white/5 flex-col justify-between py-8 transition-all duration-300 overflow-y-auto overflow-x-hidden scrollbar-none",
+        "hidden md:flex fixed top-0 left-0 bottom-0 z-50 bg-rpg-black/95 border-r border-rpg-border/50 flex-col justify-between py-8 transition-all duration-300 overflow-y-auto overflow-x-hidden scrollbar-none",
         "w-20 lg:w-20 xl:w-[280px]" // Compact by default on md/lg, full on xl
       )}>
         
@@ -115,14 +115,14 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
             onClick={() => onNavigate('LANDING')}
             className="flex flex-col items-center gap-4 hover:opacity-80 transition-all mb-10 w-full"
           >
-            <div className="w-12 h-12 xl:w-24 xl:h-24 rounded-full border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.05)] p-1 relative transition-all">
-              <div className="absolute inset-0 rounded-full border border-neutral-600/30 m-1" />
+            <div className="w-12 h-12 xl:w-24 xl:h-24 rounded-full border border-rpg-border/50 shadow-[0_0_30px_rgba(var(--rpg-primary-rgb),0.05)] p-1 relative transition-all">
+              <div className="absolute inset-0 rounded-full border border-rpg-border/30 m-1" />
               <img src="/Arutha.png" alt="Arutha Logo" className="w-full h-full rounded-full object-cover" />
             </div>
             <div className="hidden xl:flex flex-col items-center">
-              <span className="text-xl font-black tracking-[0.2em] text-neutral-200 uppercase">ARUTHA</span>
+              <span className="text-xl font-black tracking-[0.2em] text-rpg-text uppercase drop-shadow-[0_0_10px_rgba(var(--rpg-text-rgb),0.1)]">ARUTHA</span>
               {session && (
-                <span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest mt-1">
+                <span className="text-[10px] font-black text-rpg-text/60 uppercase tracking-widest mt-1">
                   {userName}
                 </span>
               )}
@@ -154,11 +154,11 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
         {/* Bottom Section: Rank & Icons */}
         {session && stats && (
           <div className="px-4 xl:px-6 space-y-6">
-            <div className="glass-panel p-4 xl:p-5 border border-white/10 bg-gradient-to-br from-jiwa/20 via-transparent to-ilmu/10 text-center relative overflow-hidden group rounded-2xl">
+            <div className="glass-panel p-4 xl:p-5 border border-rpg-border/50 bg-gradient-to-br from-jiwa/20 via-transparent to-ilmu/10 text-center relative overflow-hidden group rounded-2xl">
               <div className="absolute inset-0 bg-gradient-to-r from-jiwa/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
               <div className="xl:block hidden">
                 <p className="text-[10px] font-black tracking-[0.3em] text-jiwa/70 uppercase mb-2">Ascension Phase</p>
-                <h3 className="text-xl font-black tracking-tighter text-white italic drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] uppercase">
+                <h3 className="text-xl font-black tracking-tighter text-rpg-text italic drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] uppercase">
                   {currentRank === 'DISCIPLE' ? 'INITIATE' : currentRank}
                 </h3>
               </div>
@@ -169,22 +169,22 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
               </div>
               <div className="mt-3 flex justify-center gap-1 xl:flex hidden">
                 {[1, 2, 3].map(i => (
-                  <div key={i} className={cn("w-1.5 h-1.5 rounded-full", i === 1 ? "bg-jiwa shadow-[0_0_8px_rgba(236,72,153,0.8)]" : "bg-white/10")} />
+                  <div key={i} className={cn("w-1.5 h-1.5 rounded-full", i === 1 ? "bg-jiwa shadow-[0_0_8px_rgba(var(--rpg-primary-rgb),0.8)]" : "bg-rpg-border/20")} />
                 ))}
               </div>
             </div>
             
             <div className="flex justify-center items-center gap-4 mt-6">
               <button 
-                onClick={() => onNavigate('MAIL')} 
+                onClick={() => onNavigate('MAIL')}
                 className={cn(
                   "p-3 rounded-2xl transition-all relative group flex items-center justify-center",
-                  currentPage === 'MAIL' ? "bg-white/10 text-jiwa shadow-inner" : "text-neutral-500 hover:text-neutral-200 hover:bg-white/5"
+                  currentPage === 'MAIL' ? "bg-rpg-border/10 text-jiwa shadow-inner" : "text-rpg-text/40 hover:text-rpg-text hover:bg-rpg-border/5"
                 )}
               >
                 <Mail className="w-5 h-5" />
                 {unreadMailCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[20px] h-5 flex items-center justify-center bg-jiwa text-black text-[10px] font-black rounded-full px-1 shadow-[0_0_10px_rgba(236,72,153,0.6)] animate-bounce">
+                  <span className="absolute -top-1 -right-1 min-w-[20px] h-5 flex items-center justify-center bg-jiwa text-rpg-primary-text text-[10px] font-black rounded-full px-1 shadow-[0_0_10px_rgba(var(--rpg-primary-rgb),0.6)] animate-bounce">
                     {unreadMailCount}
                   </span>
                 )}
@@ -202,11 +202,11 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
             className="flex items-center gap-4 active:scale-95 transition-transform"
           >
             <div className="relative">
-              <img src="/Arutha.png" alt="Arutha Logo" className="w-10 h-10 rounded-xl object-cover shadow-lg border border-white/10" />
+              <img src="/Arutha.png" alt="Arutha Logo" className="w-10 h-10 rounded-xl object-cover shadow-lg border border-rpg-border/50" />
               <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-jiwa/20 to-transparent pointer-events-none" />
             </div>
             <div className="flex flex-col items-start leading-tight text-left">
-              <span className="text-xl font-black tracking-tighter text-white italic">ARUTHA</span>
+              <span className="text-xl font-black tracking-tighter text-rpg-text italic">ARUTHA</span>
               {session && (
                 <span className="text-[9px] font-black text-jiwa uppercase tracking-[0.2em] line-clamp-1 max-w-[120px] opacity-80">
                   {userName}
@@ -221,12 +221,12 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
                 onClick={() => onNavigate('MAIL')}
                 className={cn(
                   "w-10 h-10 rounded-xl transition-all active:scale-90 flex items-center justify-center shadow-lg relative",
-                  currentPage === 'MAIL' ? "bg-jiwa text-black shadow-jiwa/20" : "text-neutral-400 bg-white/5 border border-white/10"
+                  currentPage === 'MAIL' ? "bg-jiwa text-black shadow-jiwa/20" : "text-rpg-text/60 bg-rpg-card border border-rpg-border"
                 )}
               >
                 <Mail className="w-4 h-4" />
                 {unreadMailCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 flex items-center justify-center bg-jiwa text-black text-[9px] font-black rounded-full px-0.5 shadow-[0_0_8px_rgba(236,72,153,0.6)]">
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 flex items-center justify-center bg-jiwa text-black text-[9px] font-black rounded-full px-0.5 shadow-[0_0_8px_rgba(var(--color-jiwa),0.6)]">
                     {unreadMailCount}
                   </span>
                 )}
@@ -237,7 +237,7 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
                   onClick={() => setShowMobileMenu(!showMobileMenu)}
                   className={cn(
                     "w-10 h-10 rounded-xl transition-all active:scale-90 flex items-center justify-center shadow-lg border",
-                    showMobileMenu ? "bg-white text-black border-white" : "text-neutral-400 bg-white/5 border-white/10"
+                    showMobileMenu ? "bg-rpg-primary text-rpg-primary-text border-white" : "text-rpg-text/60 bg-rpg-card border-rpg-border"
                   )}
                 >
                   <LayoutGrid className="w-4 h-4" />
@@ -252,7 +252,7 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
                       className="absolute top-full right-0 mt-3 w-56 bg-neutral-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-2 shadow-2xl shadow-black/50 overflow-hidden"
                     >
                       <div className="px-4 py-2 mb-1">
-                        <p className="text-[10px] font-black tracking-[0.2em] text-neutral-500 uppercase">Navigasi Lain</p>
+                        <p className="text-[10px] font-black tracking-[0.2em] text-white/40 uppercase">Navigasi Lain</p>
                       </div>
                       <DropdownItem 
                         active={currentPage === 'LEADERBOARD'} 
@@ -274,10 +274,10 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
                           label="Admin Console" 
                         />
                       )}
-                      <div className="h-px bg-white/5 my-2" />
+                      <div className="h-px bg-white/10 my-2" />
                       <button
                         onClick={() => { supabase.auth.signOut(); setShowMobileMenu(false); }}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-neutral-500 hover:text-white transition-all rounded-xl font-bold text-xs"
+                        className="w-full flex items-center gap-3 px-4 py-3 text-white/50 hover:text-white transition-all rounded-xl font-bold text-xs"
                       >
                         Keluar Dimensi
                       </button>
@@ -289,7 +289,7 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
           ) : (
             <div className="flex gap-3">
               <button onClick={() => onNavigate('LOGIN')} className="text-xs font-bold text-neutral-400 px-3 py-2">Login</button>
-              <button onClick={() => onNavigate('REGISTER')} className="px-6 py-2.5 text-xs font-black bg-white text-black rounded-full shadow-2xl hover:scale-105 transition-transform">Register</button>
+              <button onClick={() => onNavigate('REGISTER')} className="px-6 py-2.5 text-xs font-black bg-rpg-primary text-rpg-primary-text rounded-full shadow-2xl hover:scale-105 transition-transform">Register</button>
             </div>
           )}
         </div>
@@ -297,7 +297,7 @@ export const Navbar: React.FC<NavbarProps> = ({ session, userName, onNavigate, c
 
       {/* Bottom Navigation - Mobile Only */}
       {session && (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-rpg-black/80 backdrop-blur-3xl border-t border-white/10 px-2 pb-[calc(env(safe-area-inset-bottom)+8px)] pt-3 flex justify-around items-center shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-rpg-black/80 backdrop-blur-3xl border-t border-rpg-border/50 px-2 pb-[calc(env(safe-area-inset-bottom)+8px)] pt-3 flex justify-around items-center shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
           <MobileNavPill 
             active={currentPage === 'DASHBOARD'} 
             onClick={() => onNavigate('DASHBOARD')} 
@@ -338,23 +338,23 @@ const SidebarPill = ({ active, onClick, icon, label, badge }: { active: boolean;
     className={cn(
       'flex items-center gap-4 px-4 xl:px-5 py-4 rounded-2xl text-sm font-black tracking-widest uppercase transition-all w-full group relative',
       active 
-        ? 'bg-white text-black shadow-[0_10px_30px_rgba(255,255,255,0.1)]' 
-        : 'text-neutral-500 hover:text-neutral-300 hover:bg-white/5'
+        ? 'bg-rpg-primary text-rpg-primary-text shadow-[0_10px_30px_rgba(var(--rpg-primary-rgb),0.1)]' 
+        : 'text-rpg-text/40 hover:text-rpg-text/80 hover:bg-rpg-border/5'
     )}
   >
-    <div className={cn("transition-transform group-active:scale-90 shrink-0", active && "text-black")}>
+    <div className={cn("transition-transform group-active:scale-90 shrink-0", active && "text-rpg-primary-text")}>
       {icon}
     </div>
     <span className="hidden xl:block overflow-hidden whitespace-nowrap">{label}</span>
     
     {badge && (
-      <div className="absolute right-4 w-5 h-5 bg-jiwa rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(236,72,153,0.5)] animate-pulse">
+      <div className="absolute right-4 w-5 h-5 bg-jiwa text-rpg-primary-text rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(var(--rpg-primary-rgb),0.5)] animate-pulse">
         {badge}
       </div>
     )}
     
     {/* Tooltip for compact mode */}
-    <div className="xl:hidden absolute left-full ml-4 px-3 py-2 bg-white text-black text-[10px] font-black rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-[100] shadow-2xl whitespace-nowrap">
+    <div className="xl:hidden absolute left-full ml-4 px-3 py-2 bg-rpg-primary text-rpg-primary-text text-[10px] font-black rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-[100] shadow-2xl whitespace-nowrap">
       {label}
     </div>
   </button>
@@ -365,12 +365,12 @@ const MobileNavPill = ({ active, onClick, icon, label, badge }: { active: boolea
     onClick={onClick}
     className={cn(
       'flex flex-col items-center justify-center gap-1.5 w-16 transition-all active:scale-75',
-      active ? 'text-white' : 'text-neutral-500'
+      active ? 'text-rpg-text' : 'text-rpg-text/40'
     )}
   >
     <div className={cn(
       "flex items-center justify-center w-10 h-10 rounded-2xl transition-all shadow-inner",
-      active ? "bg-white/15 scale-110 shadow-white/5" : "bg-transparent"
+      active ? "bg-rpg-border/20 scale-110 shadow-rpg-border/10" : "bg-transparent"
     )}>
       {React.cloneElement(icon as React.ReactElement<any>, { 
         className: cn("w-5 h-5", active ? "stroke-[2.5px]" : "stroke-[2px]") 
@@ -391,7 +391,7 @@ const DropdownItem = ({ active, onClick, icon, label }: { active: boolean; onCli
     onClick={onClick}
     className={cn(
       "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-xs",
-      active ? "bg-white/10 text-white" : "text-neutral-400 hover:bg-white/5 hover:text-white"
+      active ? "bg-white/10 text-white" : "text-white/40 hover:bg-white/5 hover:text-white"
     )}
   >
     <div className={cn("transition-transform", active ? "scale-110" : "scale-100")}>

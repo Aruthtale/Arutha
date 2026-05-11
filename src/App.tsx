@@ -65,8 +65,12 @@ export default function App() {
     nameChangeCount, lastNameChange, userContext, setUserContext,
     talents, onboardingQuestions, globalQuests,
     availableWeeklyQuests, activeWeeklyQuests, talentChoicesAvailable,
-    pendingTalentPool
+    pendingTalentPool, theme
   } = useStore();
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -116,7 +120,7 @@ export default function App() {
 
   return (
     <LazyMotion features={domMax}>
-    <div className="min-h-screen bg-rpg-black text-white selection:bg-white selection:text-black overflow-x-hidden">
+    <div className="min-h-screen bg-rpg-black text-rpg-text selection:bg-rpg-primary selection:text-rpg-primary-text overflow-x-hidden">
       <SplashScreen isReady={isDataReady} />
       <div className="bg-premium-glow" />
       <div className="noise-overlay" />
@@ -125,7 +129,7 @@ export default function App() {
         {loading && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[9999] bg-rpg-black/80 backdrop-blur-md flex flex-col items-center justify-center gap-6">
             <div className="w-12 h-12 border-4 border-jiwa/20 border-t-jiwa rounded-full animate-spin" />
-            <h3 className="text-lg font-black tracking-widest text-white uppercase italic">Soul Alignment...</h3>
+            <h3 className="text-lg font-black tracking-widest text-rpg-text uppercase italic">Soul Alignment...</h3>
           </motion.div>
         )}
       </AnimatePresence>
@@ -173,7 +177,7 @@ export default function App() {
             {page === 'SETTINGS' && session && (
               <Settings
                 userId={dbUserId || ''} initialName={name} email={session.user.email || ''} nameChangeCount={nameChangeCount}
-                lastNameChange={lastNameChange} onUpdateName={handleUpdateName} onLogout={() => supabase.auth.signOut()} onBack={() => setPage('DASHBOARD')}
+                lastNameChange={lastNameChange} onUpdateName={handleUpdateName} onLogout={() => supabase.auth.signOut()} onBack={() => setPage('DASHBOARD')} setPage={setPage}
               />
             )}
             {page === 'PROFILE' && characterAnalysis && <Profile name={name} level={level} xp={xp} stats={stats} analysis={characterAnalysis} onBack={() => setPage('DASHBOARD')} talents={talents} statHistory={statHistory} zodiac={userContext.zodiac} usia={userContext.usia} />}
@@ -192,10 +196,10 @@ export default function App() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/95 backdrop-blur-2xl">
             {levelUpStage === 1 ? (
               <motion.div key="lvl-anim" initial={{ scale: 0.5, y: 50 }} animate={{ scale: 1, y: 0 }} className="relative max-w-sm w-full bg-gradient-to-b from-jiwa to-rpg-black p-8 rounded-[40px] border border-white/20 text-center">
-                <Star className="w-16 h-16 text-white mx-auto mb-6 animate-pulse" />
-                <h2 className="text-4xl font-black italic text-white mb-4">LEVEL UP!</h2>
-                <div className="text-4xl font-black text-white">{level}</div>
-                <button onClick={() => setShowLevelUp(false)} className="mt-8 px-8 py-3 bg-white text-black rounded-full font-black">LANJUTKAN</button>
+                <Star className="w-16 h-16 text-rpg-text mx-auto mb-6 animate-pulse" />
+                <h2 className="text-4xl font-black italic text-rpg-text mb-4">LEVEL UP!</h2>
+                <div className="text-4xl font-black text-rpg-text">{level}</div>
+                <button onClick={() => setShowLevelUp(false)} className="mt-8 px-8 py-3 bg-rpg-primary text-rpg-primary-text rounded-full font-black">LANJUTKAN</button>
               </motion.div>
             ) : null}
           </motion.div>

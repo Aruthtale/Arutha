@@ -250,7 +250,7 @@ export const MentalHealthChat: React.FC<MentalHealthChatProps> = ({ userId, user
             initial={{ y: -60, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -60, opacity: 0 }}
-            className="flex-none bg-gradient-to-r from-karma/90 to-karma/70 backdrop-blur-xl text-white px-6 py-4 flex items-center justify-between md:pl-[280px]"
+            className="flex-none bg-gradient-to-r from-karma/90 to-karma/70 backdrop-blur-xl text-rpg-text px-6 py-4 flex items-center justify-between md:pl-[280px]"
           >
             <div className="flex items-center gap-3">
               <Phone className="w-5 h-5 animate-pulse" />
@@ -266,7 +266,7 @@ export const MentalHealthChat: React.FC<MentalHealthChatProps> = ({ userId, user
       </AnimatePresence>
 
       {/* Header Area */}
-      <div className="flex-none bg-rpg-black/80 backdrop-blur-3xl border-b border-white/5">
+      <div className="flex-none bg-rpg-black/80 backdrop-blur-3xl border-b border-rpg-border/50">
         <div className="px-6 py-5 flex items-center justify-between max-w-3xl mx-auto w-full relative">
           
           {/* Floating Back Button - Now relative to the fixed header for better alignment */}
@@ -275,7 +275,7 @@ export const MentalHealthChat: React.FC<MentalHealthChatProps> = ({ userId, user
               whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.1)' }}
               whileTap={{ scale: 0.95 }}
               onClick={onBack}
-              className="p-3 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl text-neutral-400 hover:text-white transition-all flex items-center justify-center group"
+              className="p-3 rounded-2xl bg-rpg-border/5 backdrop-blur-xl border border-rpg-border/50 shadow-2xl text-neutral-400 hover:text-rpg-text transition-all flex items-center justify-center group"
             >
               <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
             </motion.button>
@@ -284,13 +284,13 @@ export const MentalHealthChat: React.FC<MentalHealthChatProps> = ({ userId, user
           <div className="flex items-center gap-4 pl-14 sm:pl-16">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-jiwa/30 to-ilmu/30 border border-white/10 flex items-center justify-center shadow-lg">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-jiwa/30 to-ilmu/30 border border-rpg-border/50 flex items-center justify-center shadow-lg">
                   <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-jiwa" />
                 </div>
                 <div className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border-2 border-rpg-black", RISK_PULSE[analysis?.riskLevel || 'GREEN'])} />
               </div>
               <div>
-                <h2 className="text-base sm:text-lg font-black text-white tracking-tight leading-none">Soul Guard</h2>
+                <h2 className="text-base sm:text-lg font-black text-rpg-text tracking-tight leading-none">Soul Guard</h2>
                 <div className="flex items-center gap-2 mt-1">
                   <PhaseIcon className={cn("w-2.5 h-2.5", currentPhaseInfo.color)} />
                   <span className={cn("text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em]", currentPhaseInfo.color)}>
@@ -303,7 +303,7 @@ export const MentalHealthChat: React.FC<MentalHealthChatProps> = ({ userId, user
 
           <button
             onClick={() => setShowResetConfirm(true)}
-            className="text-[10px] font-black uppercase tracking-widest text-neutral-600 hover:text-neutral-300 transition-colors px-3 py-2 rounded-xl hover:bg-white/5"
+            className="text-[10px] font-black uppercase tracking-widest text-neutral-600 hover:text-neutral-300 transition-colors px-3 py-2 rounded-xl hover:bg-rpg-border/5"
           >
             Reset
           </button>
@@ -313,7 +313,7 @@ export const MentalHealthChat: React.FC<MentalHealthChatProps> = ({ userId, user
         <div className="px-6 pb-4 max-w-3xl mx-auto w-full">
           <div className="flex gap-1.5">
             {PHASE_LABELS.map((p, i) => (
-              <div key={i} className="flex-1 h-1 rounded-full overflow-hidden bg-white/5">
+              <div key={i} className="flex-1 h-1 rounded-full overflow-hidden bg-rpg-border/5">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: currentPhase > i ? '100%' : currentPhase === i + 1 ? `${Math.min(100, (userMessageCount / (i === 0 ? 3 : i === 1 ? 8 : 15)) * 100)}%` : '0%' }}
@@ -344,7 +344,7 @@ export const MentalHealthChat: React.FC<MentalHealthChatProps> = ({ userId, user
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-sm bg-neutral-900 border border-white/10 rounded-[32px] p-8 shadow-2xl overflow-hidden"
+              className="relative w-full max-w-sm bg-neutral-900 border border-rpg-border/50 rounded-[32px] p-8 shadow-2xl overflow-hidden"
             >
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-karma to-transparent" />
               
@@ -352,7 +352,7 @@ export const MentalHealthChat: React.FC<MentalHealthChatProps> = ({ userId, user
                 <Sparkles className="w-8 h-8 text-karma" />
               </div>
 
-              <h3 className="text-xl font-black text-white text-center mb-2 italic tracking-tighter">Reset Soul Guard?</h3>
+              <h3 className="text-xl font-black text-rpg-text text-center mb-2 italic tracking-tighter">Reset Soul Guard?</h3>
               <p className="text-sm text-neutral-500 text-center mb-8 leading-relaxed">
                 Seluruh riwayat obrolan dan analisis emosionalmu akan dihapus secara permanen dari dimensi ini.
               </p>
@@ -366,7 +366,7 @@ export const MentalHealthChat: React.FC<MentalHealthChatProps> = ({ userId, user
                 </button>
                 <button
                   onClick={() => setShowResetConfirm(false)}
-                  className="w-full py-4 bg-white/5 text-white font-bold rounded-2xl hover:bg-white/10 transition-colors"
+                  className="w-full py-4 bg-rpg-border/5 text-rpg-text font-bold rounded-2xl hover:bg-rpg-border/10 transition-colors"
                 >
                   Batal
                 </button>
@@ -387,13 +387,13 @@ export const MentalHealthChat: React.FC<MentalHealthChatProps> = ({ userId, user
             <div className="flex flex-col gap-4">
               <button 
                 onClick={() => selectStyle('concise')}
-                className="group relative p-6 bg-white/[0.03] border border-white/10 rounded-[24px] hover:bg-white/5 hover:border-jiwa/30 transition-all text-left"
+                className="group relative p-6 bg-white/[0.03] border border-rpg-border/50 rounded-[24px] hover:bg-rpg-border/5 hover:border-jiwa/30 transition-all text-left"
               >
                 <div className="flex items-center gap-4 mb-2">
                   <div className="p-3 rounded-xl bg-jiwa/10 border border-jiwa/20 text-jiwa group-hover:scale-110 transition-transform">
                     <Sparkles className="w-5 h-5" />
                   </div>
-                  <h4 className="font-black text-white uppercase tracking-wider">Mode Singkat</h4>
+                  <h4 className="font-black text-rpg-text uppercase tracking-wider">Mode Singkat</h4>
                 </div>
                 <p className="text-sm text-neutral-500 leading-relaxed">
                   Respon padat (1 paragraf). Fokus pada pencerahan langsung tanpa basa-basi.
@@ -402,13 +402,13 @@ export const MentalHealthChat: React.FC<MentalHealthChatProps> = ({ userId, user
 
               <button 
                 onClick={() => selectStyle('deep')}
-                className="group relative p-6 bg-white/[0.03] border border-white/10 rounded-[24px] hover:bg-white/5 hover:border-karma/30 transition-all text-left"
+                className="group relative p-6 bg-white/[0.03] border border-rpg-border/50 rounded-[24px] hover:bg-rpg-border/5 hover:border-karma/30 transition-all text-left"
               >
                 <div className="flex items-center gap-4 mb-2">
                   <div className="p-3 rounded-xl bg-karma/10 border border-karma/20 text-karma group-hover:scale-110 transition-transform">
                     <Heart className="w-5 h-5" />
                   </div>
-                  <h4 className="font-black text-white uppercase tracking-wider">Mode Mendalam</h4>
+                  <h4 className="font-black text-rpg-text uppercase tracking-wider">Mode Mendalam</h4>
                 </div>
                 <p className="text-sm text-neutral-500 leading-relaxed">
                   Respon lebih detail dan penuh empati. Untuk kamu yang butuh teman ngobrol panjang.
@@ -429,14 +429,14 @@ export const MentalHealthChat: React.FC<MentalHealthChatProps> = ({ userId, user
             <div className={cn(
               "max-w-[88%] sm:max-w-[80%] px-5 py-4 text-[15px] leading-relaxed whitespace-pre-wrap shadow-sm",
               msg.role === 'user'
-                ? "bg-white text-black rounded-[20px] rounded-tr-[6px] font-semibold"
-                : "bg-white/[0.06] border border-white/[0.08] text-neutral-200 rounded-[20px] rounded-tl-[6px] font-medium"
+                ? "bg-rpg-primary text-rpg-primary-text rounded-[20px] rounded-tr-[6px] font-semibold"
+                : "bg-rpg-card border border-rpg-border/30 text-rpg-text/80 rounded-[20px] rounded-tl-[6px] font-medium"
             )}>
               {msg.content}
               
               {/* Tarot Card inside bubble */}
               {msg.cardId && (
-                <div className="mt-4 pt-4 border-t border-white/10">
+                <div className="mt-4 pt-4 border-t border-rpg-border/50">
                   <TarotCardUI cardId={msg.cardId} />
                 </div>
               )}
@@ -480,7 +480,7 @@ export const MentalHealthChat: React.FC<MentalHealthChatProps> = ({ userId, user
       </div>
 
       {/* Input Area */}
-      <div className="flex-none bg-rpg-black/95 backdrop-blur-2xl border-t border-white/5 px-4 sm:px-6 py-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+      <div className="flex-none bg-rpg-black/95 backdrop-blur-2xl border-t border-rpg-border/50 px-4 sm:px-6 py-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
         <div className="max-w-3xl mx-auto w-full">
           {/* Quick Prompts (shown when few messages) */}
           {userMessageCount < 2 && (
@@ -496,7 +496,7 @@ export const MentalHealthChat: React.FC<MentalHealthChatProps> = ({ userId, user
                     setInput(prompt);
                     inputRef.current?.focus();
                   }}
-                  className="px-4 py-2.5 bg-white/5 border border-white/10 rounded-full text-xs font-bold text-neutral-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all active:scale-95"
+                  className="px-4 py-2.5 bg-rpg-border/5 border border-rpg-border/50 rounded-full text-xs font-bold text-neutral-400 hover:text-rpg-text hover:bg-rpg-border/10 hover:border-white/20 transition-all active:scale-95"
                 >
                   {prompt}
                 </button>
@@ -515,7 +515,7 @@ export const MentalHealthChat: React.FC<MentalHealthChatProps> = ({ userId, user
                 placeholder="Ceritakan apa yang kamu rasakan..."
                 disabled={isLoading}
                 maxLength={500}
-                className="w-full bg-white/[0.06] border border-white/10 rounded-2xl py-4 pl-5 pr-12 text-[15px] text-white placeholder:text-neutral-600 focus:outline-none focus:border-jiwa/30 focus:bg-white/[0.08] transition-all disabled:opacity-50"
+                className="w-full bg-white/[0.06] border border-rpg-border/50 rounded-2xl py-4 pl-5 pr-12 text-[15px] text-rpg-text placeholder:text-neutral-600 focus:outline-none focus:border-jiwa/30 focus:bg-white/[0.08] transition-all disabled:opacity-50"
               />
               {input.length > 0 && (
                 <div className={cn(
@@ -534,8 +534,8 @@ export const MentalHealthChat: React.FC<MentalHealthChatProps> = ({ userId, user
               className={cn(
                 "w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-lg shrink-0",
                 input.trim() && !isLoading
-                  ? "bg-gradient-to-br from-jiwa to-ilmu text-white shadow-jiwa/20"
-                  : "bg-white/5 text-neutral-600 border border-white/10"
+                  ? "bg-gradient-to-br from-jiwa to-ilmu text-rpg-text shadow-jiwa/20"
+                  : "bg-rpg-border/5 text-neutral-600 border border-rpg-border/50"
               )}
             >
               {isLoading ? (
@@ -576,8 +576,8 @@ function TarotCardUI({ cardId }: { cardId: string }) {
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-harta italic">Arcana Major</span>
           </div>
         </div>
-        <div className="p-3 bg-black/40 backdrop-blur-md border-t border-white/10">
-          <h4 className="text-xs font-black text-white text-center uppercase tracking-widest mb-1">{card.name}</h4>
+        <div className="p-3 bg-black/40 backdrop-blur-md border-t border-rpg-border/50">
+          <h4 className="text-xs font-black text-rpg-text text-center uppercase tracking-widest mb-1">{card.name}</h4>
           <p className="text-[9px] text-neutral-400 text-center leading-tight italic line-clamp-2">
             "{card.meaning}"
           </p>

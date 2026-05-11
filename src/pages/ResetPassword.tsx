@@ -29,13 +29,13 @@ export const ResetPassword = () => {
     <div className="min-h-screen flex items-center justify-center p-6 bg-rpg-black">
       <motion.div 
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md glass-panel p-10 space-y-8 border-white/10"
+        className="w-full max-w-md glass-panel p-10 space-y-8 border-rpg-border/50"
       >
         <div className="text-center space-y-2">
           <div className="w-16 h-16 bg-jiwa/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Lock className="w-8 h-8 text-jiwa" />
           </div>
-          <h2 className="text-3xl font-black italic tracking-tight">NEW PASSWORD</h2>
+          <h2 className="text-3xl font-black italic tracking-tight text-rpg-text">NEW PASSWORD</h2>
           <p className="text-sm text-neutral-400 uppercase tracking-widest font-bold">Masukkan password baru Anda</p>
         </div>
 
@@ -51,12 +51,12 @@ export const ResetPassword = () => {
         {message?.type !== 'success' && (
           <form onSubmit={handleUpdatePassword} className="space-y-6">
             <div className="relative group">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-white transition-colors" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-rpg-text transition-colors" />
               <input
                 type="password"
                 placeholder="Password Baru"
                 required
-                className="w-full pl-12 pr-4 py-4 bg-rpg-black/50 border border-rpg-border focus:border-white rounded-2xl outline-none transition-all text-white"
+                className="w-full pl-12 pr-4 py-4 bg-rpg-black/50 border border-rpg-border focus:border-white rounded-2xl outline-none transition-all text-rpg-text"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -64,7 +64,7 @@ export const ResetPassword = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-white text-black font-black rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-xl shadow-white/10"
+              className="w-full py-4 bg-rpg-primary text-rpg-primary-text font-black rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-xl shadow-white/10"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'UPDATE PASSWORD'}
             </button>

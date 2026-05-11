@@ -17,7 +17,7 @@ export const Register: React.FC<RegisterProps> = ({ onBack }) => {
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         onClick={onBack} 
-        className="fixed top-6 left-6 z-50 px-5 py-2.5 bg-white/5 border border-white/10 rounded-full text-white font-bold text-sm flex items-center gap-2 hover:bg-white/10 hover:border-white/20 transition-all shadow-xl backdrop-blur-md group"
+        className="fixed top-6 left-6 z-50 px-5 py-2.5 bg-rpg-border/5 border border-rpg-border/50 rounded-full text-rpg-text font-bold text-sm flex items-center gap-2 hover:bg-rpg-border/10 hover:border-rpg-border/50 transition-all shadow-xl backdrop-blur-md group"
       >
         <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> 
         Back to Home

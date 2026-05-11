@@ -6,17 +6,103 @@
   --font-serif: "Cormorant Garamond", serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --color-rpg-black: #050505;
-  --color-rpg-card: #0F0F0F;
-  --color-rpg-border: #222222;
+  /* DEFAULT (VOID) PALETTE */
+  --color-rpg-black: var(--rpg-black, #030303);
+  --color-rpg-card: var(--rpg-card, #080808);
+  --color-rpg-border: var(--rpg-border, #1a1a1a);
+  --color-rpg-primary: var(--rpg-primary, #ffffff);
+  --color-rpg-primary-text: var(--rpg-primary-text, #000000);
+  --color-rpg-text: var(--rpg-text, #ffffff);
   
-  /* Dimensi Colors */
-  /* Dimensi Colors - Premium RPG Palette */
-  --color-jiwa: #C084FC;   /* Purple/Soul */
-  --color-raga: #F43F5E;   /* Rose/Body */
-  --color-harta: #FACC15;  /* Gold/Wealth */
-  --color-ilmu: #3B82F6;   /* Blue/Wisdom */
-  --color-karma: #4ADE80;  /* Green/Karma */
+  /* Dimensi Colors - Neon Ether Palette */
+  --color-jiwa: var(--dim-jiwa, #ff0080);
+  --color-raga: var(--dim-raga, #ff4d4d);
+  --color-harta: var(--dim-harta, #ffcc00);
+  --color-ilmu: var(--dim-ilmu, #00ccff);
+  --color-karma: var(--dim-karma, #00ffaa);
+
+  /* Surface Elevations */
+  --color-surface-100: var(--surf-100, #0a0a0a);
+  --color-surface-200: var(--surf-200, #121212);
+  --color-surface-300: var(--surf-300, #1a1a1a);
+}
+
+@layer base {
+  :root[data-theme='VOID'] {
+    --rpg-black: #030303;
+    --rpg-card: #080808;
+    --rpg-border: #1a1a1a;
+    --rpg-primary: #ffffff;
+    --rpg-primary-rgb: 255, 255, 255;
+    --rpg-primary-text: #000000;
+    --rpg-text: #ffffff;
+    --rpg-text-rgb: 255, 255, 255;
+    --dim-jiwa: #ff0080;
+    --dim-raga: #ff4d4d;
+    --dim-harta: #ffcc00;
+    --dim-ilmu: #00ccff;
+    --dim-karma: #00ffaa;
+    --surf-100: #0a0a0a;
+    --surf-200: #121212;
+    --surf-300: #1a1a1a;
+  }
+
+  :root[data-theme='DIVINE'] {
+    --rpg-black: #f8f8f2;
+    --rpg-card: #ffffff;
+    --rpg-border: #e2e8f0;
+    --rpg-primary: #1a1a1a;
+    --rpg-primary-rgb: 26, 26, 26;
+    --rpg-primary-text: #ffffff;
+    --rpg-text: #1a1a1a;
+    --rpg-text-rgb: 26, 26, 26;
+    --dim-jiwa: #9333ea;
+    --dim-raga: #e11d48;
+    --dim-harta: #d97706;
+    --dim-ilmu: #2563eb;
+    --dim-karma: #059669;
+    --surf-100: #f1f5f9;
+    --surf-200: #e2e8f0;
+    --surf-300: #cbd5e1;
+  }
+
+  :root[data-theme='CYBER'] {
+    --rpg-black: #000000;
+    --rpg-card: #050505;
+    --rpg-border: #00ffcc22;
+    --rpg-primary: #ffffff;
+    --rpg-primary-rgb: 255, 255, 255;
+    --rpg-primary-text: #000000;
+    --rpg-text: #00ff41;
+    --rpg-text-rgb: 0, 255, 65;
+    --dim-jiwa: #ff00ff;
+    --dim-raga: #ff3333;
+    --dim-harta: #ffff00;
+    --dim-ilmu: #00ffff;
+    --dim-karma: #33ff33;
+    --surf-100: #080808;
+    --surf-200: #111111;
+    --surf-300: #1a1a1a;
+  }
+
+  :root[data-theme='EMERALD'] {
+    --rpg-black: #020a06;
+    --rpg-card: #04120a;
+    --rpg-border: #062414;
+    --rpg-primary: #ffffff;
+    --rpg-primary-rgb: 255, 255, 255;
+    --rpg-primary-text: #000000;
+    --rpg-text: #ecfdf5;
+    --rpg-text-rgb: 236, 253, 245;
+    --dim-jiwa: #34d399;
+    --dim-raga: #f87171;
+    --dim-harta: #fbbf24;
+    --dim-ilmu: #60a5fa;
+    --dim-karma: #10b981;
+    --surf-100: #051a0f;
+    --surf-200: #062414;
+    --surf-300: #0a2f1c;
+  }
 }
 
 @layer base {
@@ -25,7 +111,7 @@
   }
   
   body {
-    @apply bg-rpg-black text-white antialiased selection:bg-white selection:text-black;
+    @apply bg-rpg-black text-rpg-text antialiased selection:bg-rpg-text selection:text-rpg-black;
     -webkit-tap-highlight-color: transparent;
   }
 

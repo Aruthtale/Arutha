@@ -120,7 +120,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
           <button
             onClick={handleStart}
             disabled={isLoadingQuestions}
-            className="w-full md:w-auto px-8 py-4 bg-white text-black font-black rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 mx-auto disabled:opacity-50 disabled:hover:scale-100"
+            className="w-full md:w-auto px-8 py-4 bg-rpg-primary text-rpg-primary-text font-black rounded-2xl shadow-[0_0_20px_rgba(var(--rpg-primary-rgb),0.2)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 mx-auto disabled:opacity-50 disabled:hover:scale-100"
           >
             {isLoadingQuestions ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
             {isLoadingQuestions ? 'Syncing Dimensions...' : 'START CALIBRATION'}
@@ -253,7 +253,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
               <button
                 onClick={handleSubmit}
                 disabled={!currentAnswer.trim()}
-                className="absolute bottom-3 right-3 md:bottom-4 md:right-4 p-2.5 md:p-3 bg-white text-black rounded-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-20 disabled:hover:scale-100 shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+                className="absolute bottom-3 right-3 md:bottom-4 md:right-4 p-2.5 md:p-3 bg-rpg-primary text-rpg-primary-text rounded-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-20 disabled:hover:scale-100 shadow-[0_0_15px_rgba(var(--rpg-primary-rgb),0.2)]"
               >
                 <Send className="w-4 h-4 md:w-5 md:h-5" />
               </button>

@@ -112,11 +112,11 @@ export const Mail = ({ userId, supabaseId, onBack }: { userId: string, supabaseI
     <div className="p-6 md:p-12 max-w-4xl mx-auto min-h-screen pb-32">
       <header className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-3 bg-white/5 rounded-full hover:bg-white/10 transition-colors">
-            <ArrowLeft className="w-5 h-5 text-white" />
+          <button onClick={onBack} className="p-3 bg-rpg-border/5 rounded-full hover:bg-rpg-border/10 transition-colors">
+            <ArrowLeft className="w-5 h-5 text-rpg-text" />
           </button>
           <div>
-            <h1 className="text-3xl md:text-4xl font-black text-white italic tracking-tighter uppercase">Kotak Surat</h1>
+            <h1 className="text-3xl md:text-4xl font-black text-rpg-text italic tracking-tighter uppercase">Kotak Surat</h1>
             <p className="text-jiwa text-sm tracking-widest uppercase font-bold mt-1">Pesan dari Semesta</p>
           </div>
         </div>
@@ -128,12 +128,12 @@ export const Mail = ({ userId, supabaseId, onBack }: { userId: string, supabaseI
         <div className="text-center text-red-500 py-20 glass-panel rounded-3xl border border-red-500/10">
           <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
           <p className="font-bold tracking-widest uppercase">{error}</p>
-          <button onClick={fetchMails} className="mt-4 text-xs font-black text-white bg-white/5 px-6 py-2 rounded-full hover:bg-white/10 transition-all">
+          <button onClick={fetchMails} className="mt-4 text-xs font-black text-rpg-text bg-rpg-border/5 px-6 py-2 rounded-full hover:bg-rpg-border/10 transition-all">
             COBA LAGI
           </button>
         </div>
       ) : mails.length === 0 ? (
-        <div className="text-center text-neutral-500 py-20 glass-panel rounded-3xl border border-white/5">
+        <div className="text-center text-neutral-500 py-20 glass-panel rounded-3xl border border-rpg-border/50">
           <MailIcon className="w-12 h-12 mx-auto mb-4 opacity-20" />
           <p className="font-bold tracking-widest uppercase">Kotak Surat Kosong</p>
         </div>
@@ -152,7 +152,7 @@ export const Mail = ({ userId, supabaseId, onBack }: { userId: string, supabaseI
                     "p-6 rounded-3xl border transition-all relative overflow-hidden group",
                     isGlobal 
                       ? "bg-gradient-to-br from-amber-500/10 to-rpg-card border-amber-500/20" 
-                      : "bg-rpg-card/50 border-white/5"
+                      : "bg-rpg-card/50 border-rpg-border/50"
                   )}
                 >
                   {isGlobal && (
@@ -169,7 +169,7 @@ export const Mail = ({ userId, supabaseId, onBack }: { userId: string, supabaseI
                     </div>
                     <div className="flex-1">
                       <div className="flex flex-col md:flex-row md:items-center justify-between mb-2 gap-1">
-                        <h3 className="font-black italic tracking-wider text-white text-lg">
+                        <h3 className="font-black italic tracking-wider text-rpg-primary text-lg">
                           {isGlobal ? "PENGUMUMAN GLOBAL" : "PESAN PRIBADI"}
                         </h3>
                         <span className="text-xs text-neutral-500 font-mono">

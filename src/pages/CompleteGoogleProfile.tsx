@@ -73,12 +73,12 @@ export const CompleteGoogleProfile: React.FC<CompleteGoogleProfileProps> = ({ us
   };
 
   return (
-    <div className="min-h-screen bg-rpg-black text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-rpg-black text-rpg-text flex flex-col items-center justify-center p-6 relative overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-jiwa/10 blur-[120px] rounded-full pointer-events-none" />
       
       <motion.div 
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md glass-panel p-8 rounded-3xl border border-white/10 relative z-10 shadow-2xl"
+        className="w-full max-w-md glass-panel p-8 rounded-3xl border border-rpg-border/50 relative z-10 shadow-2xl"
       >
         <div className="text-center mb-8">
           <h2 className="text-3xl font-black tracking-tight mb-2">COMPLETE PROFILE</h2>
@@ -89,22 +89,22 @@ export const CompleteGoogleProfile: React.FC<CompleteGoogleProfileProps> = ({ us
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative group">
-            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-jiwa transition-colors" />
+            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-rpg-text transition-colors" />
             <input
               type="text"
               required
               placeholder="Username"
-              className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 focus:border-jiwa rounded-2xl outline-none transition-all text-white placeholder:text-neutral-600"
+              className="w-full pl-12 pr-4 py-4 bg-rpg-border/5 border border-rpg-border/50 focus:border-rpg-primary rounded-2xl outline-none transition-all text-rpg-text placeholder:text-neutral-600"
               value={formData.username}
               onChange={(e) => setFormData({ ...formData, username: e.target.value })}
             />
           </div>
 
           <div className="relative group">
-            <VenusAndMars className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-jiwa transition-colors" />
+            <VenusAndMars className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-rpg-text transition-colors" />
             <select
               required
-              className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 focus:border-jiwa rounded-2xl outline-none transition-all text-white appearance-none"
+              className="w-full pl-12 pr-4 py-4 bg-rpg-border/5 border border-rpg-border/50 focus:border-rpg-primary rounded-2xl outline-none transition-all text-rpg-text appearance-none"
               value={formData.gender}
               onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
             >
@@ -121,7 +121,7 @@ export const CompleteGoogleProfile: React.FC<CompleteGoogleProfileProps> = ({ us
               <div className="relative group">
                 <select
                   required
-                  className="w-full px-4 py-4 bg-white/5 border border-white/10 focus:border-jiwa rounded-2xl outline-none transition-all text-white appearance-none text-center font-bold"
+                  className="w-full px-4 py-4 bg-rpg-border/5 border border-rpg-border/50 focus:border-rpg-primary rounded-2xl outline-none transition-all text-rpg-text appearance-none text-center font-bold"
                   value={formData.day}
                   onChange={(e) => setFormData({ ...formData, day: e.target.value })}
                 >
@@ -134,7 +134,7 @@ export const CompleteGoogleProfile: React.FC<CompleteGoogleProfileProps> = ({ us
               <div className="relative group">
                 <select
                   required
-                  className="w-full px-4 py-4 bg-white/5 border border-white/10 focus:border-jiwa rounded-2xl outline-none transition-all text-white appearance-none text-center font-bold"
+                  className="w-full px-4 py-4 bg-rpg-border/5 border border-rpg-border/50 focus:border-rpg-primary rounded-2xl outline-none transition-all text-rpg-text appearance-none text-center font-bold"
                   value={formData.month}
                   onChange={(e) => setFormData({ ...formData, month: e.target.value })}
                 >
@@ -147,7 +147,7 @@ export const CompleteGoogleProfile: React.FC<CompleteGoogleProfileProps> = ({ us
               <div className="relative group">
                 <select
                   required
-                  className="w-full px-4 py-4 bg-white/5 border border-white/10 focus:border-jiwa rounded-2xl outline-none transition-all text-white appearance-none text-center font-bold"
+                  className="w-full px-4 py-4 bg-rpg-border/5 border border-rpg-border/50 focus:border-rpg-primary rounded-2xl outline-none transition-all text-rpg-text appearance-none text-center font-bold"
                   value={formData.year}
                   onChange={(e) => setFormData({ ...formData, year: e.target.value })}
                 >
@@ -164,7 +164,7 @@ export const CompleteGoogleProfile: React.FC<CompleteGoogleProfileProps> = ({ us
           <button
             type="submit"
             disabled={loading || !formData.day || !formData.month || !formData.year || !formData.gender}
-            className="w-full py-5 mt-6 bg-jiwa text-white font-black rounded-2xl hover:bg-jiwa/80 transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-lg shadow-jiwa/20 group"
+            className="w-full py-5 mt-6 bg-jiwa text-rpg-text font-black rounded-2xl hover:bg-rpg-border/10 transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-lg shadow-jiwa/20 group"
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5 group-hover:scale-110 transition-transform" />}
             <span className="tracking-widest">{loading ? 'SYNCING DATA...' : 'INITIALIZE PROFILE'}</span>

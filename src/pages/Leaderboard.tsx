@@ -93,7 +93,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, onBack,
   };
 
   const categories: { id: SortCategory; label: string; icon: any; color: string }[] = [
-    { id: 'OVERALL', label: 'Overall', icon: Trophy, color: 'text-white' },
+    { id: 'OVERALL', label: 'Overall', icon: Trophy, color: 'text-rpg-text' },
     { id: 'JIWA', label: 'Jiwa', icon: Brain, color: 'text-jiwa' },
     { id: 'RAGA', label: 'Raga', icon: Dumbbell, color: 'text-raga' },
     { id: 'HARTA', label: 'Harta', icon: Coins, color: 'text-harta' },
@@ -108,14 +108,14 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, onBack,
         <div className="absolute inset-0 blur-lg bg-yellow-400/20" />
       </div>
     );
-    if (index === 1) return <Medal className="w-5 h-5 text-slate-300 fill-slate-300/20" />;
-    if (index === 2) return <Medal className="w-5 h-5 text-amber-600 fill-amber-600/20" />;
-    return <span className="text-xs font-black text-neutral-600 group-hover:text-neutral-400 transition-colors">#{index + 1}</span>;
+    if (index === 1) return <Medal className="w-5 h-5 text-slate-400 fill-slate-400/20" />;
+    if (index === 2) return <Medal className="w-5 h-5 text-amber-700 fill-amber-700/20" />;
+    return <span className="text-xs font-black text-rpg-text/30 group-hover:text-rpg-text/60 transition-colors">#{index + 1}</span>;
   };
 
   return (
     <div className={cn(
-      "text-white",
+      "text-rpg-text",
       isPreview ? "py-10" : "min-h-screen bg-rpg-black pb-32 pt-24 md:pt-20"
     )}>
       {/* Background Decor */}
@@ -131,12 +131,12 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, onBack,
           <>
             {/* Header */}
             <div className="flex items-center justify-between mb-12">
-              <button onClick={onBack} className="p-3 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all">
+              <button onClick={onBack} className="p-3 bg-rpg-border/5 border border-rpg-border/50 rounded-2xl hover:bg-rpg-border/10 transition-all">
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div className="text-center">
-                <h1 className="text-3xl md:text-5xl font-black italic tracking-tighter uppercase">Hall of Fame</h1>
-                <p className="text-[10px] font-black tracking-[0.4em] text-neutral-500 uppercase mt-2">Pahlawan Terpilih Arutha</p>
+                <h1 className="text-3xl md:text-5xl font-black italic tracking-tighter uppercase text-rpg-text">Hall of Fame</h1>
+                <p className="text-[10px] font-black tracking-[0.4em] text-rpg-text/40 uppercase mt-2">Pahlawan Terpilih Arutha</p>
               </div>
               <div className="w-11" /> {/* Spacer */}
             </div>
@@ -150,11 +150,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, onBack,
                   className={cn(
                     "flex flex-col items-center justify-center p-4 rounded-2xl border transition-all gap-2",
                     category === cat.id
-                      ? "bg-white/10 border-white/20 shadow-xl"
-                      : "bg-white/5 border-white/5 opacity-50 hover:opacity-100"
+                      ? "bg-rpg-primary text-rpg-primary-text border-rpg-primary shadow-[0_10px_25px_rgba(var(--rpg-primary-rgb),0.2)] scale-105 z-10"
+                      : "bg-rpg-border/5 border-rpg-border/50 text-rpg-text/40 hover:text-rpg-text hover:bg-rpg-border/10"
                   )}
                 >
-                  <cat.icon className={cn("w-5 h-5", cat.color)} />
+                  <cat.icon className={cn("w-5 h-5", category === cat.id ? "text-rpg-primary-text" : cat.color)} />
                   <span className="text-[8px] font-black tracking-widest uppercase">{cat.label}</span>
                 </button>
               ))}
@@ -185,11 +185,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, onBack,
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
                   className={cn(
-                    "glass-panel p-5 flex items-center gap-5 border-l-4 group transition-all relative overflow-hidden",
-                    entry.id === currentUserId ? "border-jiwa bg-jiwa/5" : "border-transparent",
-                    index === 0 && "border-yellow-400 bg-yellow-400/[0.03] shadow-[0_20px_50px_rgba(250,204,21,0.05)] scale-[1.03]",
-                    index === 1 && "border-slate-300 bg-slate-300/[0.03] scale-[1.02]",
-                    index === 2 && "border-amber-600 bg-amber-600/[0.03] scale-[1.01]"
+                    "glass-panel p-5 flex items-center gap-5 border-l-4 group transition-all relative overflow-hidden shadow-sm hover:shadow-xl",
+                    entry.id === currentUserId ? "border-jiwa bg-jiwa/5" : "border-transparent hover:border-rpg-border",
+                    index === 0 && "border-yellow-400 bg-yellow-400/[0.05] shadow-[0_20px_50px_rgba(250,204,21,0.1)] scale-[1.03] z-20",
+                    index === 1 && "border-slate-400 bg-slate-400/[0.05] scale-[1.02] z-10",
+                    index === 2 && "border-amber-700 bg-amber-700/[0.05] scale-[1.01] z-10"
                   )}
                 >
                   {/* Highlight Glow for Top 1 */}
@@ -202,19 +202,19 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, onBack,
                   </div>
 
                   <div className={cn(
-                    "w-12 h-12 rounded-xl bg-white/5 border flex items-center justify-center overflow-hidden shrink-0 transition-all z-10",
+                    "w-12 h-12 rounded-xl bg-rpg-border/5 border flex items-center justify-center overflow-hidden shrink-0 transition-all z-10",
                     index === 0 ? "border-yellow-400/50 shadow-[0_0_15px_rgba(250,204,21,0.2)]" : 
                     index === 1 ? "border-slate-300/50" :
-                    index === 2 ? "border-amber-600/50" : "border-white/10 group-hover:border-jiwa/30"
+                    index === 2 ? "border-amber-600/50" : "border-rpg-border group-hover:border-jiwa/30"
                   )}>
                     {entry.avatar_url ? (
                       <img src={entry.avatar_url} alt={entry.name} className="w-full h-full object-cover" />
                     ) : (
                       <Sparkles className={cn(
                         "w-5 h-5",
-                        index === 0 ? "text-yellow-400" : 
-                        index === 1 ? "text-slate-300" :
-                        index === 2 ? "text-amber-600" : "text-neutral-700"
+                        index === 0 ? "text-yellow-500" : 
+                        index === 1 ? "text-slate-500" :
+                        index === 2 ? "text-amber-700" : "text-rpg-text/20"
                       )} />
                     )}
                   </div>
@@ -227,11 +227,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, onBack,
                       )}
                     </h4>
                     <div className="flex items-center gap-3 mt-1">
-                      <span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Level {entry.level}</span>
-                      <div className="w-1 h-1 rounded-full bg-white/10" />
+                      <span className="text-[10px] font-black text-rpg-text/40 uppercase tracking-widest">Level {entry.level}</span>
+                      <div className="w-1 h-1 rounded-full bg-rpg-border/20" />
                       <div className="flex items-center gap-1">
                         <Star className="w-3 h-3 text-harta" />
-                        <span className="text-[10px] font-black text-neutral-400">{entry.xp} XP</span>
+                        <span className="text-[10px] font-black text-rpg-text/40">{entry.xp} XP</span>
                       </div>
                     </div>
                   </div>
@@ -244,10 +244,10 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, onBack,
                         </span>
                       </div>
                     )}
-                    <div className="w-px h-10 bg-white/5" />
+                    <div className="w-px h-10 bg-rpg-border/10" />
                     <div className="flex flex-col items-end">
-                      <span className="text-[8px] font-black text-neutral-600 uppercase tracking-[0.2em]">Rank</span>
-                      <span className="text-lg font-black font-mono">#{index + 1}</span>
+                      <span className="text-[8px] font-black text-rpg-text/30 uppercase tracking-[0.2em]">Rank</span>
+                      <span className="text-lg font-black font-mono text-rpg-text">#{index + 1}</span>
                     </div>
                   </div>
 
@@ -269,21 +269,21 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, onBack,
 
         {/* Footer Note */}
         {!isPreview ? (
-          <div className="mt-12 p-8 border-2 border-dashed border-white/5 rounded-[32px] text-center opacity-40">
+          <div className="mt-12 p-8 border-2 border-dashed border-rpg-border/50 rounded-[32px] text-center opacity-40">
             <p className="text-[10px] font-black tracking-widest uppercase leading-loose">
               "Takhta ini hanya untuk mereka yang konsisten menaklukkan <br /> dimensi diri setiap hari."
             </p>
           </div>
         ) : (
           <div className="mt-10 flex flex-col items-center gap-6">
-            <p className="text-[10px] font-black tracking-widest uppercase opacity-30 italic">
+            <p className="text-[10px] font-black tracking-widest uppercase opacity-40 italic text-rpg-text">
               Dan ratusan pahlawan lainnya...
             </p>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={onJoin}
-              className="px-10 py-4 bg-white text-black rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-[0_20px_50px_rgba(255,255,255,0.1)]"
+              className="px-10 py-4 bg-rpg-primary text-rpg-primary-text rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-[0_20px_50px_rgba(255,255,255,0.1)]"
             >
               Lihat Seluruh Peringkat
             </motion.button>

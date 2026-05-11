@@ -91,7 +91,7 @@ export const CharacterReveal: React.FC<CharacterRevealProps> = ({ analysis, onCo
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1 }}
-                className="text-lg md:text-2xl font-medium text-neutral-400"
+                className="text-lg md:text-2xl font-medium text-rpg-text/60"
               >
                 {analysis.personality_title}
               </motion.p>
@@ -133,9 +133,9 @@ export const CharacterReveal: React.FC<CharacterRevealProps> = ({ analysis, onCo
                     <Radar
                       name="Player"
                       dataKey="A"
-                      stroke="#A78BFA"
-                      fill="#A78BFA"
-                      fillOpacity={0.25}
+                      stroke="var(--rpg-primary)"
+                      fill="var(--rpg-primary)"
+                      fillOpacity={0.2}
                       strokeWidth={2}
                     />
                   </RadarChart>
@@ -175,7 +175,7 @@ export const CharacterReveal: React.FC<CharacterRevealProps> = ({ analysis, onCo
               {/* Character Summary & Rationale */}
               <div className="space-y-4">
                 <div className="glass-panel p-6 md:p-8 border-l-4 border-l-jiwa bg-rpg-card/30">
-                  <p className="text-base md:text-xl leading-relaxed text-neutral-400 italic">
+                  <p className="text-base md:text-xl leading-relaxed text-rpg-text/60 italic">
                     "{analysis.character_summary}"
                   </p>
                 </div>
@@ -190,7 +190,7 @@ export const CharacterReveal: React.FC<CharacterRevealProps> = ({ analysis, onCo
                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-4 flex items-center gap-2">
                       <Sparkles className="w-3 h-3 text-ilmu" /> Logika Arbiter
                     </h4>
-                    <div className="text-xs md:text-sm leading-relaxed text-neutral-400 space-y-2 whitespace-pre-wrap italic">
+                    <div className="text-xs md:text-sm leading-relaxed text-rpg-text/60 space-y-2 whitespace-pre-wrap italic">
                       {analysis.rationale}
                     </div>
                   </motion.div>
@@ -219,7 +219,7 @@ export const CharacterReveal: React.FC<CharacterRevealProps> = ({ analysis, onCo
                           t.rarity === 'Epic' ? 'border-purple-500/30 text-purple-500' :
                           t.rarity === 'Rare' ? 'border-blue-500/30 text-blue-500' :
                           t.rarity === 'Uncommon' ? 'border-green-500/30 text-green-500' :
-                          'border-white/10 text-neutral-400'
+                          'border-rpg-border/50 text-rpg-text/60'
                         )}>
                           {t.rarity === 'Legendary' && <Star className="w-4 h-4 fill-amber-500" />}
                           <div className="flex flex-col gap-0.5">
@@ -251,8 +251,8 @@ export const CharacterReveal: React.FC<CharacterRevealProps> = ({ analysis, onCo
                   <Zap className="w-3 h-3 md:w-4 md:h-4 text-harta" />
                   <span className="text-[8px] md:text-[10px] font-black tracking-[0.2em] text-neutral-500 uppercase">Quest Pertamamu</span>
                 </div>
-                <h4 className="text-base md:text-lg font-bold mb-1 text-neutral-200">{analysis.starter_quest.title}</h4>
-                <p className="text-xs md:text-sm text-neutral-400">{analysis.starter_quest.desc}</p>
+                <h4 className="text-base md:text-lg font-bold mb-1 text-rpg-text/80">{analysis.starter_quest.title}</h4>
+                <p className="text-xs md:text-sm text-rpg-text/60">{analysis.starter_quest.desc}</p>
               </motion.div>
 
               {/* CTA */}
@@ -264,7 +264,7 @@ export const CharacterReveal: React.FC<CharacterRevealProps> = ({ analysis, onCo
               >
                 <button
                   onClick={onContinue}
-                  className="w-full sm:w-auto px-10 py-4 md:px-12 md:py-5 bg-white text-black font-black rounded-full hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 group shadow-[0_0_40px_rgba(255,255,255,0.25)] text-xs md:text-sm"
+                  className="w-full sm:w-auto px-10 py-4 md:px-12 md:py-5 bg-rpg-primary text-rpg-primary-text rounded-full hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 group shadow-[0_0_15px_rgba(var(--rpg-primary-rgb),0.2)] text-xs md:text-sm"
                 >
                   BEGIN JOURNEY
                   <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />

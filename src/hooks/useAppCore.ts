@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import { 
@@ -55,7 +55,7 @@ export function useAppCore() {
   const initLockRef = useRef(false);
   const refreshLockRef = useRef(false);
 
-  const fetchGlobalQuests = async () => {
+  const fetchGlobalQuests = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('arutha_global_quests')
@@ -74,7 +74,7 @@ export function useAppCore() {
     } catch (err) {
       console.error("Fetch global quests error:", err);
     }
-  };
+  }, [setGlobalQuests]);
 
   const fetchStatHistory = async (userId: string) => {
     try {
@@ -92,7 +92,7 @@ export function useAppCore() {
     }
   };
 
-  const syncProgress = async (newLevel: number, newXp: number, newStats: Stats, updatedQuests?: Quest[], newTalents?: string[], newTalentChoicesAvailable?: number, newTotalChoicesGranted?: number) => {
+  const syncProgress = useCallback(async (newLevel: number, newXp: number, newStats: Stats, updatedQuests?: Quest[], newTalents?: string[], newTalentChoicesAvailable?: number, newTotalChoicesGranted?: number) => {
     if (!session || !dbUserId) return;
     try {
       const sanitizedLevel = isNaN(newLevel) ? 1 : Math.max(1, newLevel);
@@ -138,9 +138,9 @@ export function useAppCore() {
       }
       fetchStatHistory(dbUserId);
     } catch (err) { console.error("Sync error:", err); }
-  };
+  }, [session, dbUserId, fetchStatHistory]);
 
-  const initializeUserData = async (currentSession: any) => {
+  const initializeUserData = useCallback(async (currentSession: any) => {
     if (initLockRef.current) return;
     initLockRef.current = true;
     
@@ -271,9 +271,9 @@ export function useAppCore() {
         }
       }
     } catch (err) { console.error("Init error:", err); } finally { setIsDataReady(true); initLockRef.current = false; }
-  };
+  }, [setDbUserId, setName, setLevel, setXp, setStreak, setLastStreakDate, setNameChangeCount, setLastNameChange, setLastEvolutionDate, setRefreshCount, setTalents, setLastWeeklyReset, setTotalChoicesGranted, setTalentChoicesAvailable, setAvailableWeeklyQuests, setActiveWeeklyQuests, setPendingTalentPool, setDecayResult, setUserContext, setPage, setStats, setCharacterAnalysis, setQuests, fetchStatHistory, fetchGlobalQuests]);
 
-  const addXp = (amount: number, stat?: Dimension, updatedQuests?: Quest[]) => {
+  const addXp = useCallback((amount: number, stat?: Dimension, updatedQuests?: Quest[]) => {
     const activeTalents = TALENTS.filter(t => talents.includes(t.id));
     let bonusMultiplier = 1;
     activeTalents.forEach(t => { if (t.xpBoost) bonusMultiplier += t.xpBoost.value; });
@@ -309,9 +309,9 @@ export function useAppCore() {
 
     setLevel(nextLevel); setXp(nextXp); setStats(nextStats);
     syncProgress(nextLevel, nextXp, nextStats, updatedQuests, undefined, nextTalentChoicesAvailable, nextTotalChoicesGranted);
-  };
+  }, [level, xp, stats, talents, talentChoicesAvailable, totalChoicesGranted, setTalentChoicesAvailable, setTotalChoicesGranted, setLevelUpStage, setShowLevelUp, setLevel, setXp, setStats, syncProgress]);
 
-  const completeQuest = async (id: string, note: string, photoBase64?: string, photoMimeType?: string) => {
+  const completeQuest = useCallback(async (id: string, note: string, photoBase64?: string, photoMimeType?: string) => {
     // 1. Find the quest in all possible lists
     const isGlobal = globalQuests.find(q => q.id === id);
     const isWeeklyActive = activeWeeklyQuests.find(q => q.id === id);
@@ -368,9 +368,21 @@ export function useAppCore() {
             );
             setActiveWeeklyQuests(updatedActiveWeekly);
             
-            // Sync to DB
+            // Sync to DB (User profile)
             await supabase.from('arutha_user').update({ active_weekly_quests: updatedActiveWeekly }).eq('id', dbUserId);
             
+            // Log to arutha_quest_log
+            await supabase.from('arutha_quest_log')
+              .update({ 
+                current_step: newCurrent,
+                status: isFullyComplete ? 'COMPLETED' : 'IN_PROGRESS',
+                proof_note: note,
+                ai_feedback: verification.feedback,
+                proof_photo_url: undefined // Add photo logic here if you store to storage
+              })
+              .eq('user_id', dbUserId)
+              .eq('quest_id', id);
+
             if (isFullyComplete) {
               addXp(quest.xp, quest.stat as Dimension);
               verification.feedback = `LUAR BIASA! Misi Mingguan Selesai. +${quest.xp} XP!`;
@@ -384,6 +396,21 @@ export function useAppCore() {
           setQuests(updatedDailies);
           addXp(quest.xp, quest.stat as Dimension, updatedDailies);
           
+          // Log to arutha_quest_log
+          await supabase.from('arutha_quest_log').insert({
+            user_id: dbUserId,
+            quest_id: id,
+            quest_type: 'DAILY',
+            title: quest.title,
+            stat_type: quest.stat,
+            xp_reward: quest.xp,
+            proof_note: note,
+            ai_feedback: verification.feedback,
+            status: 'COMPLETED',
+            current_step: 1,
+            total_steps: 1
+          });
+
           if (dbUserId) await resetFatigue(dbUserId);
           setDecayResult(prev => prev ? { ...prev, status: 'ok', fatigueDays: 0 } : null);
         }
@@ -393,9 +420,9 @@ export function useAppCore() {
       console.error(err);
       return { success: false, feedback: "Gagal memproses verifikasi AI." };
     }
-  };
+  }, [globalQuests, activeWeeklyQuests, quests, dbUserId, addXp, setActiveWeeklyQuests, setQuests, setDecayResult]);
 
-  const handleOnboardingComplete = async (answers: OnboardingAnswer[]) => {
+  const handleOnboardingComplete = useCallback(async (answers: OnboardingAnswer[]) => {
     if (!session) return;
     setLoading(true);
     try {
@@ -463,9 +490,9 @@ export function useAppCore() {
     } finally { 
       setLoading(false); 
     }
-  };
+  }, [session, userContext, setTalentChoicesAvailable, setTotalChoicesGranted, setQuests, setLastEvolutionDate, setCharacterAnalysis, setStats, setPage, setLoading]);
 
-  const handleTakeRecovery = async () => {
+  const handleTakeRecovery = useCallback(async () => {
     if (!dbUserId || isRefreshing) return;
     setIsRefreshing(true);
     try {
@@ -474,17 +501,17 @@ export function useAppCore() {
       await supabase.from('arutha_user').update({ active_quests: recQuests }).eq('id', dbUserId);
       setDecayResult(prev => prev ? { ...prev, status: 'ok' } : null);
     } finally { setIsRefreshing(false); }
-  };
+  }, [dbUserId, isRefreshing, decayResult, setQuests, setDecayResult]);
 
-  const handleUpdateName = async (newName: string) => {
+  const handleUpdateName = useCallback(async (newName: string) => {
     if (!session) return;
     try {
       await supabase.from('arutha_user').update({ username: newName }).eq('supabase_id', session.user.id);
       setName(newName);
     } catch (e) { console.error(e); }
-  };
+  }, [session, setName]);
 
-  const handleClaimStreak = async () => {
+  const handleClaimStreak = useCallback(async () => {
     if (!session || !session.user) return;
     
     // Prevent double claim today
@@ -507,9 +534,9 @@ export function useAppCore() {
     } catch (err) {
       console.error("Gagal update streak:", err);
     }
-  };
+  }, [session, lastStreakDate, streak, setStreak, setLastStreakDate, addXp]);
 
-  const handleStartOnboarding = async (override?: any) => {
+  const handleStartOnboarding = useCallback(async (override?: any) => {
     setLoading(true);
     try {
       const questions = await generateOnboardingQuestions(override || userContext);
@@ -520,9 +547,9 @@ export function useAppCore() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userContext, setOnboardingQuestions, setPage, setLoading]);
 
-  const refreshQuests = async () => {
+  const refreshQuests = useCallback(async () => {
     if (!dbUserId || refreshCount >= 1) return;
     setIsRefreshing(true);
     try {
@@ -533,9 +560,9 @@ export function useAppCore() {
     } catch (err) {
       console.error(err);
     } finally { setIsRefreshing(false); }
-  };
+  }, [dbUserId, refreshCount, stats, setQuests, setRefreshCount]);
 
-  const generateInitialQuests = async (mood: string) => {
+  const generateInitialQuests = useCallback(async (mood: string) => {
     setLoading(true);
     try {
       const aiQuests = await generateDailyQuests(stats, mood, false);
@@ -544,9 +571,9 @@ export function useAppCore() {
     } catch (err) {
       console.error(err);
     } finally { setLoading(false); }
-  };
+  }, [stats, dbUserId, setQuests, setLoading]);
 
-  const handleClaimGlobalQuest = async (questId: string) => {
+  const handleClaimGlobalQuest = useCallback(async (questId: string) => {
     if (!dbUserId || !session) return;
     setLoading(true);
     try {
@@ -574,9 +601,9 @@ export function useAppCore() {
     } catch (err) {
       console.error(err);
     } finally { setLoading(false); }
-  };
+  }, [dbUserId, session, quests, setQuests, setLoading, fetchGlobalQuests]);
 
-  const handleClaimWeeklyQuest = async (questId: string) => {
+  const handleClaimWeeklyQuest = useCallback(async (questId: string) => {
     if (!dbUserId) return;
     const quest = availableWeeklyQuests.find(q => q.id === questId);
     if (!quest) return;
@@ -599,13 +626,27 @@ export function useAppCore() {
         available_weekly_quests: updatedAvailable,
         active_weekly_quests: updatedActive
       }).eq('id', dbUserId);
+
+      // Initialize log for weekly quest
+      await supabase.from('arutha_quest_log').insert({
+        user_id: dbUserId,
+        quest_id: questId,
+        quest_type: 'WEEKLY',
+        title: quest.title,
+        stat_type: quest.stat,
+        xp_reward: quest.xp,
+        status: 'IN_PROGRESS',
+        current_step: 0,
+        total_steps: quest.steps?.total || 1
+      });
+
       alert(`Misi "${quest.title}" diterima! Semoga disiplinmu membawamu pada kemenangan.`);
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [dbUserId, availableWeeklyQuests, activeWeeklyQuests, setAvailableWeeklyQuests, setActiveWeeklyQuests]);
 
-  const handleTalentSelection = async (selectedTalentId: string, replacedTalentId?: string) => {
+  const handleTalentSelection = useCallback(async (selectedTalentId: string, replacedTalentId?: string) => {
     if (!dbUserId || talentChoicesAvailable <= 0) return;
 
     let newTalents = [...talents];
@@ -632,17 +673,17 @@ export function useAppCore() {
       talent_choices_available: nextChoices,
       pending_talent_pool: []
     }).eq('id', dbUserId);
-  };
+  }, [dbUserId, talentChoicesAvailable, talents, setTalents, setTalentChoicesAvailable, setPendingTalentPool]);
 
-  const saveTalentPool = async (pool: any[]) => {
+  const saveTalentPool = useCallback(async (pool: any[]) => {
     if (!dbUserId) return;
     setPendingTalentPool(pool);
     await supabase.from('arutha_user').update({
       pending_talent_pool: pool
     }).eq('id', dbUserId);
-  };
+  }, [dbUserId, setPendingTalentPool]);
 
-  const handleSkipTalent = async () => {
+  const handleSkipTalent = useCallback(async () => {
     if (!dbUserId || talentChoicesAvailable <= 0) return;
     const nextChoices = talentChoicesAvailable - 1;
     setTalentChoicesAvailable(nextChoices);
@@ -651,7 +692,7 @@ export function useAppCore() {
       talent_choices_available: nextChoices,
       pending_talent_pool: []
     }).eq('id', dbUserId);
-  };
+  }, [dbUserId, talentChoicesAvailable, setTalentChoicesAvailable, setPendingTalentPool]);
 
   return {
     loading, setLoading, levelUpStage, setLevelUpStage,

@@ -42,7 +42,7 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
     }
   };
   return (
-    <div className="min-h-screen bg-rpg-black selection:bg-jiwa/30 font-sans">
+    <div className="min-h-screen bg-rpg-black selection:bg-jiwa/30 font-sans text-rpg-text">
       <div className="noise-overlay" />
       
       {/* Hero Section */}
@@ -74,7 +74,7 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
           <img 
             src="/Arutha.png" 
             alt="Arutha Logo" 
-            className="w-32 h-32 md:w-48 md:h-48 object-cover rounded-[2.5rem] shadow-[0_0_80px_rgba(167,139,250,0.2)] border border-white/10" 
+            className="w-32 h-32 md:w-48 md:h-48 object-cover rounded-[2.5rem] shadow-[0_0_80px_rgba(167,139,250,0.2)] border border-rpg-border/50" 
           />
         </motion.div>
 
@@ -86,13 +86,13 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
           <h1 className="text-6xl sm:text-8xl md:text-[10rem] lg:text-[14rem] font-serif font-black tracking-tighter leading-[0.8] mb-6 select-none uppercase drop-shadow-[0_0_30px_rgba(255,255,255,0.1)]">
             Arutha
           </h1>
-          <h2 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-serif italic text-neutral-300 mb-10 tracking-tight leading-tight">
-            Your Life, <span className="text-white underline decoration-jiwa/50 decoration-2 md:decoration-4 underline-offset-[4px] md:underline-offset-[10px]">Legendary.</span>
+          <h2 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-serif italic text-rpg-text/60 mb-10 tracking-tight leading-tight">
+            Your Life, <span className="text-rpg-text underline decoration-jiwa/50 decoration-2 md:decoration-4 underline-offset-[4px] md:underline-offset-[10px]">Legendary.</span>
           </h2>
 
           <div className="max-w-2xl mx-auto space-y-6 mb-12">
-            <p className="text-lg sm:text-xl md:text-2xl text-neutral-400 font-light leading-relaxed italic font-serif px-2">
-              "The only game truly worth playing is <span className="text-white/90 font-medium border-b border-white/20">your own life.</span>"
+            <p className="text-lg sm:text-xl md:text-2xl text-rpg-text/60 font-light leading-relaxed italic font-serif px-2">
+              "The only game truly worth playing is <span className="text-rpg-text/90 font-medium border-b border-rpg-border/50">your own life.</span>"
             </p>
             <div className="flex items-center justify-center gap-4 opacity-50">
               <div className="h-[1px] w-12 bg-gradient-to-r from-transparent to-white/30" />
@@ -104,7 +104,7 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 md:gap-8">
             <button
               onClick={handleCtaClick}
-              className="w-full sm:w-auto px-10 md:px-16 py-4 md:py-6 bg-white text-black font-black rounded-full hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4 group shadow-[0_0_60px_rgba(255,255,255,0.15)] text-sm md:text-base"
+              className="w-full sm:w-auto px-10 md:px-16 py-4 md:py-6 bg-rpg-primary text-rpg-primary-text font-black rounded-full hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4 group shadow-[0_0_60px_rgba(255,255,255,0.15)] text-sm md:text-base"
             >
               {(session && hasProfile) ? 'KE DASHBOARD' : 'MULAI PETUALANGAN'} 
               <ArrowRight className="w-5 h-5 md:w-6 md:h-6 group-hover:translate-x-1 transition-transform" />
@@ -113,10 +113,10 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
               onClick={scrollToLeaderboard}
               className="group relative py-2"
             >
-              <span className="text-[10px] md:text-sm font-black tracking-[0.3em] md:tracking-[0.4em] uppercase text-neutral-400 group-hover:text-white transition-colors">
+              <span className="text-[10px] md:text-sm font-black tracking-[0.3em] md:tracking-[0.4em] uppercase text-rpg-text/40 group-hover:text-rpg-text transition-colors">
                 Global Ranking
               </span>
-              <div className="absolute -bottom-1 left-0 w-0 h-[1px] bg-white group-hover:w-full transition-all duration-300" />
+              <div className="absolute -bottom-1 left-0 w-0 h-[1px] bg-rpg-text group-hover:w-full transition-all duration-300" />
             </button>
           </div>
         </motion.div>
@@ -124,20 +124,20 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
         {/* Floating Stat Hints */}
         <div className="absolute bottom-20 left-10 hidden lg:block text-left opacity-40 hover:opacity-100 transition-opacity">
           <div className="text-[10px] font-black text-jiwa uppercase tracking-widest mb-1 font-sans">Dimensi 01</div>
-          <div className="text-3xl font-serif italic text-white">Soul Alignment</div>
+          <div className="text-3xl font-serif italic text-rpg-text">Soul Alignment</div>
         </div>
         <div className="absolute top-40 right-20 hidden lg:block text-right opacity-40 hover:opacity-100 transition-opacity">
           <div className="text-[10px] font-black text-harta uppercase tracking-widest mb-1 font-sans">Dimensi 03</div>
-          <div className="text-3xl font-serif italic text-white">Wealth Strategy</div>
+          <div className="text-3xl font-serif italic text-rpg-text">Wealth Strategy</div>
         </div>
 
         {/* Scroll Indicator */}
         <motion.div 
           animate={{ y: [0, 10, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 text-neutral-700 flex flex-col items-center gap-3"
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 text-rpg-text/20 flex flex-col items-center gap-3"
         >
-          <div className="w-[1px] h-16 bg-gradient-to-b from-neutral-800 to-transparent" />
+          <div className="w-[1px] h-16 bg-gradient-to-b from-rpg-border to-transparent" />
         </motion.div>
       </section>
 
@@ -151,9 +151,9 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
           >
             <h2 className="text-4xl sm:text-5xl md:text-6xl font-serif font-bold leading-none">
               Melihat <br />
-              <span className="text-neutral-400 italic text-3xl sm:text-4xl md:text-5xl">Yang Tak Terlihat.</span>
+              <span className="text-rpg-text/40 italic text-3xl sm:text-4xl md:text-5xl">Yang Tak Terlihat.</span>
             </h2>
-            <p className="text-xl md:text-2xl text-neutral-200 leading-relaxed font-medium font-sans">
+            <p className="text-xl md:text-2xl text-rpg-text/80 leading-relaxed font-medium font-sans">
               Kami membagi hidupmu menjadi 5 dimensi teknis. AI kami menganalisis pola harianmu dan memberikan quest yang relevan untuk menaikkan stat ini secara organik.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -173,7 +173,7 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
                      <Sparkles className={cn("w-4 h-4", d.color)} />
                   </div>
                   <div className={cn("text-xs font-black tracking-[0.3em] mb-2 font-sans", d.color)}>{d.name}</div>
-                  <div className="text-white text-lg font-serif italic">{d.desc}</div>
+                  <div className="text-rpg-text text-lg font-serif italic">{d.desc}</div>
                 </motion.div>
               ))}
             </div>
@@ -183,13 +183,13 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               whileInView={{ scale: 1, opacity: 1 }}
-              className="relative aspect-square glass-panel border-white/5 overflow-hidden group rounded-[3rem]"
+              className="relative aspect-square glass-panel border-rpg-border/50 overflow-hidden group rounded-[3rem]"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-jiwa/5 via-transparent to-ilmu/5" />
               
               {/* HUD Accents */}
-              <div className="absolute top-8 left-8 border-l border-t border-white/20 w-8 h-8" />
-              <div className="absolute bottom-8 right-8 border-r border-b border-white/20 w-8 h-8" />
+              <div className="absolute top-8 left-8 border-l border-t border-rpg-border/50 w-8 h-8" />
+              <div className="absolute bottom-8 right-8 border-r border-b border-rpg-border/50 w-8 h-8" />
               
               <div className="absolute inset-0 p-8 md:p-16 flex items-center justify-center">
                 {isMounted && (
@@ -199,7 +199,7 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
                     ]}>
                       <PolarGrid stroke="#333" strokeDasharray="3 3" />
                       <PolarAngleAxis dataKey="subject" tick={{ fill: '#666', fontSize: 10, fontWeight: '900', letterSpacing: '0.2em' }} />
-                      <Radar name="Status" dataKey="A" stroke="#fff" fill="#fff" fillOpacity={0.1} strokeWidth={2} />
+                      <Radar name="Status" dataKey="A" stroke="var(--rpg-primary)" fill="var(--rpg-primary)" fillOpacity={0.1} strokeWidth={2} />
                     </RadarChart>
                   </ResponsiveContainer>
                 )}
@@ -213,14 +213,14 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
 
             <motion.div 
               whileHover={{ scale: 1.05 }}
-              className="absolute -bottom-4 -right-4 md:-bottom-8 md:-right-8 bg-neutral-900 border border-white/10 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-2xl backdrop-blur-2xl z-20"
+              className="absolute -bottom-4 -right-4 md:-bottom-8 md:-right-8 bg-neutral-900 border border-rpg-border/50 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-2xl backdrop-blur-2xl z-20"
             >
               <div className="flex items-center gap-3 md:gap-4 mb-2 md:mb-4">
                 <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-jiwa animate-ping" />
                 <span className="text-[8px] md:text-[10px] font-black text-neutral-500 tracking-[0.4em] uppercase">System Status</span>
               </div>
               <div className="text-[8px] md:text-[10px] font-black text-neutral-400 mb-1 uppercase tracking-widest">Current Phase</div>
-              <div className="text-2xl md:text-4xl font-serif font-bold italic text-white flex items-center gap-2 md:gap-3">
+              <div className="text-2xl md:text-4xl font-serif font-bold italic text-rpg-text flex items-center gap-2 md:gap-3">
                 Ascension <span className="text-jiwa">I</span>
               </div>
             </motion.div>
@@ -251,7 +251,7 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
               <Zap className="w-4 h-4 text-ilmu" />
               <span className="text-[10px] font-black tracking-widest text-ilmu uppercase">The Arbiter</span>
             </div>
-            <h3 className="text-4xl md:text-5xl font-serif font-bold italic text-white leading-tight">
+            <h3 className="text-4xl md:text-5xl font-serif font-bold italic text-rpg-text leading-tight">
               AI Powered <br />Character Growth.
             </h3>
             <p className="text-lg text-neutral-400 leading-relaxed">
@@ -275,9 +275,9 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
           >
             <div className="inline-flex items-center gap-3 px-4 py-2 bg-jiwa/10 border border-jiwa/20 rounded-full">
               <Heart className="w-4 h-4 text-jiwa" />
-              <span className="text-[10px] font-black tracking-widest text-jiwa uppercase">Soul Guard</span>
+              <h3 className="font-black italic tracking-wider text-rpg-text text-lg">Soul Guard</h3>
             </div>
-            <h3 className="text-4xl md:text-5xl font-serif font-bold italic text-white leading-tight">
+            <h3 className="text-4xl md:text-5xl font-serif font-bold italic text-rpg-text leading-tight">
               A Sanctuary for <br />Your Inner Peace.
             </h3>
             <p className="text-lg text-neutral-400 leading-relaxed">
@@ -298,14 +298,14 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
           <motion.div whileHover={{ y: -10 }} className="lg:col-span-8 lg:row-span-1 glass-panel p-8 md:p-12 bg-gradient-to-br from-white/5 to-transparent flex flex-col justify-between min-h-[300px]">
             <TrendingUp className="w-12 h-12 text-raga" />
             <div>
-              <h3 className="text-3xl md:text-4xl font-serif font-bold mb-4 text-white">Daily Quest AI</h3>
+              <h3 className="text-3xl md:text-4xl font-serif font-bold mb-4 text-rpg-text">Daily Quest AI</h3>
               <p className="text-neutral-400 max-w-md text-lg md:text-xl font-sans font-medium leading-tight">Misi harian yang di-generate berdasarkan profil psikologismu. Bukan sekadar to-do list, tapi jalan menuju evolusi nyata.</p>
             </div>
           </motion.div>
           
-          <motion.div whileHover={{ y: -10 }} className="lg:col-span-4 lg:row-span-1 glass-panel p-8 md:p-12 bg-jiwa/5 border-jiwa/10 flex flex-col justify-end min-h-[300px]">
+          <motion.div whileHover={{ y: -10 }} className="lg:col-span-4 lg:row-span-1 glass-panel p-8 md:p-12 bg-jiwa/5 border-rpg-border/50 flex flex-col justify-end min-h-[300px]">
             <Heart className="w-10 h-10 text-jiwa mb-8" />
-            <h3 className="text-xl md:text-2xl font-bold mb-2 uppercase tracking-tighter font-sans text-white">Mind Check</h3>
+            <h3 className="text-xl md:text-2xl font-bold mb-2 uppercase tracking-tighter font-sans text-rpg-text">Mind Check</h3>
             <p className="text-neutral-400 text-sm md:text-base font-sans font-medium">Kami memonitor kesehatan mentalmu di balik setiap pencapaian materi.</p>
           </motion.div>
           
@@ -342,13 +342,13 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
              Tulis Ulang <br />
              <span className="italic text-neutral-500">Takdirmu.</span>
            </h2>
-           <button onClick={handleCtaClick} className="relative z-10 px-16 py-6 bg-white text-black font-black rounded-full hover:scale-110 active:scale-95 transition-all shadow-2xl font-sans">
+           <button onClick={handleCtaClick} className="relative z-10 px-16 py-6 bg-rpg-primary text-rpg-primary-text font-black rounded-full hover:scale-110 active:scale-95 transition-all shadow-2xl font-sans">
              MULAILAH SEKARANG
            </button>
         </div>
       </section>
 
-      <footer className="py-20 border-t border-white/5 text-center">
+      <footer className="py-20 border-t border-rpg-border/50 text-center">
         <p className="text-[10px] font-black tracking-[0.5em] text-neutral-700 uppercase font-sans">© 2026 Aruthtale Studios</p>
       </footer>
     </div>

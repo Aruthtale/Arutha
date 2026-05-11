@@ -69,11 +69,11 @@ export const SplashScreen: React.FC<{ isReady: boolean }> = ({ isReady }) => {
               transition={{ delay: 0.5 }}
               className="mt-8 text-center"
             >
-              <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter text-white">ARUTHA</h1>
+              <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter text-rpg-text">ARUTHA</h1>
               <div className="flex items-center justify-center gap-2 mt-2">
-                <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-white/20" />
-                <span className="text-[10px] font-black tracking-[0.4em] text-neutral-500 uppercase">Aruthtale Chronicles</span>
-                <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-white/20" />
+                <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-rpg-text/20" />
+                <span className="text-[10px] font-black tracking-[0.4em] text-rpg-text/40 uppercase">Aruthtale Chronicles</span>
+                <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-rpg-text/20" />
               </div>
             </motion.div>
 
@@ -102,7 +102,7 @@ export const SplashScreen: React.FC<{ isReady: boolean }> = ({ isReady }) => {
 
           {/* Version Tag */}
           <div className="absolute bottom-10 left-1/2 -translate-x-1/2 opacity-20">
-            <span className="text-[8px] font-mono tracking-widest text-white uppercase">V 1.0.4 - THE AWAKENING</span>
+            <span className="text-[8px] font-mono tracking-widest text-rpg-text uppercase">V 1.0.4 - THE AWAKENING</span>
           </div>
         </motion.div>
       )}

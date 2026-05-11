@@ -69,38 +69,41 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
   );
 
   return (
-    <div className="min-h-screen bg-rpg-black text-white p-4 md:p-6 pb-32 pt-24 md:pt-8">
-      <div className="max-w-5xl mx-auto space-y-8 md:space-y-12">
+    <div className="min-h-screen bg-rpg-black text-rpg-text p-4 md:p-6 pb-32 pt-28 md:pt-12">
+      <div className="max-w-5xl mx-auto space-y-16 md:space-y-20">
         
         {/* HEADER NAVIGATION */}
         <header className="flex items-center justify-between">
-          <button onClick={onBack} className="p-3 bg-rpg-card border border-rpg-border rounded-2xl hover:bg-neutral-800 transition-all flex items-center gap-3 group">
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span className="text-xs md:text-sm font-black tracking-widest">DASHBOARD</span>
+          <button onClick={onBack} className="p-3 bg-rpg-card border border-rpg-border rounded-2xl hover:bg-rpg-border/20 transition-all flex items-center gap-3 group">
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform text-rpg-text" />
+            <span className="text-xs md:text-sm font-black tracking-widest text-rpg-text">DASHBOARD</span>
           </button>
           <div className="text-right">
             <p className="text-xs font-black tracking-[0.4em] text-jiwa uppercase">Character Ledger</p>
-            <h2 className="text-2xl md:text-4xl font-black italic tracking-tighter">CHARACTER SHEET</h2>
+            <h2 className="text-2xl md:text-4xl font-black italic tracking-tighter text-rpg-text">CHARACTER SHEET</h2>
           </div>
         </header>
 
         {/* HERO PROFILE CARD */}
-        <section className="relative overflow-hidden rounded-[40px] bg-gradient-to-br from-rpg-card to-rpg-black border border-white/5 p-8 md:p-12 shadow-2xl group">
-          {/* Dynamic Aura Background */}
-          <div className={cn(
-            "absolute top-0 right-0 w-[500px] h-[500px] blur-[150px] rounded-full -mr-32 -mt-32 transition-colors duration-1000",
-            stats.JIWA >= 70 ? "bg-jiwa/20" : 
-            stats.ILMU >= 70 ? "bg-ilmu/20" : 
-            stats.RAGA >= 70 ? "bg-raga/20" : "bg-white/5"
-          )} />
-          <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-ilmu/5 blur-[120px] rounded-full opacity-50" />
+        <section className="relative rounded-[40px] bg-gradient-to-br from-rpg-card to-rpg-black border border-rpg-border/50 p-8 md:p-12 shadow-2xl group">
+          {/* Background Aura Container (to keep overflow-hidden for the glow only) */}
+          <div className="absolute inset-0 rounded-[40px] overflow-hidden pointer-events-none">
+            {/* Dynamic Aura Background */}
+            <div className={cn(
+              "absolute top-0 right-0 w-[500px] h-[500px] blur-[150px] rounded-full -mr-32 -mt-32 transition-colors duration-1000",
+              stats.JIWA >= 70 ? "bg-jiwa/20" : 
+              stats.ILMU >= 70 ? "bg-ilmu/20" : 
+              stats.RAGA >= 70 ? "bg-raga/20" : "bg-rpg-border/5"
+            )} />
+            <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-ilmu/5 blur-[120px] rounded-full opacity-50" />
+          </div>
           
           <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-10">
             {/* AVATAR SYSTEM */}
             <div className="relative shrink-0 -mt-20 md:mt-0">
               <div className="w-32 h-32 md:w-44 md:h-44 rounded-[48px] bg-gradient-to-tr from-jiwa via-ilmu to-raga rotate-6 flex items-center justify-center font-black text-4xl md:text-6xl shadow-2xl shadow-jiwa/20 border-4 border-rpg-black relative">
                 <span className="drop-shadow-2xl">{name.substring(0, 2).toUpperCase()}</span>
-                <div className="absolute -bottom-2 md:-bottom-4 -right-2 md:-right-4 bg-white text-black px-3 md:px-4 py-1 md:py-2 rounded-xl md:rounded-2xl font-black text-xs md:text-lg border-[3px] md:border-4 border-rpg-black shadow-xl">
+                <div className="absolute -bottom-2 md:-bottom-4 -right-2 md:-right-4 bg-rpg-primary text-rpg-primary-text px-3 md:px-4 py-1 md:py-2 rounded-xl md:rounded-2xl font-black text-xs md:text-lg border-[3px] md:border-4 border-rpg-black shadow-xl">
                   LVL {level}
                 </div>
               </div>
@@ -109,21 +112,21 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
             <div className="text-center md:text-left space-y-4 flex-1 w-full">
               <div className="space-y-4">
                 <div className="flex flex-col md:flex-row items-center md:items-end gap-3 md:gap-5 flex-wrap justify-center md:justify-start">
-                  <h3 className="text-2xl md:text-5xl font-black italic tracking-tighter text-white uppercase leading-none break-all">{name}</h3>
+                  <h3 className="text-2xl md:text-5xl font-black italic tracking-tighter text-rpg-text uppercase leading-none break-all">{name}</h3>
                   <div className="flex gap-2 items-center">
                     {zodiacInfo && (
                       <div className={cn(
-                        "flex items-center gap-2 px-3 py-1 md:px-4 md:py-1.5 rounded-full border bg-white/5 backdrop-blur-md",
-                        zodiacInfo.element === 'FIRE' ? 'border-red-500/20 text-red-400' :
-                        zodiacInfo.element === 'EARTH' ? 'border-green-500/20 text-green-400' :
-                        zodiacInfo.element === 'AIR' ? 'border-blue-500/20 text-blue-400' :
-                        'border-purple-500/20 text-purple-400'
+                        "flex items-center gap-2 px-3 py-1 md:px-4 md:py-1.5 rounded-full border backdrop-blur-md",
+                        zodiacInfo.element === 'FIRE' ? 'border-red-500/40 bg-red-500/10 text-red-500' :
+                        zodiacInfo.element === 'EARTH' ? 'border-green-500/40 bg-green-500/10 text-green-500' :
+                        zodiacInfo.element === 'AIR' ? 'border-blue-500/40 bg-blue-500/10 text-blue-500' :
+                        'border-purple-500/40 bg-purple-500/10 text-purple-500'
                       )}>
                         <span className="text-sm md:text-lg">{zodiacInfo.icon}</span>
                         <span className="text-[8px] md:text-[10px] font-black tracking-widest uppercase">{zodiacInfo.name}</span>
                       </div>
                     )}
-                    <div className="px-3 py-1 md:px-4 md:py-1.5 bg-jiwa text-white text-[8px] md:text-[10px] font-black rounded-full tracking-widest uppercase shadow-lg shadow-jiwa/20 whitespace-nowrap">
+                    <div className="px-3 py-1 md:px-4 md:py-1.5 bg-jiwa text-white text-[8px] md:text-[10px] font-black rounded-full tracking-widest uppercase shadow-lg shadow-jiwa/20 whitespace-nowrap border border-white/20">
                       {(() => {
                         const topStat = Object.entries(stats).sort((a,b) => b[1]-a[1])[0][0];
                         const titles: Record<string, string> = {
@@ -140,8 +143,8 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
                 </div>
 
                 {usia && (
-                  <p className="text-xs md:text-sm font-bold text-neutral-500 uppercase tracking-[0.2em]">
-                    {usia} Years Old • <span className="text-neutral-400">{analysis?.personality_type || "TRAVELLER"}</span>
+                  <p className="text-xs md:text-sm font-bold text-rpg-text/40 uppercase tracking-[0.2em]">
+                    {usia} Years Old • <span className="text-rpg-text/60">{analysis?.personality_type || "TRAVELLER"}</span>
                   </p>
                 )}
 
@@ -152,14 +155,14 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
 
               <div className="w-full max-w-md space-y-3 pt-6 mx-auto md:mx-0">
                 <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end gap-1 px-1">
-                  <span className="text-[9px] md:text-xs font-black text-neutral-400 uppercase tracking-[0.3em]">Experience Points</span>
-                  <span className="text-base md:text-lg font-mono font-black text-neutral-200">
-                    {xp} <span className="text-neutral-500 text-xs md:text-sm">/ {level * 1000}</span>
+                  <span className="text-[9px] md:text-xs font-black text-rpg-text/60 uppercase tracking-[0.3em]">Experience Points</span>
+                  <span className="text-base md:text-lg font-mono font-black text-rpg-text">
+                    {xp} <span className="text-rpg-text/50 text-xs md:text-sm">/ {level * 1000}</span>
                   </span>
                 </div>
-                <div className="h-3 md:h-4 w-full bg-rpg-black rounded-full overflow-hidden p-0.5 md:p-1 border border-neutral-800">
+                <div className="h-3 md:h-4 w-full bg-rpg-black/50 rounded-full overflow-hidden p-0.5 md:p-1 border border-rpg-border">
                   <motion.div 
-                    className="h-full bg-gradient-to-r from-jiwa to-ilmu rounded-full shadow-[0_0_15px_rgba(168,85,247,0.4)]"
+                    className="h-full bg-gradient-to-r from-jiwa to-ilmu rounded-full shadow-[0_0_15px_rgba(var(--color-jiwa),0.4)]"
                     initial={{ width: 0 }} 
                     animate={{ width: `${(xp / (level * 1000)) * 100}%` }}
                     transition={{ duration: 1.5, ease: "easeOut" }}
@@ -177,8 +180,8 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
             {/* ATTRIBUTES LIST */}
             <section className="glass-panel p-6 md:p-10 space-y-8">
               <div className="flex items-center gap-3">
-                <Medal className="w-5 h-5 md:w-6 md:h-6 text-neutral-400" />
-                <h3 className="text-[10px] md:text-xs font-black tracking-[0.3em] text-neutral-400 uppercase">CORE ATTRIBUTES</h3>
+                <Medal className="w-5 h-5 md:w-6 md:h-6 text-rpg-text/60" />
+                <h3 className="text-[10px] md:text-xs font-black tracking-[0.3em] text-rpg-text/60 uppercase">CORE ATTRIBUTES</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                 {RPG_ATTRIBUTES.map(attr => (
@@ -187,17 +190,17 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
                       <div className="flex items-center gap-3">
                         <IconBox icon={attr.icon} className={cn(attr.bg, attr.color)} size="w-5 h-5" />
                         <div className="flex flex-col">
-                          <span className="text-xs md:text-sm font-black tracking-widest text-neutral-200">{attr.label}</span>
-                          <span className={cn("text-[9px] font-black tracking-widest opacity-60", attr.color)}>
+                          <span className="text-xs md:text-sm font-black tracking-widest text-rpg-text">{attr.label}</span>
+                          <span className={cn("text-[9px] font-black tracking-widest opacity-80", attr.color)}>
                             {getDimensionRank(attr.val)}
                           </span>
                         </div>
                       </div>
-                      <span className="text-lg md:text-xl font-black italic text-neutral-200">{attr.val}%</span>
+                      <span className="text-lg md:text-xl font-black italic text-rpg-text">{attr.val}%</span>
                     </div>
-                    <div className="h-1.5 w-full bg-neutral-900 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-rpg-border/10 rounded-full overflow-hidden">
                       <motion.div 
-                        className={cn("h-full rounded-full", attr.color.replace('text-', 'bg-'))} 
+                        className={cn("h-full rounded-full shadow-[0_0_10px_currentColor]", attr.color.replace('text-', 'bg-'))} 
                         initial={{ width: 0 }} 
                         animate={{ width: `${attr.val}%` }}
                         transition={{ duration: 1, delay: 0.2 }}
@@ -215,11 +218,11 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
                 <h3 className="text-[10px] font-black tracking-[0.4em] uppercase">Chronicle of Identity</h3>
               </div>
               <div className="space-y-4">
-                <p className="text-xl md:text-2xl text-neutral-200 font-bold italic leading-tight">
+                <p className="text-xl md:text-2xl text-rpg-text/80 font-bold italic leading-tight">
                   "{analysis?.character_summary || "Your legend is yet to be written. Complete quests to manifest your destiny."}"
                 </p>
                 <div className="w-12 h-1.5 bg-jiwa/30 rounded-full" />
-                <p className="text-sm text-neutral-300 leading-relaxed max-w-2xl">
+                <p className="text-sm text-rpg-text/70 leading-relaxed max-w-2xl">
                   Based on your activity patterns, you show a strong affinity for the <span className="text-jiwa font-black">SOUL</span> dimension. Continue to develop other dimensions to achieve perfect equilibrium.
                 </p>
               </div>
@@ -230,7 +233,7 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Sparkles className="w-6 h-6 text-jiwa" />
-                  <h3 className="text-xs font-black tracking-[0.3em] text-neutral-400 uppercase">TALENT COLLECTION ({talents.length})</h3>
+                  <h3 className="text-xs font-black tracking-[0.3em] text-rpg-text/60 uppercase">TALENT COLLECTION ({talents.length})</h3>
                 </div>
               </div>
               
@@ -246,21 +249,21 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
                         t.rarity === 'Epic' ? 'bg-purple-500/5 border-purple-500/10' :
                         t.rarity === 'Rare' ? 'bg-blue-500/5 border-blue-500/10' :
                         t.rarity === 'Uncommon' ? 'bg-green-500/5 border-green-500/10' :
-                        'bg-white/5 border-white/10'
+                        'bg-rpg-border/5 border-rpg-border'
                       )}>
                         <div className={cn(
                           "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-lg",
                           t.rarity === 'Legendary' ? 'bg-amber-500 text-black' :
-                          t.rarity === 'Epic' ? 'bg-purple-500 text-white' :
-                          t.rarity === 'Rare' ? 'bg-blue-500 text-white' :
-                          t.rarity === 'Uncommon' ? 'bg-green-500 text-white' :
+                          t.rarity === 'Epic' ? 'bg-purple-500 text-rpg-text' :
+                          t.rarity === 'Rare' ? 'bg-blue-500 text-rpg-text' :
+                          t.rarity === 'Uncommon' ? 'bg-green-500 text-rpg-text' :
                           'bg-neutral-800 text-neutral-400'
                         )}>
                           <Sparkles className="w-6 h-6" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-black text-white">{t.name}</h4>
+                            <h4 className="text-sm font-black text-rpg-text">{t.name}</h4>
                             <span className={cn(
                               "text-[8px] px-1.5 py-0.5 rounded font-black uppercase",
                               t.rarity === 'Legendary' ? 'bg-amber-500/20 text-amber-500' :
@@ -279,7 +282,7 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
                   })}
                 </div>
               ) : (
-                <div className="py-12 text-center border-2 border-dashed border-white/5 rounded-3xl">
+                <div className="py-12 text-center border-2 border-dashed border-rpg-border/50 rounded-3xl">
                   <p className="text-sm font-black text-neutral-600 uppercase tracking-widest italic">No talents awakened yet</p>
                   <p className="text-[10px] text-neutral-700 mt-2">Increase your level to unlock hidden potential</p>
                 </div>
@@ -292,7 +295,7 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
                 <TrendingUp className="w-6 h-6 text-neutral-400" />
                 <h3 className="text-xs font-black tracking-[0.3em] text-neutral-400 uppercase">STATISTIC EVOLUTION (Last 30 Days)</h3>
               </div>
-              <div className="w-full h-[250px] bg-white/[0.02] rounded-2xl border border-white/5 p-4">
+              <div className="w-full h-[250px] bg-white/[0.02] rounded-2xl border border-rpg-border/50 p-4">
                 {statHistory && statHistory.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%" debounce={200}>
                     <LineChart data={statHistory}>
@@ -332,8 +335,8 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
           <div className="space-y-8">
             <section className="glass-panel p-8 space-y-8 bg-gradient-to-b from-rpg-card to-rpg-black">
               <div className="flex items-center gap-3">
-                <Award className="w-6 h-6 text-neutral-400" />
-                <h3 className="text-sm font-black tracking-[0.2em] text-neutral-400 uppercase text-center">Hall of Fame</h3>
+                <Award className="w-6 h-6 text-rpg-text/60" />
+                <h3 className="text-sm font-black tracking-[0.2em] text-rpg-text/60 uppercase text-center">Hall of Fame</h3>
               </div>
               <div className="space-y-5">
                 {achievements.map((item, i) => (
@@ -342,17 +345,17 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    className="p-5 bg-neutral-800/20 border border-neutral-700/50 rounded-[24px] flex items-center gap-4 group hover:bg-neutral-800/40 transition-all cursor-default"
+                    className="p-5 bg-rpg-border/5 border border-rpg-border/50 rounded-[24px] flex items-center gap-4 group hover:bg-rpg-border/10 transition-all cursor-default"
                   >
                     <IconBox icon={item.icon} className={item.color} size="w-6 h-6" />
                     <div>
-                      <h4 className="text-sm md:text-base font-black tracking-widest text-neutral-200">{item.title}</h4>
-                      <p className="text-[10px] md:text-xs text-neutral-500 font-medium leading-relaxed">{item.desc}</p>
+                      <h4 className="text-sm md:text-base font-black tracking-widest text-rpg-text">{item.title}</h4>
+                      <p className="text-[10px] md:text-xs text-rpg-text/60 font-medium leading-relaxed">{item.desc}</p>
                     </div>
                   </motion.div>
                 ))}
               </div>
-              <button className="w-full py-4 border-2 border-dashed border-neutral-800 rounded-[24px] text-xs font-black text-neutral-500 tracking-widest hover:border-neutral-700 hover:text-neutral-300 transition-all uppercase">
+              <button className="w-full py-4 border-2 border-dashed border-rpg-border rounded-[24px] text-xs font-black text-rpg-text/40 tracking-widest hover:border-rpg-primary hover:text-rpg-primary transition-all uppercase">
                 Unlock More
               </button>
             </section>
@@ -371,7 +374,7 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
                       <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
                         {new Date(ref.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </p>
-                      <p className="text-xs font-bold text-neutral-300 mt-1.5 leading-relaxed">
+                      <p className="text-xs font-bold text-rpg-text/70 mt-1.5 leading-relaxed">
                         "{ref.reflection_text}"
                       </p>
                     </div>
