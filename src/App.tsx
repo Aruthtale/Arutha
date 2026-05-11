@@ -866,7 +866,7 @@ export default function App() {
 
       <div className={cn(
         "transition-all duration-500 ease-out min-h-screen",
-        !hideNavbar ? "md:pl-[280px] pb-24 md:pb-0" : ""
+        !hideNavbar ? "md:pl-20 xl:pl-[280px] pb-24 md:pb-0" : ""
       )}>
         <PullToRefresh onRefresh={handleGlobalRefresh} disabled={page === 'SOUL_GUARD' || page === 'CODEX'}>
           <Suspense fallback={<PageSkeleton />}>

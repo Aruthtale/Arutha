@@ -83,16 +83,23 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
           animate={{ opacity: 1, y: 0 }}
           className="relative z-10 w-full max-w-6xl mx-auto px-4"
         >
-          <h1 className="text-5xl sm:text-7xl md:text-[10rem] lg:text-[12rem] font-serif font-bold tracking-tighter leading-none mb-4 select-none uppercase break-words">
+          <h1 className="text-6xl sm:text-8xl md:text-[10rem] lg:text-[14rem] font-serif font-black tracking-tighter leading-[0.8] mb-6 select-none uppercase drop-shadow-[0_0_30px_rgba(255,255,255,0.1)]">
             Arutha
           </h1>
-          <h2 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-serif italic text-neutral-300 mb-8 tracking-tight">
-            Your Life, <span className="text-white underline decoration-jiwa/50 decoration-2 md:decoration-4 underline-offset-[4px] md:underline-offset-[8px]">Legendary.</span>
+          <h2 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-serif italic text-neutral-300 mb-10 tracking-tight leading-tight">
+            Your Life, <span className="text-white underline decoration-jiwa/50 decoration-2 md:decoration-4 underline-offset-[4px] md:underline-offset-[10px]">Legendary.</span>
           </h2>
 
-          <p className="max-w-xl mx-auto text-lg sm:text-xl md:text-2xl text-neutral-400 font-light leading-relaxed mb-10 md:mb-12 italic font-serif px-2">
-            "Satu-satunya permainan yang benar-benar berharga adalah <span className="text-white/90 font-medium border-b border-white/20">hidupmu sendiri.</span>"
-          </p>
+          <div className="max-w-2xl mx-auto space-y-6 mb-12">
+            <p className="text-lg sm:text-xl md:text-2xl text-neutral-400 font-light leading-relaxed italic font-serif px-2">
+              "The only game truly worth playing is <span className="text-white/90 font-medium border-b border-white/20">your own life.</span>"
+            </p>
+            <div className="flex items-center justify-center gap-4 opacity-50">
+              <div className="h-[1px] w-12 bg-gradient-to-r from-transparent to-white/30" />
+              <span className="text-[10px] font-black tracking-[0.5em] uppercase">Soul Sync Enabled</span>
+              <div className="h-[1px] w-12 bg-gradient-to-l from-transparent to-white/30" />
+            </div>
+          </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 md:gap-8">
             <button
@@ -233,32 +240,89 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 grid-rows-2 gap-6 min-h-[800px]">
-          <motion.div whileHover={{ y: -10 }} className="md:col-span-8 md:row-span-1 glass-panel p-12 bg-gradient-to-br from-white/5 to-transparent flex flex-col justify-between">
+        {/* NEW SECTION: THE AI SYNERGY */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 py-20">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            className="space-y-8"
+          >
+            <div className="inline-flex items-center gap-3 px-4 py-2 bg-ilmu/10 border border-ilmu/20 rounded-full">
+              <Zap className="w-4 h-4 text-ilmu" />
+              <span className="text-[10px] font-black tracking-widest text-ilmu uppercase">The Arbiter</span>
+            </div>
+            <h3 className="text-4xl md:text-5xl font-serif font-bold italic text-white leading-tight">
+              AI Powered <br />Character Growth.
+            </h3>
+            <p className="text-lg text-neutral-400 leading-relaxed">
+              The Arbiter tidak hanya memberikan quest, ia mempelajari kebiasaanmu. Mengubah setiap tindakan nyata—mulai dari menabung hingga olahraga—menjadi Experience Points yang meningkatkan status dimensimu.
+            </p>
+            <ul className="space-y-4">
+              {['Personalized Quest Generation', 'Zodiac-Based Identity Scaling', 'Real-Life Proof Verification'].map((item, i) => (
+                <li key={i} className="flex items-center gap-3 text-sm font-bold text-neutral-300">
+                  <div className="w-1.5 h-1.5 rounded-full bg-ilmu shadow-[0_0_10px_#3B82F6]" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="space-y-8"
+          >
+            <div className="inline-flex items-center gap-3 px-4 py-2 bg-jiwa/10 border border-jiwa/20 rounded-full">
+              <Heart className="w-4 h-4 text-jiwa" />
+              <span className="text-[10px] font-black tracking-widest text-jiwa uppercase">Soul Guard</span>
+            </div>
+            <h3 className="text-4xl md:text-5xl font-serif font-bold italic text-white leading-tight">
+              A Sanctuary for <br />Your Inner Peace.
+            </h3>
+            <p className="text-lg text-neutral-400 leading-relaxed">
+              Di Arutha, ambisi tidak boleh menghancurkan jiwa. Soul Guard adalah pendamping emosionalmu, mendeteksi tanda-tanda stres dan memberikan "Recovery Missions" untuk mencegah burnout.
+            </p>
+            <ul className="space-y-4">
+              {['Emotional State Detection', 'Zero-Burnout Policy', 'Empathetic AI Consultation'].map((item, i) => (
+                <li key={i} className="flex items-center gap-3 text-sm font-bold text-neutral-300">
+                  <div className="w-1.5 h-1.5 rounded-full bg-jiwa shadow-[0_0_10px_#A855F7]" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-2 gap-6 min-h-fit lg:min-h-[800px]">
+          <motion.div whileHover={{ y: -10 }} className="lg:col-span-8 lg:row-span-1 glass-panel p-8 md:p-12 bg-gradient-to-br from-white/5 to-transparent flex flex-col justify-between min-h-[300px]">
             <TrendingUp className="w-12 h-12 text-raga" />
             <div>
-              <h3 className="text-4xl font-serif font-bold mb-4 text-white">Daily Quest AI</h3>
-              <p className="text-neutral-200 max-w-md text-xl font-sans font-medium">Misi harian yang di-generate berdasarkan profil psikologismu. Bukan sekadar to-do list, tapi jalan menuju evolusi.</p>
+              <h3 className="text-3xl md:text-4xl font-serif font-bold mb-4 text-white">Daily Quest AI</h3>
+              <p className="text-neutral-400 max-w-md text-lg md:text-xl font-sans font-medium leading-tight">Misi harian yang di-generate berdasarkan profil psikologismu. Bukan sekadar to-do list, tapi jalan menuju evolusi nyata.</p>
             </div>
           </motion.div>
-          <motion.div whileHover={{ y: -10 }} className="md:col-span-4 md:row-span-1 glass-panel p-12 bg-jiwa/5 border-jiwa/10 flex flex-col justify-end">
+          
+          <motion.div whileHover={{ y: -10 }} className="lg:col-span-4 lg:row-span-1 glass-panel p-8 md:p-12 bg-jiwa/5 border-jiwa/10 flex flex-col justify-end min-h-[300px]">
             <Heart className="w-10 h-10 text-jiwa mb-8" />
-            <h3 className="text-2xl font-bold mb-2 uppercase tracking-tighter font-sans text-white">Mind Check</h3>
-            <p className="text-neutral-300 text-base font-sans font-medium">Kami memonitor kesehatan mentalmu di balik setiap pencapaian materi.</p>
+            <h3 className="text-xl md:text-2xl font-bold mb-2 uppercase tracking-tighter font-sans text-white">Mind Check</h3>
+            <p className="text-neutral-400 text-sm md:text-base font-sans font-medium">Kami memonitor kesehatan mentalmu di balik setiap pencapaian materi.</p>
           </motion.div>
-          <motion.div whileHover={{ y: -10 }} className="md:col-span-4 md:row-span-1 glass-panel p-12 bg-harta/5 border-harta/10 flex flex-col justify-end">
+          
+          <motion.div whileHover={{ y: -10 }} className="lg:col-span-4 lg:row-span-1 glass-panel p-8 md:p-12 bg-harta/5 border-harta/10 flex flex-col justify-end min-h-[300px]">
             <Shield className="w-10 h-10 text-harta mb-8" />
-            <h3 className="text-2xl font-bold mb-2 uppercase tracking-tighter font-sans">Anti-P2W</h3>
-            <p className="text-neutral-500 text-sm font-sans">Kemajuan diukur dari disiplin, bukan saldo bank.</p>
+            <h3 className="text-xl md:text-2xl font-bold mb-2 uppercase tracking-tighter font-sans">Anti-P2W</h3>
+            <p className="text-neutral-500 text-sm font-sans">Kemajuan diukur dari disiplin harian dan pembuktian aksi, bukan saldo bank.</p>
           </motion.div>
-          <motion.div whileHover={{ y: -10 }} className="md:col-span-8 md:row-span-1 glass-panel p-12 bg-gradient-to-tr from-ilmu/10 to-transparent flex flex-col justify-between">
+          
+          <motion.div whileHover={{ y: -10 }} className="lg:col-span-8 lg:row-span-1 glass-panel p-8 md:p-12 bg-gradient-to-tr from-ilmu/10 to-transparent flex flex-col justify-between min-h-[300px]">
             <div className="flex justify-between items-start">
               <Users className="w-12 h-12 text-ilmu" />
               <div className="px-4 py-1 bg-ilmu/20 text-ilmu rounded-full text-[10px] font-black uppercase font-sans">Coming Soon</div>
             </div>
             <div>
-              <h3 className="text-4xl font-serif font-bold mb-4">Guild System</h3>
-              <p className="text-neutral-400 max-w-md text-lg font-sans">Selesaikan quest party bersama teman-teman nyata di kotamu untuk bonus stat KARMA.</p>
+              <h3 className="text-3xl md:text-4xl font-serif font-bold mb-4">Guild System</h3>
+              <p className="text-neutral-400 max-w-md text-base md:text-lg font-sans">Selesaikan quest party bersama teman-teman nyata di kotamu untuk bonus stat KARMA.</p>
             </div>
           </motion.div>
         </div>

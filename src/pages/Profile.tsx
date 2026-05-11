@@ -97,55 +97,69 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
           
           <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-10">
             {/* AVATAR SYSTEM */}
-            <div className="relative shrink-0">
+            <div className="relative shrink-0 -mt-20 md:mt-0">
               <div className="w-32 h-32 md:w-44 md:h-44 rounded-[48px] bg-gradient-to-tr from-jiwa via-ilmu to-raga rotate-6 flex items-center justify-center font-black text-4xl md:text-6xl shadow-2xl shadow-jiwa/20 border-4 border-rpg-black relative">
                 <span className="drop-shadow-2xl">{name.substring(0, 2).toUpperCase()}</span>
-                <div className="absolute -bottom-4 -right-4 bg-white text-black px-4 py-2 rounded-2xl font-black text-sm md:text-lg border-4 border-rpg-black shadow-xl">
+                <div className="absolute -bottom-2 md:-bottom-4 -right-2 md:-right-4 bg-white text-black px-3 md:px-4 py-1 md:py-2 rounded-xl md:rounded-2xl font-black text-xs md:text-lg border-[3px] md:border-4 border-rpg-black shadow-xl">
                   LVL {level}
                 </div>
               </div>
             </div>
 
-            <div className="text-center md:text-left space-y-4 flex-1">
+            <div className="text-center md:text-left space-y-4 flex-1 w-full">
               <div className="space-y-4">
-                <div className="flex flex-col md:flex-row items-center md:items-end gap-3 md:gap-5">
-                  <h3 className="text-3xl md:text-5xl font-black italic tracking-tighter text-white uppercase leading-none">{name}</h3>
-                  {zodiacInfo && (
-                    <div className={cn(
-                      "flex items-center gap-2 px-4 py-1.5 rounded-full border bg-white/5 backdrop-blur-md",
-                      zodiacInfo.element === 'FIRE' ? 'border-red-500/20 text-red-400' :
-                      zodiacInfo.element === 'EARTH' ? 'border-green-500/20 text-green-400' :
-                      zodiacInfo.element === 'AIR' ? 'border-blue-500/20 text-blue-400' :
-                      'border-purple-500/20 text-purple-400'
-                    )}>
-                      <span className="text-lg">{zodiacInfo.icon}</span>
-                      <span className="text-[10px] font-black tracking-widest uppercase">{zodiacInfo.name}</span>
+                <div className="flex flex-col md:flex-row items-center md:items-end gap-3 md:gap-5 flex-wrap justify-center md:justify-start">
+                  <h3 className="text-2xl md:text-5xl font-black italic tracking-tighter text-white uppercase leading-none break-all">{name}</h3>
+                  <div className="flex gap-2 items-center">
+                    {zodiacInfo && (
+                      <div className={cn(
+                        "flex items-center gap-2 px-3 py-1 md:px-4 md:py-1.5 rounded-full border bg-white/5 backdrop-blur-md",
+                        zodiacInfo.element === 'FIRE' ? 'border-red-500/20 text-red-400' :
+                        zodiacInfo.element === 'EARTH' ? 'border-green-500/20 text-green-400' :
+                        zodiacInfo.element === 'AIR' ? 'border-blue-500/20 text-blue-400' :
+                        'border-purple-500/20 text-purple-400'
+                      )}>
+                        <span className="text-sm md:text-lg">{zodiacInfo.icon}</span>
+                        <span className="text-[8px] md:text-[10px] font-black tracking-widest uppercase">{zodiacInfo.name}</span>
+                      </div>
+                    )}
+                    <div className="px-3 py-1 md:px-4 md:py-1.5 bg-jiwa text-white text-[8px] md:text-[10px] font-black rounded-full tracking-widest uppercase shadow-lg shadow-jiwa/20 whitespace-nowrap">
+                      {(() => {
+                        const topStat = Object.entries(stats).sort((a,b) => b[1]-a[1])[0][0];
+                        const titles: Record<string, string> = {
+                          JIWA: 'SOUL ASCENDANT',
+                          RAGA: 'VITALITY PARAGON',
+                          HARTA: 'FORTUNE TYCOON',
+                          ILMU: 'WISDOM SAGE',
+                          KARMA: 'DESTINY WEAVER'
+                        };
+                        return titles[topStat] || 'UNKNOWN ENTITY';
+                      })()}
                     </div>
-                  )}
-                  <div className="px-4 py-1.5 bg-jiwa text-white text-[10px] font-black rounded-full tracking-widest uppercase shadow-lg shadow-jiwa/20">
-                    MASTER OF {Object.entries(stats).sort((a,b) => b[1]-a[1])[0][0]}
                   </div>
                 </div>
 
                 {usia && (
-                  <p className="text-sm font-bold text-neutral-500 uppercase tracking-[0.2em]">
+                  <p className="text-xs md:text-sm font-bold text-neutral-500 uppercase tracking-[0.2em]">
                     {usia} Years Old • <span className="text-neutral-400">{analysis?.personality_type || "TRAVELLER"}</span>
                   </p>
                 )}
 
-                <p className="text-jiwa/80 font-black italic text-xl md:text-2xl tracking-tight">
+                <p className="text-jiwa/80 font-black italic text-lg md:text-2xl tracking-tight leading-tight">
                   {analysis?.personality_title || "The Unwritten Legend"}
                 </p>
               </div>
 
-              <div className="w-full md:w-[400px] space-y-3 pt-4">
-                <div className="flex justify-between items-end px-1">
-                  <span className="text-xs font-black text-neutral-400 uppercase tracking-[0.2em]">Experience Points</span>
-                  <span className="text-base md:text-lg font-mono font-black text-neutral-200">{xp} <span className="text-neutral-500">/ {level * 1000}</span></span>
+              <div className="w-full max-w-md space-y-3 pt-6 mx-auto md:mx-0">
+                <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end gap-1 px-1">
+                  <span className="text-[9px] md:text-xs font-black text-neutral-400 uppercase tracking-[0.3em]">Experience Points</span>
+                  <span className="text-base md:text-lg font-mono font-black text-neutral-200">
+                    {xp} <span className="text-neutral-500 text-xs md:text-sm">/ {level * 1000}</span>
+                  </span>
                 </div>
-                <div className="h-4 w-full bg-rpg-black rounded-full overflow-hidden p-1 border border-neutral-800">
+                <div className="h-3 md:h-4 w-full bg-rpg-black rounded-full overflow-hidden p-0.5 md:p-1 border border-neutral-800">
                   <motion.div 
-                    className="h-full bg-gradient-to-r from-jiwa to-ilmu rounded-full animate-shimmer"
+                    className="h-full bg-gradient-to-r from-jiwa to-ilmu rounded-full shadow-[0_0_15px_rgba(168,85,247,0.4)]"
                     initial={{ width: 0 }} 
                     animate={{ width: `${(xp / (level * 1000)) * 100}%` }}
                     transition={{ duration: 1.5, ease: "easeOut" }}
@@ -161,10 +175,10 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
           
           <div className="space-y-8">
             {/* ATTRIBUTES LIST */}
-            <section className="glass-panel p-8 md:p-10 space-y-8">
+            <section className="glass-panel p-6 md:p-10 space-y-8">
               <div className="flex items-center gap-3">
-                <Medal className="w-6 h-6 text-neutral-400" />
-                <h3 className="text-xs font-black tracking-[0.3em] text-neutral-400 uppercase">CORE ATTRIBUTES</h3>
+                <Medal className="w-5 h-5 md:w-6 md:h-6 text-neutral-400" />
+                <h3 className="text-[10px] md:text-xs font-black tracking-[0.3em] text-neutral-400 uppercase">CORE ATTRIBUTES</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                 {RPG_ATTRIBUTES.map(attr => (
@@ -202,11 +216,11 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
               </div>
               <div className="space-y-4">
                 <p className="text-xl md:text-2xl text-neutral-200 font-bold italic leading-tight">
-                  "{analysis?.character_summary || "Ceritamu masih tertulis di antara bintang-bintang. Selesaikan quest untuk mewujudkan takdirmu."}"
+                  "{analysis?.character_summary || "Your legend is yet to be written. Complete quests to manifest your destiny."}"
                 </p>
                 <div className="w-12 h-1.5 bg-jiwa/30 rounded-full" />
                 <p className="text-sm text-neutral-300 leading-relaxed max-w-2xl">
-                  Berdasarkan pola aktivitasmu, kamu menunjukkan kecenderungan yang kuat pada dimensi <span className="text-jiwa font-black">JIWA</span>. Teruslah kembangkan dimensi lain untuk mencapai keseimbangan sempurna.
+                  Based on your activity patterns, you show a strong affinity for the <span className="text-jiwa font-black">SOUL</span> dimension. Continue to develop other dimensions to achieve perfect equilibrium.
                 </p>
               </div>
             </section>
@@ -216,7 +230,7 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Sparkles className="w-6 h-6 text-jiwa" />
-                  <h3 className="text-xs font-black tracking-[0.3em] text-neutral-400 uppercase">KOLEKSI BAKAT ({talents.length})</h3>
+                  <h3 className="text-xs font-black tracking-[0.3em] text-neutral-400 uppercase">TALENT COLLECTION ({talents.length})</h3>
                 </div>
               </div>
               
@@ -266,8 +280,8 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
                 </div>
               ) : (
                 <div className="py-12 text-center border-2 border-dashed border-white/5 rounded-3xl">
-                  <p className="text-sm font-black text-neutral-600 uppercase tracking-widest italic">Belum ada bakat yang terasah</p>
-                  <p className="text-[10px] text-neutral-700 mt-2">Naikkan level untuk membuka potensi terpendammu</p>
+                  <p className="text-sm font-black text-neutral-600 uppercase tracking-widest italic">No talents awakened yet</p>
+                  <p className="text-[10px] text-neutral-700 mt-2">Increase your level to unlock hidden potential</p>
                 </div>
               )}
             </section>
@@ -276,7 +290,7 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
             <section className="glass-panel p-8 md:p-10 space-y-8">
               <div className="flex items-center gap-3">
                 <TrendingUp className="w-6 h-6 text-neutral-400" />
-                <h3 className="text-xs font-black tracking-[0.3em] text-neutral-400 uppercase">EVOLUSI STATISTIK (30 Hari Terakhir)</h3>
+                <h3 className="text-xs font-black tracking-[0.3em] text-neutral-400 uppercase">STATISTIC EVOLUTION (Last 30 Days)</h3>
               </div>
               <div className="w-full h-[250px] bg-white/[0.02] rounded-2xl border border-white/5 p-4">
                 {statHistory && statHistory.length > 0 ? (
@@ -307,7 +321,7 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
                   </ResponsiveContainer>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-xs font-black text-neutral-600 tracking-widest uppercase">
-                    Belum Ada Data Historis
+                    No Historical Data Found
                   </div>
                 )}
               </div>
@@ -366,8 +380,8 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
                   <div className="flex gap-3 opacity-50">
                     <div className="w-1.5 h-10 bg-neutral-700 rounded-full" />
                     <div className="flex-1">
-                      <p className="text-xs font-bold text-neutral-400">Belum ada ingatan</p>
-                      <p className="text-[10px] text-neutral-500 mt-1">Bicara dengan Soul Guard untuk mencatat jurnal.</p>
+                      <p className="text-xs font-bold text-neutral-400">No memories found</p>
+                      <p className="text-[10px] text-neutral-500 mt-1">Speak with the Soul Guard to record your journey.</p>
                     </div>
                   </div>
                 )}
