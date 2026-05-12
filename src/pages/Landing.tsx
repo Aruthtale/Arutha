@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap,
   ArrowRight,
@@ -7,7 +7,12 @@ import {
   Heart,
   Shield,
   Users,
-  Sparkles
+  Sparkles,
+  Lock,
+  Scan,
+  BookOpen,
+  Activity,
+  Camera
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
@@ -23,6 +28,19 @@ interface LandingProps {
 export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }) => {
   const leaderboardRef = React.useRef<HTMLDivElement>(null);
   const [isMounted, setIsMounted] = React.useState(false);
+  const [activeObject, setActiveObject] = React.useState(0);
+  const objects = [
+    { icon: <BookOpen className="w-16 h-16" />, label: 'Knowledge' },
+    { icon: <Activity className="w-16 h-16" />, label: 'Vitality' },
+    { icon: <Camera className="w-16 h-16" />, label: 'Proof' },
+  ];
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveObject((prev) => (prev + 1) % objects.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   const scrollToLeaderboard = () => {
     leaderboardRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -315,14 +333,63 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
             <p className="text-neutral-500 text-sm font-sans">Kemajuan diukur dari disiplin harian dan pembuktian aksi, bukan saldo bank.</p>
           </motion.div>
           
-          <motion.div whileHover={{ y: -10 }} className="lg:col-span-8 lg:row-span-1 glass-panel p-8 md:p-12 bg-gradient-to-tr from-ilmu/10 to-transparent flex flex-col justify-between min-h-[300px]">
-            <div className="flex justify-between items-start">
-              <Users className="w-12 h-12 text-ilmu" />
-              <div className="px-4 py-1 bg-ilmu/20 text-ilmu rounded-full text-[10px] font-black uppercase font-sans">Coming Soon</div>
+          <motion.div whileHover={{ y: -10 }} className="lg:col-span-8 lg:row-span-1 glass-panel p-8 md:p-12 bg-gradient-to-tr from-jiwa/10 to-transparent flex flex-col md:flex-row gap-12 items-center min-h-[350px] relative overflow-hidden group">
+            {/* The Scanner Animation */}
+            <div className="relative w-48 h-48 flex-shrink-0">
+              <div className="absolute inset-0 border-2 border-jiwa/20 rounded-3xl" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeObject}
+                    initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 1.2, y: -10 }}
+                    className="flex flex-col items-center gap-4 text-jiwa/40"
+                  >
+                    <motion.div
+                      animate={{ rotateY: [0, 360] }}
+                      transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                    >
+                      {objects[activeObject].icon}
+                    </motion.div>
+                    <span className="text-[10px] font-black tracking-widest uppercase">{objects[activeObject].label}...</span>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* Scanning Line */}
+              <motion.div
+                animate={{ top: ['10%', '90%', '10%'] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-jiwa to-transparent shadow-[0_0_15px_#A855F7] z-10"
+              />
+              
+              {/* Corner HUD Accents */}
+              <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-jiwa/40" />
+              <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-jiwa/40" />
             </div>
-            <div>
-              <h3 className="text-3xl md:text-4xl font-serif font-bold mb-4">Guild System</h3>
-              <p className="text-neutral-400 max-w-md text-base md:text-lg font-sans">Selesaikan quest party bersama teman-teman nyata di kotamu untuk bonus stat KARMA.</p>
+
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="px-3 py-1 bg-jiwa/20 border border-jiwa/30 rounded-full flex items-center gap-2">
+                  <Scan className="w-3 h-3 text-jiwa" />
+                  <span className="text-[10px] font-black text-jiwa uppercase tracking-widest">Reality Verified</span>
+                </div>
+                <div className="flex items-center gap-2 text-neutral-500">
+                  <Lock className="w-3 h-3" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Zero-Storage</span>
+                </div>
+              </div>
+              
+              <h3 className="text-3xl md:text-4xl font-serif font-bold mb-4 text-rpg-text">The Arbiter's Proof</h3>
+              <p className="text-neutral-400 max-w-md text-base md:text-lg font-sans leading-relaxed">
+                Buktikan aksimu melalui pindaian AI. Kami menganalisis bukti visual dan konteks aktivitasmu secara ephemeral untuk memastikan setiap XP didapat dari usaha nyata.
+              </p>
+            </div>
+
+            {/* Decorative Background HUD */}
+            <div className="absolute -right-20 -bottom-20 opacity-5 group-hover:opacity-10 transition-opacity">
+               <Scan className="w-64 h-64 text-jiwa" />
             </div>
           </motion.div>
         </div>
