@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Loader2, Sparkles } from 'lucide-react';
-import { analyzeCharacter, generateOnboardingQuestions, type OnboardingAnswer, type CharacterAnalysis } from '../lib/gemini';
+import { analyzeCharacter, generateOnboardingQuestions, generateSpecificQuestions, type OnboardingAnswer, type CharacterAnalysis } from '../lib/gemini';
 
 const FALLBACK_QUESTIONS = [
   "Apa hobimu saat sedang bosan?",
@@ -29,6 +29,8 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [answers, setAnswers] = useState<OnboardingAnswer[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showDecision, setShowDecision] = useState(false);
+  const [isGeneratingSpecific, setIsGeneratingSpecific] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -74,9 +76,33 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
     if (step < questions.length - 1) {
       setStep(s => s + 1);
     } else {
-      // All questions answered — send to parent for analysis
-      onComplete(updatedAnswers);
+      // If we haven't shown the decision yet and we just finished the first 10
+      if (!showDecision && questions.length === 10) {
+        setShowDecision(true);
+      } else {
+        // Already did specific questions or skipped them
+        onComplete(updatedAnswers);
+      }
     }
+  };
+
+  const handleContinue = async () => {
+    setIsGeneratingSpecific(true);
+    try {
+      const specific = await generateSpecificQuestions(answers);
+      setQuestions(prev => [...prev, ...specific]);
+      setShowDecision(false);
+      setStep(s => s + 1);
+    } catch (e) {
+      console.warn("Failed to generate specific questions, finishing.");
+      onComplete(answers);
+    } finally {
+      setIsGeneratingSpecific(false);
+    }
+  };
+
+  const handleFinish = () => {
+    onComplete(answers);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -125,6 +151,52 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
             {isLoadingQuestions ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
             {isLoadingQuestions ? 'Syncing Dimensions...' : 'START CALIBRATION'}
           </button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // --- Decision Screen ---
+  if (showDecision) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-rpg-black text-rpg-text relative overflow-hidden text-center">
+        <div className="absolute w-[500px] h-[500px] bg-ilmu/10 blur-[150px] rounded-full pointer-events-none" />
+        
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative z-10 max-w-md space-y-8"
+        >
+          <div className="mx-auto w-16 h-16 bg-white/5 rounded-full flex items-center justify-center border border-white/10 mb-6">
+            <Sparkles className="w-8 h-8 text-ilmu" />
+          </div>
+          
+          <div className="space-y-4">
+            <h2 className="text-3xl font-black uppercase tracking-tight italic">
+              Kalibrasi Dasar Selesai
+            </h2>
+            <p className="text-neutral-400 text-sm md:text-base leading-relaxed">
+              Arutha sudah memiliki gambaran kasar tentang jiwamu. Apakah kamu ingin menjawab 5 pertanyaan tambahan untuk hasil yang lebih presisi, atau sudahi sekarang?
+            </p>
+          </div>
+
+          <div className="grid gap-4">
+            <button
+              onClick={handleContinue}
+              disabled={isGeneratingSpecific}
+              className="w-full px-8 py-4 bg-rpg-primary text-rpg-primary-text font-black rounded-2xl shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isGeneratingSpecific ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+              {isGeneratingSpecific ? 'MEMPROSES...' : 'LANJUT (LEBIH SPESIFIK)'}
+            </button>
+            
+            <button
+              onClick={handleFinish}
+              className="w-full px-8 py-4 bg-white/5 text-rpg-text font-bold rounded-2xl border border-white/10 hover:bg-white/10 transition-all active:scale-[0.98]"
+            >
+              SUDAHI SAJA
+            </button>
+          </div>
         </motion.div>
       </div>
     );

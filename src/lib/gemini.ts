@@ -48,11 +48,12 @@ export interface OnboardingAnswer {
 }
 
 const MODELS_STABLE = [
-  'gemini-3.1-flash-lite-preview',
-  'gemini-3.1-pro-preview',
-  'gemini-3.0-flash-preview',
+  'gemini-3-flash-preview',
   'gemini-3.1-flash-lite',
-  'gemini-3.0-pro-preview'
+  'gemini-3.1-flash-lite-preview',
+  'gemini-1.5-pro-latest',
+  'gemini-1.5-flash-latest',
+  'gemini-3.1-pro-preview',
 ];
 
 async function delay(ms: number) {
@@ -60,13 +61,15 @@ async function delay(ms: number) {
 }
 
 /**
- * Helper to generate content with multiple model fallbacks and retries on 503 errors.
+ * Helper to generate content with multiple model fallbacks and retries on 503/429 errors.
  */
 async function generateWithFallback(prompt: string | any[], generationConfig?: any): Promise<string> {
   const aiClient = getClient();
   
   for (const modelName of MODELS_STABLE) {
-    let retries = 2;
+    let retries = 3;
+    let backoff = 1000;
+    
     while (retries > 0) {
       try {
         const response = await aiClient.models.generateContent({
@@ -75,21 +78,37 @@ async function generateWithFallback(prompt: string | any[], generationConfig?: a
           generationConfig
         });
         
-        return response.text || '';
+        const text = response.text;
+        if (!text) {
+          throw new Error("Empty response text");
+        }
+        return text;
       } catch (e: any) {
-        console.error(`Gemini Error with ${modelName} (Retries left: ${retries - 1}):`, e);
-        // Retry on Service Unavailable (503) or Rate Limit (429)
-        const status = e.status || (e.message?.includes('503') ? 503 : (e.message?.includes('429') ? 429 : 0));
-        if (status === 503 || status === 429) {
+        console.warn(`Gemini Warning with ${modelName} (Retries left: ${retries - 1}):`, e.message || e);
+        
+        // Retry on Service Unavailable (503) or Rate Limit (429) or Overloaded
+        const status = e.status || 0;
+        const message = (e.message || "").toLowerCase();
+        const isRetryable = status === 503 || status === 429 || message.includes('overloaded') || message.includes('high demand');
+        
+        if (isRetryable) {
           retries--;
-          await delay(status === 429 ? 2000 : 1000);
+          await delay(backoff);
+          backoff *= 2; // Exponential backoff
           continue;
         }
-        break; // Skip to next model for other errors
+        
+        // If it's a 404 (Not Found), move to next model immediately
+        if (status === 404 || message.includes('not found')) {
+          break;
+        }
+        
+        // For other errors, log and try next model
+        break;
       }
     }
   }
-  throw new Error("All AI models failed to respond.");
+  throw new Error("Critical: All AI models failed to respond. Please check your internet connection or API key.");
 }
 
 export async function generateOnboardingQuestions(userContext?: { usia?: number; gender?: string; username?: string; zodiac?: string }): Promise<string[]> {
@@ -130,6 +149,38 @@ Kembalikan HANYA array JSON berisi 10 string pertanyaan, tanpa markdown tambahan
     "Lebih pilih uang banyak atau teman banyak?",
     "Apa satu hal yang ingin kamu ubah dari dirimu?",
     "Sebutkan satu kata yang menggambarkan kamu hari ini!",
+  ];
+}
+
+export async function generateSpecificQuestions(previousAnswers: OnboardingAnswer[]) {
+  const context = previousAnswers.map(a => `Q: ${a.question}\nA: ${a.answer}`).join('\n');
+  const prompt = `Analisis jawaban user berikut ini untuk memahami profil mereka dalam 5 Dimensi (JIWA, RAGA, HARTA, ILMU, KARMA):
+${context}
+
+Berdasarkan data tersebut, buatlah 5 pertanyaan tambahan yang LEBIH SPESIFIK dan personal untuk memvalidasi atau memperdalam pemahaman tentang salah satu dimensi yang paling dominan atau paling lemah.
+Pertanyaan harus tetap santai, pendek, dan menggunakan gaya bahasa 'lu/gue' jika cocok atau bahasa santai lainnya.
+Kembalikan HANYA array JSON berisi 5 string pertanyaan.`;
+
+  try {
+    const text = await generateWithFallback(prompt);
+    let jsonStr = text.trim();
+    if (jsonStr.includes('```')) {
+      jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
+    }
+    const parsed = JSON.parse(jsonStr);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed;
+    }
+  } catch (e) {
+    console.error("Failed to generate specific questions:", e);
+  }
+
+  return [
+    "Jika harus memilih satu hal yang paling berharga, apa itu?",
+    "Apa ketakutan terbesarmu dalam mencapai tujuan?",
+    "Bagaimana cara lu biasanya menghadapi kegagalan?",
+    "Siapa orang yang paling lu percayai saat ini?",
+    "Apa satu pencapaian yang paling lu banggakan?",
   ];
 }
 
