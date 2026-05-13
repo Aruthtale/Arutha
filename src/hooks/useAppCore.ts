@@ -15,6 +15,7 @@ import {
 import { checkAndApplyDecay, resetFatigue } from '../lib/decaySystem';
 import { isNewDay, getLocalTimestamp, getTodayDate, isToday, isNewWeek } from '../lib/dateUtils';
 import { TALENTS } from '../lib/talents';
+import { useToast } from './useToast';
 
 export function useAppCore() {
   const {
@@ -511,7 +512,7 @@ export function useAppCore() {
       }
     } catch (err: any) {
       console.error("Onboarding Error:", err);
-      alert(err.message || "Terjadi kesalahan saat penyelarasan jiwa.");
+      useToast.getState().addToast(err.message || "Terjadi kesalahan saat penyelarasan jiwa.", "error");
     } finally { 
       setLoading(false); 
     }
@@ -603,11 +604,15 @@ export function useAppCore() {
     setLoading(true);
     try {
       const { data: quest } = await supabase.from('arutha_global_quests').select('*').eq('id', questId).single();
-      if (!quest || quest.is_claimed) { alert("Terlambat! Misi ini sudah diselesaikan pahlawan lain."); fetchGlobalQuests(); return; }
+      if (!quest || quest.is_claimed) { 
+        useToast.getState().addToast("Terlambat! Misi ini sudah diselesaikan pahlawan lain.", "error"); 
+        fetchGlobalQuests(); 
+        return; 
+      }
       
       // Check if already accepted
       if (quests.find(q => q.id === questId)) {
-        alert("Kamu sudah menerima misi ini.");
+        useToast.getState().addToast("Kamu sudah menerima misi ini.", "info");
         return;
       }
 
@@ -622,7 +627,7 @@ export function useAppCore() {
       const newQ = [...quests, normalizedQuest];
       setQuests(newQ);
       await supabase.from('arutha_user').update({ active_quests: newQ }).eq('id', dbUserId);
-      alert("Misi Diterima! Buktikan tantangan ini sebelum orang lain menyelesaikannya."); 
+      useToast.getState().addToast("Misi Diterima! Buktikan tantangan ini sebelum orang lain menyelesaikannya.", "success"); 
     } catch (err) {
       console.error(err);
     } finally { setLoading(false); }
@@ -636,7 +641,7 @@ export function useAppCore() {
     // Check if user already has an active quest for this dimension
     const existing = activeWeeklyQuests.find(q => q.stat === quest.stat && !q.completed);
     if (existing) {
-      alert(`Kamu masih memiliki misi mingguan aktif untuk dimensi ${quest.stat}. Selesaikan dulu atau tunggu minggu depan!`);
+      useToast.getState().addToast(`Kamu masih memiliki misi mingguan aktif untuk dimensi ${quest.stat}. Selesaikan dulu atau tunggu minggu depan!`, "error");
       return;
     }
 
@@ -665,7 +670,7 @@ export function useAppCore() {
         total_steps: quest.steps?.total || 1
       });
 
-      alert(`Misi "${quest.title}" diterima! Semoga disiplinmu membawamu pada kemenangan.`);
+      useToast.getState().addToast(`Misi "${quest.title}" diterima! Semoga disiplinmu membawamu pada kemenangan.`, "success");
     } catch (err) {
       console.error(err);
     }

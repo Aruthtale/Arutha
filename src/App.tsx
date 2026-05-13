@@ -12,6 +12,7 @@ import { Navbar } from './components/Navbar';
 import { SplashScreen } from './components/SplashScreen';
 import { PullToRefresh } from './components/PullToRefresh';
 import { PageSkeleton } from './components/Skeleton';
+import { ToastContainer } from './components/ToastContainer';
 
 // Lazy Load Pages
 const lazyWithRetry = (componentImport: () => Promise<any>) =>
@@ -226,6 +227,7 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+      <ToastContainer />
     </div>
     </LazyMotion>
   );
