@@ -207,7 +207,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div>
               <h4 className="text-sm font-black uppercase text-orange-400">Misi Pemulihan</h4>
               <p className="text-[11px] text-neutral-300 mt-1">Ambil misi ringan ini untuk memulihkan stat yang menurun.</p>
-              <button onClick={onTakeRecovery} disabled={isRefreshing} className="mt-4 w-full py-3 bg-rpg-primary rounded-xl text-[10px] font-black uppercase">
+              <button onClick={onTakeRecovery} disabled={isRefreshing} className="mt-4 w-full py-3 bg-rpg-primary text-rpg-primary-text rounded-xl text-[10px] font-black uppercase">
                 {isRefreshing ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : 'Ambil Misi'}
               </button>
             </div>

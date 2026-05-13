@@ -38,7 +38,7 @@ export interface Quest {
   steps?: {
     current: number;
     total: number;
-    last_check_in?: string; // ISO Date to prevent same-day spam
+    last_check_in?: string;
   };
 }
 
@@ -47,15 +47,52 @@ export interface OnboardingAnswer {
   answer: string;
 }
 
-const MODELS_3X = [
+const MODELS_STABLE = [
   'gemini-3.1-flash-lite-preview',
+  'gemini-3.1-pro-preview',
+  'gemini-3.0-flash-preview',
   'gemini-3.1-flash-lite',
-  'gemini-3-flash-preview',
-  'gemini-3.1-pro-preview'
+  'gemini-3.0-pro-preview'
 ];
 
-export async function generateOnboardingQuestions(userContext?: { usia?: number; gender?: string; username?: string; zodiac?: string }): Promise<string[]> {
+async function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Helper to generate content with multiple model fallbacks and retries on 503 errors.
+ */
+async function generateWithFallback(prompt: string | any[], generationConfig?: any): Promise<string> {
   const aiClient = getClient();
+  
+  for (const modelName of MODELS_STABLE) {
+    let retries = 2;
+    while (retries > 0) {
+      try {
+        const response = await aiClient.models.generateContent({
+          model: modelName,
+          contents: Array.isArray(prompt) ? prompt : prompt,
+          generationConfig
+        });
+        
+        return response.text || '';
+      } catch (e: any) {
+        console.error(`Gemini Error with ${modelName} (Retries left: ${retries - 1}):`, e);
+        // Retry on Service Unavailable (503) or Rate Limit (429)
+        const status = e.status || (e.message?.includes('503') ? 503 : (e.message?.includes('429') ? 429 : 0));
+        if (status === 503 || status === 429) {
+          retries--;
+          await delay(status === 429 ? 2000 : 1000);
+          continue;
+        }
+        break; // Skip to next model for other errors
+      }
+    }
+  }
+  throw new Error("All AI models failed to respond.");
+}
+
+export async function generateOnboardingQuestions(userContext?: { usia?: number; gender?: string; username?: string; zodiac?: string }): Promise<string[]> {
   const contextText = userContext ? `\nTarget User: ${userContext.gender || 'Unknown'}, ${userContext.usia || '??'} tahun, Zodiak: ${userContext.zodiac || 'Unknown'}.` : '';
   const prompt = `Buatkan 10 pertanyaan pendek, simpel, dan cepat dijawab dalam bahasa Indonesia yang digunakan untuk menganalisis kepribadian seseorang layaknya karakter RPG. ${contextText}
 Tujuan dari 10 pertanyaan ini adalah untuk memetakan orang tersebut ke dalam 5 dimensi:
@@ -68,29 +105,20 @@ Tujuan dari 10 pertanyaan ini adalah untuk memetakan orang tersebut ke dalam 5 d
 Pertanyaan harus sangat pendek, santai (casual), dan disesuaikan dengan konteks usia/gender/zodiak user jika tersedia agar terasa lebih personal. Hindari pertanyaan filosofis yang terlalu dalam.
 Kembalikan HANYA array JSON berisi 10 string pertanyaan, tanpa markdown tambahan.`;
 
-  for (const modelName of MODELS_3X) {
-    try {
-      const result = await aiClient.models.generateContent({
-        model: modelName,
-        contents: prompt,
-      });
-      
-      const text = result.text || '';
-      let jsonStr = text.trim();
-      if (jsonStr.includes('```')) {
-        jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
-      }
-      const parsed = JSON.parse(jsonStr);
-      if (Array.isArray(parsed) && parsed.length >= 5) {
-        return parsed;
-      }
-    } catch (e: any) {
-      console.error(`Gemini Error with ${modelName}:`, e);
-      continue;
+  try {
+    const text = await generateWithFallback(prompt);
+    let jsonStr = text.trim();
+    if (jsonStr.includes('```')) {
+      jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
     }
+    const parsed = JSON.parse(jsonStr);
+    if (Array.isArray(parsed) && parsed.length >= 5) {
+      return parsed;
+    }
+  } catch (e) {
+    console.error("Critical AI Failure:", e);
   }
 
-  // Final Fallback: Jika semua model AI gagal
   return [
     "Apa hobimu saat sedang bosan?",
     "Pilih satu: Olahraga, Main Game, atau Tidur?",
@@ -121,7 +149,6 @@ export interface CharacterAnalysis {
 }
 
 export async function analyzeCharacter(answers: OnboardingAnswer[], userContext?: { usia?: number; gender?: string; username?: string; zodiac?: string }): Promise<CharacterAnalysis> {
-  const aiClient = getClient();
   const qaBlock = answers.map((a, i) => `Pertanyaan ${i + 1}: "${a.question}"\nJawaban: "${a.answer}"`).join('\n\n');
   const validMBTI = ["INTJ", "INTP", "ENTJ", "ENTP", "INFJ", "INFP", "ENFJ", "ENFP", "ISTJ", "ISFJ", "ESTJ", "ESFJ", "ISTP", "ISFP", "ESTP", "ESFP"];
   const contextBlock = userContext ? `Data User: Nama: ${userContext.username}, Usia: ${userContext.usia}, Gender: ${userContext.gender}, Zodiak: ${userContext.zodiac}\n\n` : '';
@@ -139,41 +166,34 @@ PENTING: personality_type HARUS secara eksak salah satu dari: ${validMBTI.join('
 ${contextBlock}Data Jawaban User:
 ${qaBlock}`;
 
-  for (const modelName of MODELS_3X) {
-    try {
-      const response = await aiClient.models.generateContent({
-        model: modelName,
-        contents: prompt,
-      });
-      const text = response.text || '';
-      let jsonStr = text.trim();
-      if (jsonStr.includes('```')) {
-        jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
-      }
-      const result = JSON.parse(jsonStr);
-      
-      // Safety Fallbacks: Garansi tidak ada data null yang masuk ke Supabase
-      const stats = result.stats || {};
-      const normalizedStats = {
-        JIWA: Math.min(50, Number(stats.JIWA || stats.jiwa) || 30),
-        RAGA: Math.min(50, Number(stats.RAGA || stats.raga) || 30),
-        HARTA: Math.min(50, Number(stats.HARTA || stats.harta) || 30),
-        ILMU: Math.min(50, Number(stats.ILMU || stats.ilmu) || 30),
-        KARMA: Math.min(50, Number(stats.KARMA || stats.karma) || 30),
-      };
-
-      return {
-        personality_type: (result.personality_type || 'INFJ').toUpperCase(),
-        personality_title: result.personality_title || 'The Advocate',
-        personality_desc: result.personality_desc || 'Karakter dalam pencarian jati diri.',
-        character_summary: result.character_summary || 'Karakter belum sepenuhnya terbaca oleh sistem.',
-        rationale: text.split('```').pop()?.trim() || '',
-        stats: normalizedStats,
-        starter_quest: result.starter_quest || { title: 'Mulai Petualangan', desc: 'Lakukan langkah pertama hari ini.', stat: 'JIWA' }
-      };
-    } catch (e: any) {
-      continue; 
+  try {
+    const text = await generateWithFallback(prompt);
+    let jsonStr = text.trim();
+    if (jsonStr.includes('```')) {
+      jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
     }
+    const result = JSON.parse(jsonStr);
+    
+    const stats = result.stats || {};
+    const normalizedStats = {
+      JIWA: Math.min(50, Number(stats.JIWA || stats.jiwa) || 30),
+      RAGA: Math.min(50, Number(stats.RAGA || stats.raga) || 30),
+      HARTA: Math.min(50, Number(stats.HARTA || stats.harta) || 30),
+      ILMU: Math.min(50, Number(stats.ILMU || stats.ilmu) || 30),
+      KARMA: Math.min(50, Number(stats.KARMA || stats.karma) || 30),
+    };
+
+    return {
+      personality_type: (result.personality_type || 'INFJ').toUpperCase(),
+      personality_title: result.personality_title || 'The Advocate',
+      personality_desc: result.personality_desc || 'Karakter dalam pencarian jati diri.',
+      character_summary: result.character_summary || 'Karakter belum sepenuhnya terbaca oleh sistem.',
+      rationale: text.split('```').pop()?.trim() || '',
+      stats: normalizedStats,
+      starter_quest: result.starter_quest || { title: 'Mulai Petualangan', desc: 'Lakukan langkah pertama hari ini.', stat: 'JIWA' }
+    };
+  } catch (e) {
+    console.error("Analysis Failure:", e);
   }
 
   return {
@@ -187,7 +207,6 @@ ${qaBlock}`;
 }
 
 export async function generateDailyQuests(stats: Stats, moodContext?: string, isWeeklyPool?: boolean): Promise<Quest[]> {
-  const aiClient = getClient();
   const moodPrompt = moodContext ? `\nMood User: "${moodContext}".` : '';
   const burnoutPrompt = isWeeklyPool ? `\nPENTING: Hasilkan 3 opsi misi WEEKLY progresif (butuh disiplin beberapa hari). XP: 1000-2000.` : '';
   
@@ -200,22 +219,16 @@ export async function generateDailyQuests(stats: Stats, moodContext?: string, is
 
   JSON format: [{id, title, desc, stat, xp, quest_type: "DAILY"|"WEEKLY"|"MONTHLY"}].`;
 
-  for (const modelName of MODELS_3X) {
-    try {
-      const response = await aiClient.models.generateContent({
-        model: modelName,
-        contents: prompt,
-      });
-      const text = response.text || '';
-      let jsonStr = text.trim();
-      if (jsonStr.includes('```')) {
-        jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
-      }
-      const quests = JSON.parse(jsonStr);
-      return quests.map((q: any) => ({ ...q, completed: false }));
-    } catch (e: any) {
-      continue;
+  try {
+    const text = await generateWithFallback(prompt);
+    let jsonStr = text.trim();
+    if (jsonStr.includes('```')) {
+      jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
     }
+    const quests = JSON.parse(jsonStr);
+    return quests.map((q: any) => ({ ...q, completed: false }));
+  } catch (e) {
+    console.error("Quest Generation Failure:", e);
   }
 
   return [
@@ -235,16 +248,15 @@ export async function verifyQuestCompletion(
   imageBase64?: string,
   imageMimeType?: string
 ): Promise<{ success: boolean; feedback: string }> {
-  const aiClient = getClient();
   let promptText = `Validator Mentor Arutha. Verifikasi misi: "${questTitle}". Bukti catatan: "${userNote}".`;
   if (imageBase64) {
     promptText += ` Terdapat lampiran foto bukti.`;
   }
   promptText += ` Output JSON {success: boolean, feedback: string}.`;
 
-  const parts: any[] = [{ text: promptText }];
+  const contents: any[] = [{ text: promptText }];
   if (imageBase64 && imageMimeType) {
-    parts.push({
+    contents.push({
       inlineData: {
         data: imageBase64,
         mimeType: imageMimeType
@@ -252,45 +264,32 @@ export async function verifyQuestCompletion(
     });
   }
 
-  for (const modelName of MODELS_3X) {
-    try {
-      const response = await aiClient.models.generateContent({
-        model: modelName,
-        contents: promptText, // Simplified for now, or keep parts if image is needed
-      });
-      const text = response.text || '';
-      let jsonStr = text.trim();
-      if (jsonStr.includes('```')) {
-        jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
-      }
-      return JSON.parse(jsonStr);
-    } catch (e: any) {
-      continue;
+  try {
+    const text = await generateWithFallback(contents);
+    let jsonStr = text.trim();
+    if (jsonStr.includes('```')) {
+      jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
     }
+    return JSON.parse(jsonStr);
+  } catch (e) {
+    console.error("Verification Failure:", e);
   }
   return { success: true, feedback: "Progres diterima otomatis." };
 }
 
 export async function generateRecoveryQuests(fatigueDays: number): Promise<Quest[]> {
-  const aiClient = getClient();
   const prompt = `Hasilkan 3 misi pemulihan ringan (berbeda dari biasanya) untuk user yang absen ${fatigueDays} hari. Gunakan variasi tema kegiatan (fisik, mental, atau sosial). Seed: ${Date.now()}. JSON format: [{id, title, desc, stat, xp: 150}].`;
 
-  for (const modelName of MODELS_3X) {
-    try {
-      const response = await aiClient.models.generateContent({
-        model: modelName,
-        contents: prompt,
-      });
-      const text = response.text || '';
-      let jsonStr = text.trim();
-      if (jsonStr.includes('```')) {
-        jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
-      }
-      const quests = JSON.parse(jsonStr);
-      return quests.map((q: any) => ({ ...q, completed: false }));
-    } catch (e: any) {
-      continue;
+  try {
+    const text = await generateWithFallback(prompt);
+    let jsonStr = text.trim();
+    if (jsonStr.includes('```')) {
+      jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
     }
+    const quests = JSON.parse(jsonStr);
+    return quests.map((q: any) => ({ ...q, completed: false }));
+  } catch (e) {
+    console.error("Recovery Quest Failure:", e);
   }
   return [{ id: 'rec-1', title: 'Hening Sejenak', desc: 'Duduk tenang selama 2 menit.', stat: 'JIWA', xp: 150, completed: false }];
 }
@@ -301,7 +300,6 @@ export async function chatWithArbiter(
   userStats: Stats, 
   username: string
 ): Promise<string> {
-  const aiClient = getClient();
   const systemPrompt = `
     Kamu adalah "THE ARBITER" - Teman pintar dan pemandu sistem di Arutha.
     User: ${username}. Stats: JIWA:${userStats.JIWA}, RAGA:${userStats.RAGA}, HARTA:${userStats.HARTA}, ILMU:${userStats.ILMU}, KARMA:${userStats.KARMA}.
@@ -321,18 +319,11 @@ export async function chatWithArbiter(
     { role: 'user', parts: [{ text: message }] }
   ];
 
-  for (const modelName of MODELS_3X) {
-    try {
-      const response = await aiClient.models.generateContent({
-        model: modelName,
-        contents: contents,
-      });
-      return response.text || '';
-    } catch (e) {
-      continue;
-    }
+  try {
+    return await generateWithFallback(contents);
+  } catch (e) {
+    return "Dimensi astral sedang terganggu.";
   }
-  return "Dimensi astral sedang terganggu.";
 }
 
 export interface MentalStateAnalysis {
@@ -352,7 +343,6 @@ export async function chatWithSoulGuard(
   messageCount: number,
   style: 'concise' | 'deep' = 'concise'
 ): Promise<string> {
-  const aiClient = getClient();
   const currentPhase = messageCount <= 3 ? 1 : messageCount <= 8 ? 2 : 3;
 
   const systemPrompt = `
@@ -365,7 +355,7 @@ export async function chatWithSoulGuard(
     - Gunakan teknik validasi (misal: "Aku mengerti itu terasa berat...", "Wajar jika kamu merasa begitu...").
     - Berikan ruang bagi user untuk bercerita tanpa merasa terintimidasi.
     - Gunakan bahasa yang manusiawi dan menyentuh hati. Gunakan sedikit metafora cahaya/jiwa hanya jika memperkuat rasa aman.
-    - Fokus utama: kesehatan mental, emosi, dan ketenangan batin.
+    - Fokus utama: kesehatan mental, emosi, and ketenangan batin.
 
     STRATEGI PERCAKAPAN:
     - Fase 1 (Pesan 1-3): Bangun rasa percaya. Dengarkan dan validasi dengan lembut.
@@ -382,29 +372,20 @@ export async function chatWithSoulGuard(
     { role: 'user', parts: [{ text: message }] }
   ];
 
-  for (const modelName of MODELS_3X) {
-    try {
-      const response = await aiClient.models.generateContent({
-        model: modelName,
-        contents: contents,
-        generationConfig: {
-          maxOutputTokens: style === 'concise' ? 150 : 500,
-          temperature: 0.7,
-        }
-      });
-      return response.text || '';
-    } catch (e) {
-      continue;
-    }
+  try {
+    return await generateWithFallback(contents, {
+      maxOutputTokens: style === 'concise' ? 150 : 500,
+      temperature: 0.7,
+    });
+  } catch (e) {
+    return "Koneksiku terganggu. Aku tetap di sini.";
   }
-  return "Koneksiku terganggu. Aku tetap di sini.";
 }
 
 export async function analyzeMentalState(
   conversationHistory: { role: 'user' | 'assistant'; content: string }[],
   username: string
 ): Promise<MentalStateAnalysis | null> {
-  const aiClient = getClient();
   const userMessages = conversationHistory.filter(m => m.role === 'user');
   if (userMessages.length < 4) return null;
 
@@ -414,21 +395,14 @@ export async function analyzeMentalState(
 
   const prompt = `Analis psikologis ARUTHA. JSON format. Percakapan: ${conversationText}. Output JSON {dominantCondition, riskLevel, primaryPattern, recommendation, emotionalKeywords, phase, confidence}.`;
 
-  for (const modelName of MODELS_3X) {
-    try {
-      const response = await aiClient.models.generateContent({
-        model: modelName,
-        contents: prompt,
-      });
-      const text = response.text || '';
-      let jsonStr = text.trim();
-      if (jsonStr.includes('```')) {
-        jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
-      }
-      return JSON.parse(jsonStr) as MentalStateAnalysis;
-    } catch (e) {
-      continue;
+  try {
+    const text = await generateWithFallback(prompt);
+    let jsonStr = text.trim();
+    if (jsonStr.includes('```')) {
+      jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
     }
+    return JSON.parse(jsonStr) as MentalStateAnalysis;
+  } catch (e) {
+    return null;
   }
-  return null;
 }
