@@ -14,7 +14,7 @@ interface DashboardHUDProps {
 
 export const DashboardHUD = React.memo(({ level, xp, streak, claimed, onClaimStreak, dominantColor }: DashboardHUDProps) => {
   return (
-    <div className="fixed top-16 md:top-0 left-0 md:left-[280px] right-0 z-40">
+    <div className="relative md:fixed md:top-0 md:left-20 xl:left-[280px] md:right-0 z-30 mb-8 md:mb-0 border-y border-rpg-border/30 md:border-t-0">
       <div className="absolute top-0 left-0 right-0 h-[2px] opacity-50 transition-all duration-1000" style={{ background: `linear-gradient(90deg, transparent, ${dominantColor}, transparent)` }} />
       
       <div className="bg-rpg-black/80 backdrop-blur-3xl border-b border-rpg-border/50 shadow-[0_10px_40px_rgba(0,0,0,0.6)]">

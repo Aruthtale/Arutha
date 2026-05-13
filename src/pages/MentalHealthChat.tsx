@@ -483,7 +483,7 @@ export const MentalHealthChat: React.FC<MentalHealthChatProps> = ({ userId, user
       <div className="flex-none bg-rpg-black/95 backdrop-blur-2xl border-t border-rpg-border/50 px-4 sm:px-6 py-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
         <div className="max-w-3xl mx-auto w-full">
           {/* Quick Prompts (shown when few messages) */}
-          {userMessageCount < 2 && (
+          {userMessageCount === 0 && input.trim() === '' && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
