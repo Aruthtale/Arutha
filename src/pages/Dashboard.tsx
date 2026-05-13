@@ -294,25 +294,33 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </section>
         </div>
 
-        <div className="space-y-8 min-w-0">
-          <section className={cn("glass-panel p-8 bg-gradient-to-b", auraTheme.bg, "to-rpg-black/60", getRankGlow(avgStats))}>
-            <StatRadar chartData={chartData} dominantColor={dominantColor} />
-            <div className="space-y-4">
+        <div className="space-y-6 min-w-0">
+          <section className={cn(
+            "glass-panel p-8 bg-gradient-to-b relative overflow-hidden group", 
+            auraTheme.bg, "to-rpg-black/80", getRankGlow(avgStats)
+          )}>
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 mix-blend-overlay pointer-events-none" />
+            
+            <div className="relative z-10 scale-105 mb-6">
+              <StatRadar chartData={chartData} dominantColor={dominantColor} />
+            </div>
+
+            <div className="space-y-5 relative z-10">
               {statsArray.map(dim => (
-                <div key={dim.name} className="space-y-1">
-                  <div className="flex justify-between text-[10px] font-black uppercase">
-                    <span>{dim.name} ({getDimensionRank(dim.val)})</span>
-                    <span>{dim.val}%</span>
+                <div key={dim.name} className="space-y-2 group/stat">
+                  <div className="flex justify-between items-end text-[10px] font-black uppercase tracking-widest">
+                    <span className="text-rpg-text/80 group-hover/stat:text-rpg-text transition-colors">{dim.name} <span className="opacity-50">({getDimensionRank(dim.val)})</span></span>
+                    <span className="text-xs text-rpg-text">{dim.val}%</span>
                   </div>
-                  <div className="h-1.5 bg-rpg-border/10 rounded-full overflow-hidden">
+                  <div className="h-2 w-full bg-rpg-black/50 rounded-full overflow-hidden p-[2px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)] border border-rpg-border/20">
                     <motion.div 
                       animate={{ width: `${dim.val}%` }} 
                       className={cn(
-                        "h-full transition-colors duration-500",
-                        dim.name === 'JIWA' ? 'bg-jiwa' : 
-                        dim.name === 'RAGA' ? 'bg-raga' : 
-                        dim.name === 'HARTA' ? 'bg-harta' : 
-                        dim.name === 'ILMU' ? 'bg-ilmu' : 'bg-karma'
+                        "h-full rounded-full transition-colors duration-500",
+                        dim.name === 'JIWA' ? 'bg-jiwa shadow-[0_0_10px_rgba(147,51,234,0.5)]' : 
+                        dim.name === 'RAGA' ? 'bg-raga shadow-[0_0_10px_rgba(225,29,72,0.5)]' : 
+                        dim.name === 'HARTA' ? 'bg-harta shadow-[0_0_10px_rgba(217,119,6,0.5)]' : 
+                        dim.name === 'ILMU' ? 'bg-ilmu shadow-[0_0_10px_rgba(37,99,235,0.5)]' : 'bg-karma shadow-[0_0_10px_rgba(5,150,105,0.5)]'
                       )} 
                     />
                   </div>
@@ -322,34 +330,46 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </section>
 
           {talents.length > 0 && (
-            <section className="glass-panel p-8 bg-rpg-card">
-              <h3 className="text-[10px] font-black uppercase text-rpg-text/40 mb-4">Bakat Aktif ({talents.length})</h3>
-              <div className="flex flex-wrap gap-2">
+            <section className="glass-panel p-6 bg-rpg-card border border-rpg-border/30 hover:border-rpg-border transition-colors">
+              <div className="flex items-center gap-2 mb-5">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-rpg-text/60">Bakat Aktif ({talents.length})</h3>
+              </div>
+              <div className="flex flex-wrap gap-2.5">
                 {talents.map(id => {
                   const t = TALENTS.find(x => x.id === id);
-                  return t ? <div key={id} className="px-3 py-1.5 rounded-lg bg-rpg-border/10 border border-rpg-border/50 text-[10px] font-black">{t.name}</div> : null;
+                  return t ? (
+                    <div key={id} className="px-3 py-2 rounded-xl bg-rpg-black/40 border border-rpg-border text-[10px] font-black text-rpg-text tracking-wider hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(255,255,255,0.05)] transition-all cursor-default">
+                      {t.name}
+                    </div>
+                  ) : null;
                 })}
               </div>
             </section>
           )}
 
-          <section className="glass-panel p-8 bg-rpg-card">
-             <div className="flex items-center gap-2 mb-6">
-               <TrendingUp className="w-4 h-4 text-ilmu" />
-               <h3 className="text-[10px] font-black uppercase text-rpg-text/40">History</h3>
+          <section className="glass-panel p-6 bg-rpg-card border border-rpg-border/30">
+             <div className="flex items-center justify-between mb-6">
+               <div className="flex items-center gap-2">
+                 <TrendingUp className="w-4 h-4 text-ilmu" />
+                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-rpg-text/60">History (30 Days)</h3>
+               </div>
              </div>
-             <div className="h-48">
+             <div className="h-48 w-full bg-black/5 rounded-2xl p-2 border border-black/10">
                {isChartVisible && statHistory.length > 0 && (
                  <ResponsiveContainer width="100%" height="100%">
                    <LineChart data={statHistory}>
                      <XAxis dataKey="created_at" hide />
-                     <YAxis hide domain={[0, 100]} />
-                     <Tooltip contentStyle={{ backgroundColor: '#111', borderRadius: '12px' }} />
-                     <Line type="monotone" dataKey="jiwa" stroke="var(--color-jiwa)" strokeWidth={2} dot={false} />
-                     <Line type="monotone" dataKey="raga" stroke="var(--color-raga)" strokeWidth={2} dot={false} />
-                     <Line type="monotone" dataKey="harta" stroke="var(--color-harta)" strokeWidth={2} dot={false} />
-                     <Line type="monotone" dataKey="ilmu" stroke="var(--color-ilmu)" strokeWidth={2} dot={false} />
-                     <Line type="monotone" dataKey="karma" stroke="var(--color-karma)" strokeWidth={2} dot={false} />
+                     <YAxis hide domain={['dataMin - 5', 'dataMax + 5']} />
+                     <Tooltip 
+                       contentStyle={{ backgroundColor: 'rgba(0,0,0,0.85)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#ffffff' }}
+                       itemStyle={{ fontSize: '10px', fontWeight: 'bold', color: '#ffffff' }}
+                     />
+                     <Line type="monotone" dataKey="jiwa" stroke="var(--dim-jiwa)" strokeWidth={2.5} dot={{ r: 0 }} activeDot={{ r: 4 }} />
+                     <Line type="monotone" dataKey="raga" stroke="var(--dim-raga)" strokeWidth={2.5} dot={{ r: 0 }} activeDot={{ r: 4 }} />
+                     <Line type="monotone" dataKey="harta" stroke="var(--dim-harta)" strokeWidth={2.5} dot={{ r: 0 }} activeDot={{ r: 4 }} />
+                     <Line type="monotone" dataKey="ilmu" stroke="var(--dim-ilmu)" strokeWidth={2.5} dot={{ r: 0 }} activeDot={{ r: 4 }} />
+                     <Line type="monotone" dataKey="karma" stroke="var(--dim-karma)" strokeWidth={2.5} dot={{ r: 0 }} activeDot={{ r: 4 }} />
                    </LineChart>
                  </ResponsiveContainer>
                )}

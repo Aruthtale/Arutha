@@ -20,9 +20,9 @@ export const StatRadar = React.memo(({ chartData, dominantColor }: StatRadarProp
       {isReady && (
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart cx="50%" cy="50%" outerRadius="70%" data={chartData}>
-            <PolarGrid stroke="rgba(255,255,255,0.1)" />
+            <PolarGrid stroke="var(--rpg-text)" strokeOpacity={0.15} />
             <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-            <PolarAngleAxis dataKey="subject" tick={{ fill: '#888', fontSize: 10, fontWeight: '900' }} />
+            <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--rpg-text)', opacity: 0.8, fontSize: 10, fontWeight: '900' }} />
             <Radar
               name="Player"
               dataKey="A"
