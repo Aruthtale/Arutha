@@ -15,13 +15,13 @@ export function getDimensionRank(value: number): string {
 
 export function getDimensionColor(dim: string): string {
   const colors: Record<string, string> = {
-    JIWA: '#C084FC',
-    RAGA: '#F43F5E',
-    HARTA: '#FACC15',
-    ILMU: '#3B82F6',
-    KARMA: '#4ADE80',
+    JIWA: '#ff0080',
+    RAGA: '#ff4d4d',
+    HARTA: '#ffcc00',
+    ILMU: '#00ccff',
+    KARMA: '#00ffaa',
   };
-  return colors[dim.toUpperCase()] || '#C084FC';
+  return colors[dim.toUpperCase()] || '#ff0080';
 }
 
 export function getRankGlow(avgStats: number): string {

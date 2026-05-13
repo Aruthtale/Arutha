@@ -131,9 +131,9 @@ export const Auth: React.FC<{ initialIsRegister?: boolean }> = ({ initialIsRegis
               />
             </div>
             <div className="relative group">
-              <VenusAndMars className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-rpg-text transition-colors" />
+              <VenusAndMars className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-rpg-text transition-colors pointer-events-none" />
               <select
-                className="w-full pl-12 pr-4 py-3 md:py-4 bg-rpg-black/50 border border-rpg-border/50 focus:border-rpg-primary rounded-xl md:rounded-2xl outline-none transition-all text-rpg-text appearance-none text-sm md:text-base"
+                className="w-full pl-12 pr-10 py-3 md:py-4 bg-rpg-black/50 border border-rpg-border/50 focus:border-rpg-primary rounded-xl md:rounded-2xl outline-none transition-all text-rpg-text appearance-none text-sm md:text-base cursor-pointer"
                 value={formData.gender}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
               >
@@ -141,6 +141,11 @@ export const Auth: React.FC<{ initialIsRegister?: boolean }> = ({ initialIsRegis
                 <option value="Female" className="bg-rpg-card">Female</option>
                 <option value="Other" className="bg-rpg-card">Other</option>
               </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-40">
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                </svg>
+              </div>
             </div>
           </div>
         )}
@@ -148,10 +153,14 @@ export const Auth: React.FC<{ initialIsRegister?: boolean }> = ({ initialIsRegis
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 md:py-4 bg-rpg-primary text-rpg-primary-text shadow-[rgba(var(--rpg-primary-rgb),0.2)]"
+          className="w-full flex items-center justify-center gap-3 md:gap-4 py-3 md:py-4 bg-rpg-primary text-rpg-primary-text rounded-xl md:rounded-2xl font-black tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-rpg-primary/10 text-sm md:text-base"
         >
-          {isRegister ? <UserPlus className="w-5 h-5" /> : <LogIn className="w-5 h-5" />}
-          {loading ? 'Processing...' : (isRegister ? 'CREATE CHARACTER' : 'ENTER WORLD')}
+          {loading ? (
+            <div className="w-5 h-5 border-2 border-rpg-primary-text/30 border-t-rpg-primary-text rounded-full animate-spin" />
+          ) : (
+            isRegister ? <UserPlus className="w-5 h-5" /> : <LogIn className="w-5 h-5" />
+          )}
+          {loading ? 'PROCESSING...' : (isRegister ? 'CREATE CHARACTER' : 'ENTER WORLD')}
         </button>
       </form>
 

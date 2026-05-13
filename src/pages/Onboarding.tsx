@@ -91,7 +91,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
   // --- Intro Screen ---
   if (step === -1) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-rpg-black relative overflow-hidden">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-rpg-black text-rpg-text relative overflow-hidden">
         <div className="absolute w-[500px] h-[500px] bg-jiwa/10 blur-[150px] rounded-full pointer-events-none" />
         
         <motion.div
@@ -102,17 +102,17 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
           <div className="mx-auto w-16 h-16 bg-white/5 rounded-full flex items-center justify-center border border-white/10 mb-6">
             <Sparkles className="w-8 h-8 text-jiwa" />
           </div>
-          <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight text-neutral-100">
+          <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight text-rpg-text">
             Soul Initialization
           </h1>
-          <div className="space-y-4 text-neutral-400 text-sm md:text-base leading-relaxed">
+          <div className="space-y-4 text-rpg-text/60 text-sm md:text-base leading-relaxed">
             <p>
               Setiap pahlawan memiliki awal ceritanya masing-masing. Sebelum kamu memulai petualangan ini, Arutha perlu memahami siapa kamu yang sebenarnya.
             </p>
             <p>
               Kami akan mengajukan 10 pertanyaan singkat untuk mengukur potensimu dalam 5 Dimensi Kehidupan: <strong className="text-jiwa">Jiwa</strong>, <strong className="text-raga">Raga</strong>, <strong className="text-harta">Harta</strong>, <strong className="text-ilmu">Ilmu</strong>, dan <strong className="text-karma">Karma</strong>.
             </p>
-            <p className="text-neutral-200 font-medium">
+            <p className="text-rpg-text font-medium">
               Jawablah sejujur mungkin. Tidak ada jawaban benar atau salah.
             </p>
           </div>
@@ -133,7 +133,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
   // --- Analyzing Screen ---
   if (isAnalyzing) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-rpg-black relative overflow-hidden">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-rpg-black text-rpg-text relative overflow-hidden">
         {/* Animated Background */}
         <motion.div
           animate={{ scale: [1, 1.5, 1], opacity: [0.1, 0.3, 0.1] }}
@@ -158,10 +158,10 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
           />
           
           <div className="text-center space-y-3">
-            <h2 className="text-2xl md:text-3xl font-black tracking-tight text-neutral-100 uppercase">
+            <h2 className="text-2xl md:text-3xl font-black tracking-tight text-rpg-text uppercase">
               Analyzing Soul Pattern...
             </h2>
-            <p className="text-neutral-500 text-sm max-w-sm">
+            <p className="text-rpg-text/40 text-sm max-w-sm">
               The Arbiter is reading your frequency to determine your initial RPG Profile.
             </p>
           </div>
@@ -172,7 +172,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
                 key={i}
                 animate={{ opacity: [0.2, 1, 0.2] }}
                 transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
-                className="w-2 h-2 rounded-full bg-white"
+                className="w-2 h-2 rounded-full bg-rpg-text"
               />
             ))}
           </div>
@@ -183,7 +183,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
 
   // --- Question Screen ---
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start md:justify-center p-6 bg-rpg-black relative overflow-y-auto overflow-x-hidden pt-32 pb-20 md:pt-24 md:pb-0">
+    <div className="min-h-screen flex flex-col items-center justify-start md:justify-center p-6 bg-rpg-black text-rpg-text relative overflow-y-auto overflow-x-hidden pt-32 pb-20 md:pt-24 md:pb-0">
       {/* Subtle background glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-jiwa/5 blur-[120px] rounded-full pointer-events-none" />
 
@@ -248,7 +248,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
                 onKeyDown={handleKeyDown}
                 placeholder="Ketik jawabanmu di sini..."
                 rows={3}
-                className="w-full p-4 md:p-6 pr-14 md:pr-16 bg-rpg-card border border-rpg-border focus:border-white/30 rounded-2xl outline-none transition-all text-white placeholder:text-neutral-600 resize-none text-base md:text-lg leading-relaxed"
+                className="w-full p-4 md:p-6 pr-14 md:pr-16 bg-rpg-card border border-rpg-border focus:border-rpg-primary/30 rounded-2xl outline-none transition-all text-rpg-text placeholder:text-rpg-text/20 resize-none text-base md:text-lg leading-relaxed"
               />
               <button
                 onClick={handleSubmit}
@@ -259,8 +259,8 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
               </button>
             </div>
 
-            <p className="text-xs text-neutral-700 text-center">
-              Tekan <kbd className="px-1.5 py-0.5 bg-rpg-card border border-rpg-border rounded text-neutral-500 font-mono">Enter</kbd> untuk lanjut
+            <p className="text-xs text-rpg-text/20 text-center">
+              Tekan <kbd className="px-1.5 py-0.5 bg-rpg-card border border-rpg-border rounded text-rpg-text/40 font-mono">Enter</kbd> untuk lanjut
             </p>
           </motion.div>
         </AnimatePresence>

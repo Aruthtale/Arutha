@@ -302,7 +302,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <span>{dim.val}%</span>
                   </div>
                   <div className="h-1.5 bg-rpg-border/10 rounded-full overflow-hidden">
-                    <motion.div animate={{ width: `${dim.val}%` }} className={cn("h-full", getDimensionColor(dim.name as any) === 'var(--color-jiwa)' ? 'bg-jiwa' : getDimensionColor(dim.name as any) === 'var(--color-raga)' ? 'bg-raga' : getDimensionColor(dim.name as any) === 'var(--color-harta)' ? 'bg-harta' : getDimensionColor(dim.name as any) === 'var(--color-ilmu)' ? 'bg-ilmu' : 'bg-karma')} />
+                    <motion.div 
+                      animate={{ width: `${dim.val}%` }} 
+                      className={cn(
+                        "h-full transition-colors duration-500",
+                        dim.name === 'JIWA' ? 'bg-jiwa' : 
+                        dim.name === 'RAGA' ? 'bg-raga' : 
+                        dim.name === 'HARTA' ? 'bg-harta' : 
+                        dim.name === 'ILMU' ? 'bg-ilmu' : 'bg-karma'
+                      )} 
+                    />
                   </div>
                 </div>
               ))}
