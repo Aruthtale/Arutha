@@ -170,10 +170,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const target = e.target;
+    const file = target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         alert("Ukuran foto maksimal 5MB.");
+        target.value = '';
         return;
       }
       const reader = new FileReader();
@@ -181,6 +183,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         const result = reader.result as string;
         setPhotoData({ base64: result.split(',')[1], mimeType: result.split(';')[0].split(':')[1] });
         setPhotoPreview(result);
+        target.value = '';
       };
       reader.readAsDataURL(file);
     }
