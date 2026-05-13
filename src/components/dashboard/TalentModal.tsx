@@ -68,7 +68,7 @@ export const TalentModal = ({
                   className={cn(
                     "w-24 h-28 md:w-36 md:h-40 rounded-3xl border-2 flex flex-col items-center justify-center gap-1 transition-all cursor-pointer relative overflow-hidden p-2",
                     colors,
-                    replacingTalentId === talentId && talentId ? "border-rpg-primary ring-4 ring-rpg-primary/20 bg-rpg-primary text-rpg-primary-text" : ""
+                    replacingTalentId === talentId && talentId ? "ring-4 ring-rpg-primary/50 border-rpg-primary" : ""
                   )}
                 >
                   {talent ? (
@@ -137,21 +137,21 @@ export const TalentModal = ({
                   className={cn(
                     "glass-panel p-6 border transition-all cursor-pointer text-left space-y-4 group relative overflow-hidden",
                     colors,
-                    selectedNewTalentId === t.id ? "bg-rpg-primary text-rpg-primary-text border-rpg-primary ring-4 ring-rpg-primary/20" : ""
+                    selectedNewTalentId === t.id ? "ring-4 ring-rpg-primary/50 border-rpg-primary bg-white/10" : ""
                   )}
                 >
                   <div className="flex justify-between items-start">
-                    <div className={cn("text-4xl group-hover:scale-125 transition-transform duration-500", selectedNewTalentId === t.id ? "text-black" : "")}>
+                    <div className={cn("text-4xl group-hover:scale-125 transition-transform duration-500", selectedNewTalentId === t.id ? "scale-110" : "")}>
                       {t.rarity === 'Legendary' ? '🔱' : t.rarity === 'Epic' ? '💎' : t.rarity === 'Rare' ? '⚔️' : '✨'}
                     </div>
-                    <div className={cn("px-2 py-0.5 rounded text-[8px] font-black tracking-widest uppercase", selectedNewTalentId === t.id ? "bg-black text-rpg-text" : badgeColors)}>
+                    <div className={cn("px-2 py-0.5 rounded text-[8px] font-black tracking-widest uppercase", selectedNewTalentId === t.id ? "bg-rpg-primary text-rpg-primary-text" : badgeColors)}>
                       {t.rarity}
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <h4 className="font-black italic text-xl leading-tight uppercase tracking-tighter">{t.name}</h4>
-                    <p className={cn("text-[11px] leading-relaxed font-medium", selectedNewTalentId === t.id ? "text-black/80" : "text-neutral-400")}>
+                    <p className={cn("text-[11px] leading-relaxed font-medium", selectedNewTalentId === t.id ? "text-rpg-text" : "text-neutral-400")}>
                       {t.desc}
                     </p>
                   </div>
@@ -163,8 +163,8 @@ export const TalentModal = ({
                         selectedNewTalentId === t.id ? "bg-black/10 border border-black/10" : "bg-white/5 border border-white/5"
                       )}>
                         <div className="flex items-center gap-2">
-                          <div className={cn("w-1.5 h-1.5 rounded-full", selectedNewTalentId === t.id ? "bg-black" : "bg-jiwa")}></div>
-                          <span className={cn("text-[10px] font-black uppercase tracking-wider", selectedNewTalentId === t.id ? "text-rpg-primary-text/60" : "text-rpg-text/40")}>Stat Buff</span>
+                          <div className={cn("w-1.5 h-1.5 rounded-full", selectedNewTalentId === t.id ? "bg-white" : "bg-jiwa")}></div>
+                          <span className={cn("text-[10px] font-black uppercase tracking-wider", selectedNewTalentId === t.id ? "text-white/60" : "text-rpg-text/40")}>Stat Buff</span>
                         </div>
                         <span className={cn("text-xs font-black", selectedNewTalentId === t.id ? "text-rpg-primary-text" : "text-rpg-text")}>
                           +{Math.round(t.statBoost.value * 100)}% {t.statBoost.stat}
@@ -194,7 +194,7 @@ export const TalentModal = ({
           <div className="flex flex-col md:flex-row justify-center gap-4 pt-8">
             <button 
               onClick={onClose}
-              className="px-8 py-4 bg-rpg-border/5 border border-rpg-border/50 text-rpg-text/40 rounded-2xl font-black italic tracking-widest hover:bg-white/10 transition-all order-3 md:order-1"
+              className="px-8 py-4 bg-rpg-border/5 border border-rpg-border/50 text-rpg-text/60 rounded-2xl font-black italic tracking-widest hover:bg-white/10 hover:text-rpg-text transition-all order-3 md:order-1"
             >
               KEMBALI
             </button>
@@ -217,7 +217,7 @@ export const TalentModal = ({
                   onClose();
                 }
               }}
-              className="px-8 py-4 bg-rpg-border/5 border border-rpg-border/50 text-rpg-text/40 rounded-2xl font-black italic tracking-widest hover:bg-red-500/20 hover:text-red-500 hover:border-red-500/50 transition-all order-2 md:order-3"
+              className="px-8 py-4 bg-rpg-border/5 border border-rpg-border/50 text-rpg-text/60 rounded-2xl font-black italic tracking-widest hover:bg-red-500/20 hover:text-red-500 hover:border-red-500/50 transition-all order-2 md:order-3"
             >
               LEWATI PILIHAN
             </button>

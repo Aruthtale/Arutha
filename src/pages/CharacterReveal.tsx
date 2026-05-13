@@ -120,26 +120,26 @@ export const CharacterReveal: React.FC<CharacterRevealProps> = ({ analysis, onCo
               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 text-center mb-4">
                 Distribusi Stat Awal
               </h3>
-              <div className="w-full relative block min-h-[250px] min-w-0">
-                {isMounted && (
-                  <ResponsiveContainer width="100%" aspect={1} debounce={200}>
-                    <RadarChart cx="50%" cy="50%" outerRadius="75%" data={chartData}>
-                    <PolarGrid stroke="#333" />
-                    <PolarAngleAxis 
-                      dataKey="subject" 
-                      tick={{ fill: '#888', fontSize: 11, fontWeight: 'bold' }} 
-                    />
-                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                    <Radar
-                      name="Player"
-                      dataKey="A"
-                      stroke="var(--rpg-primary)"
-                      fill="var(--rpg-primary)"
-                      fillOpacity={0.2}
-                      strokeWidth={2}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
+              <div className="w-full h-[300px] md:h-[350px] relative">
+                {isMounted && phase >= 1 && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
+                      <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                      <PolarAngleAxis 
+                        dataKey="subject" 
+                        tick={{ fill: '#888', fontSize: 11, fontWeight: 'bold' }} 
+                      />
+                      <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                      <Radar
+                        name="Player"
+                        dataKey="A"
+                        stroke="var(--rpg-primary)"
+                        fill="var(--rpg-primary)"
+                        fillOpacity={0.2}
+                        strokeWidth={2}
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
                 )}
               </div>
               

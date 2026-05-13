@@ -48,12 +48,13 @@ export interface OnboardingAnswer {
 }
 
 const MODELS_STABLE = [
-  'gemini-3-flash-preview',
+  'gemini-1.5-flash',
+  'gemini-1.5-flash-latest',
+  'gemini-1.5-pro',
+  'gemini-1.5-pro-latest',
   'gemini-3.1-flash-lite',
   'gemini-3.1-flash-lite-preview',
-  'gemini-1.5-pro-latest',
-  'gemini-1.5-flash-latest',
-  'gemini-3.1-pro-preview',
+  'gemini-3-flash-preview',
 ];
 
 async function delay(ms: number) {
@@ -67,8 +68,8 @@ async function generateWithFallback(prompt: string | any[], generationConfig?: a
   const aiClient = getClient();
   
   for (const modelName of MODELS_STABLE) {
-    let retries = 3;
-    let backoff = 1000;
+    let retries = 2; // Reduced retries per model to rotate faster
+    let backoff = 500;
     
     while (retries > 0) {
       try {
@@ -84,26 +85,33 @@ async function generateWithFallback(prompt: string | any[], generationConfig?: a
         }
         return text;
       } catch (e: any) {
-        console.warn(`Gemini Warning with ${modelName} (Retries left: ${retries - 1}):`, e.message || e);
-        
-        // Retry on Service Unavailable (503) or Rate Limit (429) or Overloaded
         const status = e.status || 0;
         const message = (e.message || "").toLowerCase();
-        const isRetryable = status === 503 || status === 429 || message.includes('overloaded') || message.includes('high demand');
         
-        if (isRetryable) {
-          retries--;
-          await delay(backoff);
-          backoff *= 2; // Exponential backoff
-          continue;
-        }
-        
+        console.warn(`Gemini Log [${modelName}]: ${status} - ${message.substring(0, 50)}...`);
+
         // If it's a 404 (Not Found), move to next model immediately
         if (status === 404 || message.includes('not found')) {
           break;
         }
+
+        // If it's a 429 (Quota Exhausted), move to next model immediately
+        if (status === 429 || message.includes('quota')) {
+          console.warn(`Model ${modelName} is at quota. Trying next fallback...`);
+          break; 
+        }
+
+        // Retry on Service Unavailable (503) or Overloaded
+        const isRetryable = status === 503 || message.includes('overloaded') || message.includes('high demand');
         
-        // For other errors, log and try next model
+        if (isRetryable && retries > 1) {
+          retries--;
+          await delay(backoff);
+          backoff *= 2;
+          continue;
+        }
+        
+        // For other errors or if out of retries, try next model
         break;
       }
     }
