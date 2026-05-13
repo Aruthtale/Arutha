@@ -16,6 +16,27 @@ interface AIChatWidgetProps {
   stats: Stats;
 }
 
+const TypewriterText = ({ text, animate }: { text: string; animate: boolean }) => {
+  const [displayedText, setDisplayedText] = useState(animate ? '' : text);
+  
+  useEffect(() => {
+    if (!animate) {
+      setDisplayedText(text);
+      return;
+    }
+    let i = 0;
+    setDisplayedText('');
+    const timer = setInterval(() => {
+      setDisplayedText(text.slice(0, i + 1));
+      i++;
+      if (i >= text.length) clearInterval(timer);
+    }, 15);
+    return () => clearInterval(timer);
+  }, [text, animate]);
+
+  return <span>{displayedText}</span>;
+};
+
 export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ userId, username, stats }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -152,7 +173,11 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ userId, username, st
                       ? "bg-rpg-primary text-rpg-primary-text rounded-tr-none font-bold" 
                       : "bg-rpg-border/20 border border-rpg-border/50 text-rpg-text rounded-tl-none font-medium"
                   )}>
-                    {msg.content}
+                    {msg.role === 'assistant' ? (
+                      <TypewriterText text={msg.content} animate={i === messages.length - 1} />
+                    ) : (
+                      msg.content
+                    )}
                   </div>
                   <div className="mt-3 flex items-center gap-2 opacity-30">
                     {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}

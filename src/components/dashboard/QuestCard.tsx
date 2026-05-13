@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Star, Shield, Globe, Calendar } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn, getDimensionColor } from '../../lib/utils';
 
 type Dimension = 'JIWA' | 'RAGA' | 'HARTA' | 'ILMU' | 'KARMA';
 
@@ -35,7 +35,8 @@ export const QuestCard = React.memo(({ quest, onAction, isGlobal }: QuestCardPro
       <motion.div 
         initial={{ opacity: 0, y: 20 }} 
         animate={{ opacity: 1, y: 0 }}
-        className="group relative overflow-hidden rounded-[32px] bg-gradient-to-br from-amber-500/20 to-rpg-black border border-amber-500/30 p-8 shadow-2xl shadow-amber-500/5"
+        className="group relative overflow-hidden rounded-[32px] bg-gradient-to-br from-amber-500/20 to-rpg-black border border-amber-500/30 p-8 shadow-2xl shadow-amber-500/5 quest-card"
+        style={{ '--glow-color': 'rgba(245, 158, 11, 0.4)' } as React.CSSProperties}
       >
         <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-3xl rounded-full" />
         <div className="relative z-10 flex flex-col h-full">
@@ -49,7 +50,7 @@ export const QuestCard = React.memo(({ quest, onAction, isGlobal }: QuestCardPro
               <span className="text-2xl font-black text-rpg-text font-mono">+{quest.xp} XP</span>
             </div>
           </div>
-          <h4 className="text-xl md:text-2xl font-black text-rpg-text mb-3 tracking-tighter italic">"{quest.title}"</h4>
+          <h4 className="text-xl md:text-3xl font-serif font-black text-rpg-text mb-3 tracking-tighter italic">"{quest.title}"</h4>
           <p className="text-neutral-400 text-sm mb-8 leading-relaxed font-medium">{quest.desc}</p>
           <button 
             onClick={() => onAction(quest.id)}
@@ -68,9 +69,10 @@ export const QuestCard = React.memo(({ quest, onAction, isGlobal }: QuestCardPro
         initial={{ opacity: 0, x: -20 }} 
         animate={{ opacity: 1, x: 0 }}
         className={cn(
-          "glass-panel p-6 md:p-8 border-l-4 group relative overflow-hidden",
+          "quest-card p-6 md:p-8 border-l-4 group relative overflow-hidden",
           quest.completed ? "border-neutral-600 opacity-60 grayscale" : "border-jiwa"
         )}
+        style={{ '--glow-color': getDimensionColor(quest.stat) } as React.CSSProperties}
       >
         <div className="flex justify-between items-start mb-6">
           <span className="text-[10px] font-black uppercase tracking-widest text-jiwa bg-jiwa/10 px-3 py-1 rounded-lg">
@@ -82,7 +84,7 @@ export const QuestCard = React.memo(({ quest, onAction, isGlobal }: QuestCardPro
           </div>
         </div>
 
-        <h4 className="text-xl md:text-2xl font-black italic mb-3 text-rpg-text">"{quest.title}"</h4>
+        <h4 className="text-2xl md:text-3xl font-serif font-black italic mb-3 text-rpg-text">"{quest.title}"</h4>
         <p className="text-sm text-neutral-400 mb-6 font-medium leading-relaxed">{quest.desc}</p>
 
         {quest.steps && (
@@ -119,11 +121,11 @@ export const QuestCard = React.memo(({ quest, onAction, isGlobal }: QuestCardPro
     <motion.div 
       initial={{ opacity: 0, y: 20 }} 
       animate={{ opacity: 1, y: 0 }} 
-      whileHover={{ y: -5 }}
       className={cn(
-        "glass-panel p-6 md:p-8 border-l-4 group transition-all flex flex-col h-full",
-        quest.completed ? "opacity-60 grayscale border-rpg-border" : "border-jiwa hover:border-rpg-primary shadow-xl hover:shadow-jiwa/5"
+        "quest-card p-6 md:p-8 border-l-4 group flex flex-col h-full",
+        quest.completed ? "opacity-60 grayscale border-rpg-border" : "border-jiwa hover:border-rpg-primary"
       )}
+      style={{ '--glow-color': getDimensionColor(quest.stat) } as React.CSSProperties}
     >
       <div className="flex justify-between items-start mb-5">
         <span className="text-xs font-black uppercase tracking-widest text-rpg-text/60 bg-rpg-border/20 px-3 py-1.5 rounded-lg">{quest.stat}</span>
@@ -133,7 +135,7 @@ export const QuestCard = React.memo(({ quest, onAction, isGlobal }: QuestCardPro
         </div>
       </div>
 
-      <h4 className="text-2xl md:text-3xl font-black italic mb-4 group-hover:text-jiwa text-rpg-text transition-colors leading-tight">
+      <h4 className="text-3xl md:text-4xl font-serif font-black italic mb-4 group-hover:text-jiwa text-rpg-text transition-colors leading-tight">
         {quest.title}
       </h4>
       <p className="text-sm md:text-base text-rpg-text/60 mb-8 leading-relaxed flex-1 font-medium">
