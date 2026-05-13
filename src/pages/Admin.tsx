@@ -95,7 +95,11 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
     setActionLoading(userId + '-reset');
     const { error } = await supabase
       .from('arutha_user')
-      .update({ last_name_change: null, name_change_count: 0 })
+      .update({ 
+        last_name_change: null, 
+        name_change_count: 0,
+        updated_at: new Date().toISOString()
+      })
       .eq('supabase_id', userId);
     
     if (!error) {
@@ -128,7 +132,11 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
 
         const { error } = await supabase
           .from('arutha_user')
-          .update({ xp: nextXp, level: nextLevel })
+          .update({ 
+            xp: nextXp, 
+            level: nextLevel,
+            updated_at: new Date().toISOString()
+          })
           .eq('supabase_id', userId);
         
         if (!error) {
@@ -157,7 +165,11 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
         setActionLoading(userId + '-reset-lvl');
         const { error } = await supabase
           .from('arutha_user')
-          .update({ level: 1, xp: 0 })
+          .update({ 
+            level: 1, 
+            xp: 0,
+            updated_at: new Date().toISOString()
+          })
           .eq('supabase_id', userId);
         
         if (!error) {
@@ -172,7 +184,10 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
     setActionLoading(userId + '-lvl');
     const { error } = await supabase
       .from('arutha_user')
-      .update({ level: currentLevel + 1 })
+      .update({ 
+        level: currentLevel + 1,
+        updated_at: new Date().toISOString()
+      })
       .eq('supabase_id', userId);
     
     if (!error) {
@@ -377,7 +392,11 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
           nextXp -= (nextLevel * 1000);
           nextLevel += 1;
         }
-        await supabase.from('arutha_user').update({ xp: nextXp, level: nextLevel }).eq('id', userId);
+        await supabase.from('arutha_user').update({ 
+          xp: nextXp, 
+          level: nextLevel,
+          updated_at: new Date().toISOString()
+        }).eq('id', userId);
         
         // Also update stats in character_profile
         const { data: profile } = await supabase.from('character_profile').select('id, jiwa, raga, harta, ilmu, karma').eq('user_id', userId).single();

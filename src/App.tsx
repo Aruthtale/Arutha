@@ -2,7 +2,7 @@ import React, { useEffect, Suspense, lazy } from 'react';
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { AnimatePresence, motion, LazyMotion, domMax } from 'framer-motion';
-import { Star } from 'lucide-react';
+import { Star, Loader2 } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { isAdmin } from './lib/config';
 import { cn } from './lib/utils';
@@ -180,7 +180,28 @@ export default function App() {
                 lastNameChange={lastNameChange} onUpdateName={handleUpdateName} onLogout={() => supabase.auth.signOut()} onBack={() => setPage('DASHBOARD')} setPage={setPage}
               />
             )}
-            {page === 'PROFILE' && characterAnalysis && <Profile name={name} level={level} xp={xp} stats={stats} analysis={characterAnalysis} onBack={() => setPage('DASHBOARD')} talents={talents} statHistory={statHistory} zodiac={userContext.zodiac} usia={userContext.usia} />}
+            {page === 'PROFILE' && (
+          characterAnalysis ? (
+            <Profile 
+              userId={dbUserId || ''}
+              name={name} 
+              level={level} 
+              xp={xp} 
+              stats={stats} 
+              analysis={characterAnalysis} 
+              onBack={() => setPage('DASHBOARD')} 
+              talents={talents} 
+              statHistory={statHistory} 
+              zodiac={userContext.zodiac} 
+              usia={userContext.usia} 
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+              <Loader2 className="w-10 h-10 animate-spin text-jiwa" />
+              <p className="text-rpg-text/60 font-black uppercase tracking-widest text-xs">Menyelaraskan Dimensi...</p>
+            </div>
+          )
+        )}
             {page === 'LEADERBOARD' && <Leaderboard currentUserId={dbUserId || ''} onBack={() => setPage(session ? 'DASHBOARD' : 'LANDING')} />}
             {page === 'ADMIN' && isAdmin(session?.user.email) && <Admin onBack={() => setPage('DASHBOARD')} />}
             {page === 'CODEX' && <Codex onBack={() => setPage('DASHBOARD')} />}

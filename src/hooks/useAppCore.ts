@@ -109,6 +109,8 @@ export function useAppCore() {
       if (newTalentChoicesAvailable !== undefined) updateData.talent_choices_available = newTalentChoicesAvailable;
       if (newTotalChoicesGranted !== undefined) updateData.total_choices_granted = newTotalChoicesGranted;
       
+      updateData.updated_at = new Date().toISOString();
+      
       const { error } = await supabase.from('arutha_user').update(updateData).eq('supabase_id', session.user.id);
       if (error) console.error("Sync Progress Error (arutha_user):", error);
 
@@ -149,12 +151,34 @@ export function useAppCore() {
 
     try {
       const userEmail = currentSession.user.email || `user_${currentSession.user.id.slice(0, 8)}@arutha.local`;
-      let { data: userData } = await supabase.from('arutha_user').select('*').eq('supabase_id', currentSession.user.id).maybeSingle();
+      const USER_COLUMNS = 'id, supabase_id, email, username, level, xp, streak, last_streak_date, name_change_count, last_name_change, last_evolution_date, refresh_count, talents, last_weekly_reset, available_weekly_quests, active_weekly_quests, talent_choices_available, total_choices_granted, pending_talent_pool, usia, gender, birth_date, zodiac, last_quest_update, active_quests';
+      
+      let { data: userData, error: fetchError } = await supabase.from('arutha_user').select(USER_COLUMNS).eq('supabase_id', currentSession.user.id).maybeSingle();
+
+      if (fetchError) {
+        console.error("Initialize User Fetch Error:", fetchError);
+        // Attempt a very limited fields fetch as ultimate fallback
+        const { data: fallbackData } = await supabase.from('arutha_user').select('id, username, level, xp').eq('supabase_id', currentSession.user.id).maybeSingle();
+        if (fallbackData) userData = fallbackData as any;
+      }
 
       if (!userData) {
-        const { data: newList } = await supabase.from('arutha_user').insert({
-          supabase_id: currentSession.user.id, email: userEmail, username: displayName, level: 1, xp: 0, streak: 0
+        const now = new Date().toISOString();
+        const { data: newList, error: insertError } = await supabase.from('arutha_user').insert({
+          supabase_id: currentSession.user.id, 
+          email: userEmail, 
+          username: displayName, 
+          level: 1, 
+          xp: 0, 
+          streak: 0,
+          created_at: now,
+          updated_at: now
         }).select();
+        
+        if (insertError) {
+          console.error("User Creation Error:", insertError);
+          throw insertError;
+        }
         userData = newList?.[0];
       }
 
@@ -462,14 +486,15 @@ export function useAppCore() {
         const aiQuests = await generateDailyQuests(analysis.stats, undefined, false);
         setQuests(aiQuests);
         
-        const now = getLocalTimestamp();
+        const now = new Date().toISOString();
         const { error: questError } = await supabase.from('arutha_user').update({ 
           active_quests: aiQuests, 
           last_quest_update: now,
           last_refresh_date: now,
           last_evolution_date: now,
           talent_choices_available: initialTalentChoices,
-          total_choices_granted: 1
+          total_choices_granted: 1,
+          updated_at: now
         }).eq('id', userData.id);
 
         if (questError) {

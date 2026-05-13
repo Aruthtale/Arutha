@@ -24,29 +24,40 @@ interface ProfileProps {
   statHistory?: any[];
   zodiac?: string;
   usia?: number;
+  userId: string;
 }
 
-export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analysis, onBack, talents, statHistory, zodiac, usia }) => {
+export const Profile: React.FC<ProfileProps> = ({ userId, name, level, xp, stats, analysis, onBack, talents, statHistory, zodiac, usia }) => {
   const [reflections, setReflections] = React.useState<any[]>([]);
+  const [isLoadingReflections, setIsLoadingReflections] = React.useState(true);
   
   const zodiacInfo = React.useMemo(() => {
-    return ZODIACS.find(z => z.name === zodiac);
+    if (!zodiac) return null;
+    return ZODIACS.find(z => z.id === zodiac.toLowerCase() || z.name.toLowerCase() === zodiac.toLowerCase());
   }, [zodiac]);
 
   React.useEffect(() => {
     const fetchReflections = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const { data } = await supabase
-        .from('dimension_reflections')
-        .select('reflection_text, created_at')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-      if (data) setReflections(data);
+      if (!userId) return;
+      setIsLoadingReflections(true);
+      try {
+        const { data, error } = await supabase
+          .from('dimension_reflections')
+          .select('reflection_text, created_at')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(5);
+        
+        if (error) throw error;
+        if (data) setReflections(data);
+      } catch (err) {
+        console.error("Error fetching reflections:", err);
+      } finally {
+        setIsLoadingReflections(false);
+      }
     };
     fetchReflections();
-  }, []);
+  }, [userId]);
 
   const achievements = React.useMemo(() => [
     { title: "Langkah Pertama", desc: "Menyelesaikan quest perdana", icon: <Zap className="w-4 h-4" />, color: "bg-jiwa/20 text-jiwa" },
@@ -55,11 +66,11 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
   ], []);
 
   const RPG_ATTRIBUTES = React.useMemo(() => [
-    { label: 'Spirit', dim: 'JIWA', val: stats.JIWA, icon: <Brain />, color: 'text-jiwa', bg: 'bg-jiwa/10' },
-    { label: 'Vitality', dim: 'RAGA', val: stats.RAGA, icon: <Dumbbell />, color: 'text-raga', bg: 'bg-raga/10' },
-    { label: 'Fortune', dim: 'HARTA', val: stats.HARTA, icon: <Coins />, color: 'text-harta', bg: 'bg-harta/10' },
-    { label: 'Wisdom', dim: 'ILMU', val: stats.ILMU, icon: <BookOpen />, color: 'text-ilmu', bg: 'bg-ilmu/10' },
-    { label: 'Empathy', dim: 'KARMA', val: stats.KARMA, icon: <Users />, color: 'text-karma', bg: 'bg-karma/10' },
+    { id: 'JIWA', label: 'Spirit', val: stats.JIWA, icon: <Brain />, color: 'text-jiwa', bg: 'bg-jiwa/10' },
+    { id: 'RAGA', label: 'Vitality', val: stats.RAGA, icon: <Dumbbell />, color: 'text-raga', bg: 'bg-raga/10' },
+    { id: 'HARTA', label: 'Fortune', val: stats.HARTA, icon: <Coins />, color: 'text-harta', bg: 'bg-harta/10' },
+    { id: 'ILMU', label: 'Wisdom', val: stats.ILMU, icon: <BookOpen />, color: 'text-ilmu', bg: 'bg-ilmu/10' },
+    { id: 'KARMA', label: 'Empathy', val: stats.KARMA, icon: <Users />, color: 'text-karma', bg: 'bg-karma/10' },
   ], [stats]);
 
   const IconBox = ({ icon, className, size = "w-4 h-4" }: { icon: React.ReactElement, className?: string, size?: string }) => (
@@ -86,9 +97,7 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
 
         {/* HERO PROFILE CARD */}
         <section className="relative rounded-[40px] bg-gradient-to-br from-rpg-card to-rpg-black border border-rpg-border/50 p-8 md:p-12 shadow-2xl group">
-          {/* Background Aura Container (to keep overflow-hidden for the glow only) */}
           <div className="absolute inset-0 rounded-[40px] overflow-hidden pointer-events-none">
-            {/* Dynamic Aura Background */}
             <div className={cn(
               "absolute top-0 right-0 w-[500px] h-[500px] blur-[150px] rounded-full -mr-32 -mt-32 transition-colors duration-1000",
               stats.JIWA >= 70 ? "bg-jiwa/20" : 
@@ -99,7 +108,6 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
           </div>
           
           <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-10">
-            {/* AVATAR SYSTEM */}
             <div className="relative shrink-0 -mt-20 md:mt-0">
               <div className="w-32 h-32 md:w-44 md:h-44 rounded-[48px] bg-gradient-to-tr from-jiwa via-ilmu to-raga rotate-6 flex items-center justify-center font-black text-4xl md:text-6xl shadow-2xl shadow-jiwa/20 border-4 border-rpg-black relative">
                 <span className="drop-shadow-2xl">{name.substring(0, 2).toUpperCase()}</span>
@@ -128,7 +136,10 @@ export const Profile: React.FC<ProfileProps> = ({ name, level, xp, stats, analys
                     )}
                     <div className="px-3 py-1 md:px-4 md:py-1.5 bg-jiwa text-white text-[8px] md:text-[10px] font-black rounded-full tracking-widest uppercase shadow-lg shadow-jiwa/20 whitespace-nowrap border border-white/20">
                       {(() => {
-                        const topStat = Object.entries(stats).sort((a,b) => b[1]-a[1])[0][0];
+                        const entries = Object.entries(stats || {});
+                        if (entries.length === 0) return 'UNKNOWN ENTITY';
+                        const sorted = entries.sort((a,b) => (b[1] as number) - (a[1] as number));
+                        const topStat = sorted[0][0];
                         const titles: Record<string, string> = {
                           JIWA: 'SOUL ASCENDANT',
                           RAGA: 'VITALITY PARAGON',

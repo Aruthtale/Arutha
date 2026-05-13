@@ -60,7 +60,8 @@ export const checkAndApplyDecay = async (userId: string): Promise<DecayResult> =
     // Update user di DB
     const updateData: any = {
       last_active_date: now.toISOString(),
-      fatigue_days: newFatigueDays
+      fatigue_days: newFatigueDays,
+      updated_at: now.toISOString()
     };
     
     await supabase.from('arutha_user').update(updateData).eq('id', userId);
@@ -97,6 +98,7 @@ export const checkAndApplyDecay = async (userId: string): Promise<DecayResult> =
 export const resetFatigue = async (userId: string) => {
   await supabase.from('arutha_user').update({
     fatigue_days: 0,
-    last_active_date: new Date().toISOString()
+    last_active_date: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   }).eq('id', userId);
 };
