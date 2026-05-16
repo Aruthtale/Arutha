@@ -22,6 +22,7 @@ interface AppState {
   nameChangeCount: number;
   lastNameChange: string | null;
   talents: string[];
+  achievements: string[];
   talentChoicesAvailable: number;
   totalChoicesGranted: number;
   
@@ -36,6 +37,7 @@ interface AppState {
   setNameChangeCount: (count: number | ((prev: number) => number)) => void;
   setLastNameChange: (date: string | null | ((prev: string | null) => string | null)) => void;
   setTalents: (talents: string[] | ((prev: string[]) => string[])) => void;
+  setAchievements: (achievements: string[] | ((prev: string[]) => string[])) => void;
   setTalentChoicesAvailable: (count: number | ((prev: number) => number)) => void;
   setTotalChoicesGranted: (count: number | ((prev: number) => number)) => void;
 
@@ -119,6 +121,7 @@ export const useStore = create<AppState>((set) => ({
   nameChangeCount: 0,
   lastNameChange: null,
   talents: [],
+  achievements: [],
   talentChoicesAvailable: 0,
   totalChoicesGranted: 0,
 
@@ -133,6 +136,7 @@ export const useStore = create<AppState>((set) => ({
   setNameChangeCount: (nameChangeCount) => set((state) => ({ nameChangeCount: typeof nameChangeCount === 'function' ? nameChangeCount(state.nameChangeCount) : nameChangeCount })),
   setLastNameChange: (lastNameChange) => set((state) => ({ lastNameChange: typeof lastNameChange === 'function' ? lastNameChange(state.lastNameChange) : lastNameChange })),
   setTalents: (talents) => set((state) => ({ talents: typeof talents === 'function' ? talents(state.talents) : talents })),
+  setAchievements: (achievements) => set((state) => ({ achievements: typeof achievements === 'function' ? achievements(state.achievements) : achievements })),
   setTalentChoicesAvailable: (talentChoicesAvailable) => set((state) => ({ talentChoicesAvailable: typeof talentChoicesAvailable === 'function' ? talentChoicesAvailable(state.talentChoicesAvailable) : talentChoicesAvailable })),
   setTotalChoicesGranted: (totalChoicesGranted) => set((state) => ({ totalChoicesGranted: typeof totalChoicesGranted === 'function' ? totalChoicesGranted(state.totalChoicesGranted) : totalChoicesGranted })),
 

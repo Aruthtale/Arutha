@@ -31,9 +31,9 @@ export const DashboardHUD = React.memo(({ level, xp, streak, claimed, onClaimStr
               <span className="relative text-xs md:text-sm font-black text-rpg-text">L{level}</span>
             </div>
             <div className="flex-1 px-3 md:px-4">
-              <div className="flex justify-between items-end mb-1 md:mb-1.5">
-                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-rpg-text/40">Experience</span>
-                <span className="text-[9px] md:text-[10px] font-black text-harta font-mono tracking-tighter">{xp} / {level * 1000}</span>
+              <div className="flex justify-between items-end mb-1.5">
+                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-rpg-text/60">Experience</span>
+                <span className="text-[10px] md:text-xs font-black text-harta font-mono tracking-tighter drop-shadow-sm">{xp} / {level * 1000}</span>
               </div>
               <div className="h-1.5 md:h-2 w-full bg-rpg-black rounded-full overflow-hidden border border-rpg-border/50">
                 <motion.div 
@@ -69,6 +69,16 @@ export const DashboardHUD = React.memo(({ level, xp, streak, claimed, onClaimStr
               </span>
             </div>
             {!claimed && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-white animate-ping" />}
+            {streak >= 7 && (
+               <div className={cn(
+                 "absolute -top-3 -right-3 text-[9px] px-1.5 py-0.5 rounded-full font-black shadow-lg flex items-center border animate-pulse",
+                 streak >= 30 ? "bg-jiwa text-black shadow-jiwa/50 border-jiwa" : 
+                 streak >= 14 ? "bg-blue-500 text-white shadow-blue-500/50 border-blue-400" : 
+                 "bg-red-500 text-white shadow-red-500/50 border-red-400"
+               )}>
+                  {streak >= 30 ? '3x' : streak >= 14 ? '2x' : '1.5x'} XP Aura
+               </div>
+            )}
           </motion.button>
         </div>
       </div>

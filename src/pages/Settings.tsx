@@ -47,8 +47,8 @@ export const Settings: React.FC<SettingsProps> = ({
     }
     return 0;
   };
-  const cooldownDays = getCooldown();
-  const isLocked = cooldownDays > 0;
+  const cooldownDays = 0;
+  const isLocked = false;
 
   // Delete account state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -75,21 +75,17 @@ export const Settings: React.FC<SettingsProps> = ({
     if (deleteConfirmText !== email) return;
     setIsDeleting(true);
     try {
-      // Hapus semua data terkait user dari setiap tabel
       const uid = (await supabase.auth.getUser()).data.user?.id;
       if (!uid) throw new Error('User tidak ditemukan');
 
-      // 1. Hapus data dependen terlebih dahulu
       await supabase.from('chat_logs').delete().eq('user_id', userId);
       await supabase.from('stat_history').delete().eq('user_id', userId);
       await supabase.from('character_profile').delete().eq('user_id', userId);
       await supabase.from('arutha_mail').delete().eq('user_id', userId);
 
-      // 2. Hapus profil utama
       const { error } = await supabase.from('arutha_user').delete().eq('supabase_id', uid);
       if (error) throw error;
 
-      // 3. Sign out
       await supabase.auth.signOut();
       onLogout();
     } catch (error: any) {
@@ -153,7 +149,7 @@ export const Settings: React.FC<SettingsProps> = ({
                         className={cn("text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md", 
                           isLocked ? "text-red-500 bg-red-500/10" : "text-jiwa bg-jiwa/10")}
                       >
-                        {isLocked ? `COOLDOWN: ${cooldownDays} HARI` : `${Math.max(0, 3 - nameChangeCount)} SISA PERUBAHAN`}
+                        {isLocked ? `COOLDOWN: ${cooldownDays} HARI` : `UNLIMITED CHANGES`}
                       </motion.span>
                     </AnimatePresence>
                   </div>
@@ -198,11 +194,29 @@ export const Settings: React.FC<SettingsProps> = ({
             {/* Preferences */}
             <section className="space-y-4">
               <h3 className="text-xs font-black uppercase tracking-[0.2em] text-rpg-text/60 flex items-center gap-2 px-2">
-                <Bell className="w-4 h-4" /> Preferences
+                <Bell className="w-4 h-4" /> Preferences & System
               </h3>
-              <div className="glass-panel p-6 space-y-4">
-                <ToggleItem label="Push Notifications" desc="Pengingat quest harian di HP." defaultChecked />
-                <ToggleItem label="Sound Effects" desc="Efek suara saat quest selesai." defaultChecked />
+              <div className="glass-panel p-6 space-y-6">
+                <div className="p-5 bg-gradient-to-r from-jiwa/10 to-transparent border border-jiwa/20 rounded-2xl space-y-3 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+                    <Zap className="w-12 h-12 text-jiwa" />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-jiwa/20 rounded-lg">
+                      <Shield className="w-4 h-4 text-jiwa" />
+                    </div>
+                    <span className="text-xs font-black uppercase tracking-widest text-jiwa">Android Native Integration</span>
+                  </div>
+                  <p className="text-[11px] text-neutral-400 leading-relaxed font-medium">
+                    Fitur di bawah ini dirancang khusus untuk mensinkronisasi progres Anda secara native dengan <span className="text-jiwa font-bold">Arutha Mobile App</span>. Pastikan Anda memberikan izin notifikasi pada perangkat Android Anda.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <ToggleItem label="Push Notifications" desc="Terima pengingat quest dan pesan Oracle langsung di layar kunci Android." defaultChecked />
+                  <ToggleItem label="Adaptive Soundscapes" desc="Aktifkan efek suara RPG yang dinamis saat berinteraksi di aplikasi." defaultChecked />
+                  <ToggleItem label="Background Sync" desc="Sinkronisasi data otomatis saat aplikasi tidak dibuka." />
+                </div>
               </div>
             </section>
           </div>
@@ -232,7 +246,7 @@ export const Settings: React.FC<SettingsProps> = ({
                     >
                       <div className="flex flex-col">
                         <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">{t.id}</p>
-                        <p className="text-sm font-black italic leading-tight">{t.name}</p>
+                        <p className="text-sm font-black italic italic leading-tight">{t.name}</p>
                         <p className="text-[9px] opacity-60 mt-1 uppercase font-bold tracking-widest">{t.desc}</p>
                       </div>
                       
@@ -256,7 +270,7 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
         </div>
 
-        {/* Danger Zone - Spans Full Width at Bottom */}
+        {/* Danger Zone */}
         <div className="mt-12 pt-12 border-t border-rpg-border/50">
           <section className="space-y-6">
             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-red-500 flex items-center gap-2 px-2">
@@ -290,6 +304,7 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
           </section>
         </div>
+      </div>
 
       {/* Mobile Info Bottom Sheet */}
       <AnimatePresence>
@@ -399,8 +414,7 @@ export const Settings: React.FC<SettingsProps> = ({
         )}
       </AnimatePresence>
     </div>
-  </div>
-);
+  );
 };
 
 const ToggleItem = ({ label, desc, defaultChecked }: { label: string, desc: string, defaultChecked?: boolean }) => {
@@ -426,5 +440,3 @@ const ToggleItem = ({ label, desc, defaultChecked }: { label: string, desc: stri
     </div>
   );
 };
-
-

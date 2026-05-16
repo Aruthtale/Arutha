@@ -3,96 +3,202 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
 }
 
 model User {
-  id              String                @id @default(cuid())
-  supabase_id     String?               @unique
-  email           String                @unique
-  password        String?
-  username        String                @unique
-  usia            Int?
-  gender          String?
-  level           Int                   @default(1)
-  xp              Int                   @default(0)
-  activeQuests    Json?                 @map("active_quests")
-  lastQuestUpdate DateTime              @default(now()) @map("last_quest_update")
-  refreshCount    Int                   @default(0) @map("refresh_count")
-  lastRefreshDate DateTime              @default(now()) @map("last_refresh_date")
-  lastActiveDate  DateTime              @default(now()) @map("last_active_date")
-  fatigueDays     Int                   @default(0) @map("fatigue_days")
-  nameChangeCount Int                   @default(0) @map("name_change_count")
-  streak          Int                   @default(0)
-  lastStreakDate  DateTime?             @map("last_streak_date")
-  lastNameChange  DateTime?             @map("last_name_change")
-  createdAt       DateTime              @default(now()) @map("created_at")
-  updatedAt       DateTime              @updatedAt @map("updated_at")
-  profiles        CharacterProfile[]
-  reflections     DimensionReflection[]
-  questLogs       QuestLog[]
-  statHistory     StatHistory[]
+  id                              String                            @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  supabase_id                     String?                           @unique(map: "supabase_id") @db.VarChar(255)
+  email                           String                            @unique(map: "email") @db.VarChar(255)
+  password                        String?                           @db.VarChar(255)
+  username                        String                            @unique(map: "username") @db.VarChar(255)
+  usia                            Int?
+  gender                          String?                           @db.VarChar(50)
+  level                           Int                               @default(1)
+  xp                              Int                               @default(0)
+  activeQuests                    Json?                             @map("active_quests")
+  lastQuestUpdate                 DateTime                          @default(now()) @map("last_quest_update") @db.Timestamp(0)
+  refreshCount                    Int                               @default(0) @map("refresh_count")
+  lastRefreshDate                 DateTime                          @default(now()) @map("last_refresh_date") @db.Timestamp(0)
+  createdAt                       DateTime                          @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt                       DateTime                          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  fatigueDays                     Int                               @default(0) @map("fatigue_days")
+  lastActiveDate                  DateTime                          @default(now()) @map("last_active_date") @db.Timestamp(0)
+  nameChangeCount                 Int                               @default(0) @map("name_change_count")
+  lastNameChange                  DateTime?                         @map("last_name_change") @db.Timestamp(0)
+  streak                          Int                               @default(0)
+  lastStreakDate                  DateTime?                         @map("last_streak_date") @db.Timestamp(0)
+  talents                         Json?
+  birth_date                      DateTime?                         @db.Date
+  zodiac                          String?                           @db.VarChar(50)
+  last_evolution_date             DateTime?                         @db.Timestamp(0)
+  available_weekly_quests         Json?
+  active_weekly_quests            Json?
+  last_weekly_reset               DateTime?                         @default(now()) @db.Timestamp(0)
+  talent_choices_available        Int?                              @default(0)
+  pending_talent_pool             Json?
+  total_choices_granted           Int?                              @default(0)
+  arutha_global_quest_submissions arutha_global_quest_submissions[]
+  arutha_quest_log                arutha_quest_log[]
+  profiles                        CharacterProfile[]
+  reflections                     DimensionReflection[]
+  questLogs                       QuestLog[]
+  statHistory                     StatHistory[]
 
   @@map("arutha_user")
 }
 
 model CharacterProfile {
-  id                String   @id @default(cuid())
-  userId            String   @map("user_id")
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  personality_type  String
-  personality_title String
-  personality_desc  String
-  character_summary String
+  id                String   @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  userId            String   @map("user_id") @db.VarChar(36)
+  personality_type  String   @db.VarChar(255)
+  personality_title String   @db.VarChar(255)
+  personality_desc  String   @db.Text
+  character_summary String   @db.Text
   jiwa              Int
   raga              Int
   harta             Int
   ilmu              Int
   karma             Int
-  createdAt         DateTime @default(now()) @map("created_at")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  rationale         String?  @db.Text
+  user              User     @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "character_profile_ibfk_1")
 
-  @@index([userId])
+  @@index([userId], map: "user_id")
   @@map("character_profile")
 }
 
 model StatHistory {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  userId    String   @map("user_id") @db.VarChar(36)
   jiwa      Int      @default(0)
   raga      Int      @default(0)
   harta     Int      @default(0)
   ilmu      Int      @default(0)
   karma     Int      @default(0)
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  user      User     @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "stat_history_ibfk_1")
 
-  @@index([userId])
+  @@index([userId], map: "user_id")
   @@map("stat_history")
 }
 
 model QuestLog {
-  id          String   @id @default(cuid())
-  userId      String   @map("user_id")
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title       String
-  description String?
-  stat_type   String
+  id          String   @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  userId      String   @map("user_id") @db.VarChar(36)
+  title       String   @db.VarChar(255)
+  description String?  @db.Text
+  stat_type   String   @db.VarChar(50)
   xp_gained   Int      @map("xp_gained")
-  user_note   String?  @map("user_note")
-  completedAt DateTime @default(now()) @map("completed_at")
+  user_note   String?  @map("user_note") @db.Text
+  completedAt DateTime @default(now()) @map("completed_at") @db.Timestamp(0)
+  user        User     @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "quest_logs_ibfk_1")
 
-  @@index([userId])
+  @@index([userId], map: "user_id")
   @@map("quest_logs")
 }
 
 model DimensionReflection {
-  id              String   @id @default(cuid())
-  userId          String   @map("user_id")
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  dimension       String
-  reflection_text String
-  createdAt       DateTime @default(now()) @map("created_at")
+  id              String   @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  userId          String   @map("user_id") @db.VarChar(36)
+  dimension       String   @db.VarChar(255)
+  reflection_text String   @db.Text
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  user            User     @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "dimension_reflections_ibfk_1")
 
-  @@index([userId])
+  @@index([userId], map: "user_id")
   @@map("dimension_reflections")
+}
+
+model arutha_broadcasts {
+  id         String   @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  message    String   @db.Text
+  active     Boolean? @default(true)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+}
+
+model arutha_global_quest_submissions {
+  id                   String                @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  quest_id             String?               @db.VarChar(36)
+  user_id              String                @db.VarChar(36)
+  proof_photo          String?               @db.Text
+  proof_note           String?               @db.Text
+  status               String?               @default("PENDING") @db.VarChar(50)
+  created_at           DateTime              @default(now()) @db.Timestamp(0)
+  arutha_global_quests arutha_global_quests? @relation(fields: [quest_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "arutha_global_quest_submissions_ibfk_1")
+  arutha_user          User                  @relation(fields: [user_id], references: [id], onUpdate: Restrict, map: "arutha_global_quest_submissions_ibfk_2")
+
+  @@index([quest_id], map: "quest_id")
+  @@index([user_id], map: "user_id")
+}
+
+model arutha_global_quests {
+  id                              String                            @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  title                           String                            @db.VarChar(255)
+  description                     String?                           @db.Text
+  stat_type                       String?                           @default("JIWA") @db.VarChar(50)
+  reward_xp                       Int?                              @default(500)
+  expires_at                      DateTime?                         @db.Timestamp(0)
+  is_claimed                      Boolean?                          @default(false)
+  claimed_by                      String?                           @db.VarChar(36)
+  claimed_at                      DateTime?                         @db.Timestamp(0)
+  created_at                      DateTime                          @default(now()) @db.Timestamp(0)
+  arutha_global_quest_submissions arutha_global_quest_submissions[]
+}
+
+model arutha_mail {
+  id         String   @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  user_id    String?  @db.VarChar(36)
+  message    String   @db.Text
+  is_read    Boolean? @default(false)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+}
+
+model arutha_quest_log {
+  id              String                      @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  user_id         String                      @db.VarChar(36)
+  quest_id        String                      @db.VarChar(255)
+  quest_type      arutha_quest_log_quest_type
+  title           String                      @db.VarChar(255)
+  stat_type       String                      @db.VarChar(50)
+  xp_reward       Int                         @default(0)
+  proof_note      String?                     @db.Text
+  proof_photo_url String?                     @db.Text
+  ai_feedback     String?                     @db.Text
+  status          arutha_quest_log_status     @default(IN_PROGRESS)
+  current_step    Int?                        @default(0)
+  total_steps     Int?                        @default(1)
+  created_at      DateTime                    @default(now()) @db.Timestamp(0)
+  updated_at      DateTime                    @default(now()) @db.Timestamp(0)
+  arutha_user     User                        @relation(fields: [user_id], references: [id], onUpdate: Restrict, map: "arutha_quest_log_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+model chat_logs {
+  id         String         @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  user_id    String         @db.VarChar(36)
+  role       chat_logs_role
+  content    String         @db.Text
+  created_at DateTime       @default(now()) @db.Timestamp(0)
+  category   String?        @default("arbiter") @db.VarChar(255)
+}
+
+enum chat_logs_role {
+  user
+  assistant
+}
+
+enum arutha_quest_log_quest_type {
+  DAILY
+  WEEKLY
+  RECOVERY
+  GLOBAL
+  WORLD
+}
+
+enum arutha_quest_log_status {
+  IN_PROGRESS
+  COMPLETED
+  FAILED
 }

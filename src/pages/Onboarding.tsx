@@ -23,11 +23,22 @@ interface OnboardingProps {
 }
 
 export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext, questions: providedQuestions }) => {
-  const [step, setStep] = useState((providedQuestions && providedQuestions.length > 0) ? 0 : -1); 
-  const [questions, setQuestions] = useState<string[]>((providedQuestions && providedQuestions.length > 0) ? providedQuestions : FALLBACK_QUESTIONS);
+  const [step, setStep] = useState(() => {
+    if (providedQuestions && providedQuestions.length > 0) return 0;
+    const savedStep = localStorage.getItem('arutha_onboarding_step');
+    return savedStep ? parseInt(savedStep, 10) : -1;
+  }); 
+  const [questions, setQuestions] = useState<string[]>(() => {
+    if (providedQuestions && providedQuestions.length > 0) return providedQuestions;
+    const savedQuestions = localStorage.getItem('arutha_onboarding_questions');
+    return savedQuestions ? JSON.parse(savedQuestions) : FALLBACK_QUESTIONS;
+  });
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   const [currentAnswer, setCurrentAnswer] = useState('');
-  const [answers, setAnswers] = useState<OnboardingAnswer[]>([]);
+  const [answers, setAnswers] = useState<OnboardingAnswer[]>(() => {
+    const savedAnswers = localStorage.getItem('arutha_onboarding_answers');
+    return savedAnswers ? JSON.parse(savedAnswers) : [];
+  });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showDecision, setShowDecision] = useState(false);
   const [isGeneratingSpecific, setIsGeneratingSpecific] = useState(false);
@@ -43,6 +54,13 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
       return () => clearTimeout(timer);
     }
   }, [step]);
+
+  // Persist state
+  useEffect(() => {
+    localStorage.setItem('arutha_onboarding_answers', JSON.stringify(answers));
+    localStorage.setItem('arutha_onboarding_step', step.toString());
+    localStorage.setItem('arutha_onboarding_questions', JSON.stringify(questions));
+  }, [answers, step, questions]);
 
   const handleStart = async () => {
     console.log("Memulai Sinkronisasi Dimensi...");
@@ -81,6 +99,9 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
         setShowDecision(true);
       } else {
         // Already did specific questions or skipped them
+        localStorage.removeItem('arutha_onboarding_answers');
+        localStorage.removeItem('arutha_onboarding_step');
+        localStorage.removeItem('arutha_onboarding_questions');
         onComplete(updatedAnswers);
       }
     }
@@ -95,6 +116,9 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
       setStep(s => s + 1);
     } catch (e) {
       console.warn("Failed to generate specific questions, finishing.");
+      localStorage.removeItem('arutha_onboarding_answers');
+      localStorage.removeItem('arutha_onboarding_step');
+      localStorage.removeItem('arutha_onboarding_questions');
       onComplete(answers);
     } finally {
       setIsGeneratingSpecific(false);
@@ -102,6 +126,9 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
   };
 
   const handleFinish = () => {
+    localStorage.removeItem('arutha_onboarding_answers');
+    localStorage.removeItem('arutha_onboarding_step');
+    localStorage.removeItem('arutha_onboarding_questions');
     onComplete(answers);
   };
 

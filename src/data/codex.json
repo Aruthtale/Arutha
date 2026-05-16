@@ -53,17 +53,22 @@
   ],
   "rules": [
     { "title": "Hukum Semesta & Fitur Utama", "desc": "Prinsip-prinsip dasar dan fitur utama yang mengatur perjalananmu di dunia Arutha.", "iconKey": "Shield" },
-    { "title": "Daily Refresh (1x Sehari)", "desc": "Setiap hari, kamu hanya mendapatkan satu kali kesempatan untuk me-refresh daftar misimu. Gunakan dengan bijak!", "iconKey": "Zap" },
-    { "title": "Sistem Progresi (XP)", "desc": "Setiap misi yang berhasil diverifikasi akan memberikan Experience Points (XP). Kumpulkan XP untuk naik level.", "iconKey": "TrendingUp" },
-    { "title": "Evolusi Karakter (30 Hari)", "desc": "Setiap 30 hari, Arutha melakukan evaluasi ulang. Statistikmu bersifat dinamis mengikuti kondisi hidup saat ini, namun pahlawanmu terus tumbuh melalui Talenta permanen.", "iconKey": "Sparkles" },
-    { "title": "Bimbingan AI Arutha", "desc": "Gunakan fitur chat dengan AI Arutha untuk konsultasi mengenai progres, tips harian, atau sekadar motivasi saat kamu merasa jenuh.", "iconKey": "Brain" },
-    { "title": "Hukum Decay (Kelelahan)", "desc": "Jika kamu mengabaikan satu dimensi terlalu lama, statistik dimensi tersebut akan menurun secara otomatis.", "iconKey": "AlertTriangle" },
-    { "title": "Misi Pemulihan", "desc": "Gunakan Misi Pemulihan untuk mengembalikan statistik yang turun drastis akibat Decay.", "iconKey": "RefreshCcw" },
-    { "title": "Bakat & Bakat Permanen", "desc": "Bakat memberikan bonus pasif. Setiap kali berevolusi, kamu mendapatkan bakat baru yang akan tersimpan selamanya, meskipun statistikmu naik-turun.", "iconKey": "Zap" }
+    { "title": "Daily Refresh (1x Sehari)", "desc": "Setiap hari, kamu mendapatkan satu kali kesempatan untuk me-refresh daftar misimu. Kuota ini di-reset otomatis setiap tengah malam.", "iconKey": "Zap" },
+    { "title": "Misi Mingguan (Weekly Quests)", "desc": "Tantangan skala besar yang berfokus pada perubahan jangka panjang. Memberikan XP lebih besar dan peluang tinggi mendapatkan Bakat Rare.", "iconKey": "TrendingUp" },
+    { "title": "Sistem Progresi (XP)", "desc": "Setiap misi yang berhasil diverifikasi akan memberikan Experience Points (XP). Kumpulkan XP untuk naik level dan membuka Arketipe baru.", "iconKey": "Star" },
+    { "title": "Hukum Decay (Kelelahan)", "desc": "Jika kamu absen lebih dari 3 hari, statistik dimensimu akan menurun drastis. Arutha akan memberikan peringatan 'Decay' di Dashboard.", "iconKey": "AlertTriangle" },
+    { "title": "Misi Pemulihan (Recovery)", "desc": "Misi khusus yang muncul saat kamu mengalami Decay. Menyelesaikan misi ini akan menghentikan penurunan statistik dan mengembalikan momentummu.", "iconKey": "RefreshCcw" },
+    { "title": "Bimbingan AI Arutha", "desc": "Gunakan fitur chat untuk konsultasi mengenai progres, tips harian, atau sekadar motivasi saat kamu merasa jenuh.", "iconKey": "Brain" }
   ],
   "mysticItems": [
+    { "title": "The Mood Altar (Jurnal Suasana Hati)", "desc": "Tempat sakral untuk mencatat getaran emosimu setiap hari. Melacak mood membantu Arutha memberikan tantangan yang lebih akurat sesuai kondisi mentalmu.", "iconKey": "BookOpen", "bg": "bg-amber-500/10", "border": "border-amber-500/20", "color": "text-amber-400" },
     { "title": "Soul Guard (Guardian of the Mind)", "desc": "Entitas AI yang mendampingimu dalam menjaga kesehatan mental. Soul Guard bekerja dalam 3 fase: Context Scope, Brainstorming, dan Supportive Companion.", "iconKey": "Brain", "bg": "bg-jiwa/10", "border": "border-jiwa/20", "color": "text-jiwa" },
-    { "title": "Tarot of the Soul", "desc": "22 kartu Major Arcana yang digunakan sebagai cermin psikologis. Setiap kartu mewakili arketipe perjalanan hidup dan memberikan perspektif baru saat kamu bimbang.", "iconKey": "Sparkles", "bg": "bg-harta/10", "border": "border-harta/20", "color": "text-harta" },
-    { "title": "Echoes of Insight", "desc": "Sistem analisis mental Arutha yang memproses pola emosi dalam percakapan untuk memberikan laporan statistik 'Jiwa' yang akurat.", "iconKey": "Info", "bg": "bg-ilmu/10", "border": "border-ilmu/20", "color": "text-ilmu" }
+    { "title": "Tarot of the Soul", "desc": "22 kartu Major Arcana yang digunakan sebagai cermin psikologis. Memberikan perspektif baru dan interpretasi mistis berdasarkan statistik dimensimu saat ini.", "iconKey": "Sparkles", "bg": "bg-purple-500/10", "border": "border-purple-500/20", "color": "text-purple-400" }
+  ],
+  "achievements": [
+    { "title": "Langkah Pertama", "desc": "Selesaikan misi harian pertamamu. Simbol dimulainya perjalanan menuju versi terbaik dirimu.", "iconKey": "Zap", "rarity": "COMMON" },
+    { "title": "Integritas Tinggi", "desc": "Lulus verifikasi AI 5 kali berturut-turut tanpa penolakan. Membuktikan kejujuranmu pada semesta.", "iconKey": "Shield", "rarity": "RARE" },
+    { "title": "Pelajar Tekun", "desc": "Mencapai level 70 di dimensi ILMU. Menandakan penguasaan intelektual yang mendalam.", "iconKey": "BookOpen", "rarity": "EPIC" },
+    { "title": "Dominasi Mingguan", "desc": "Selesaikan 3 misi mingguan dalam satu periode. Dedikasi tingkat tinggi.", "iconKey": "TrendingUp", "rarity": "LEGENDARY" }
   ]
 }

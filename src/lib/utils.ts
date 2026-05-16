@@ -4,6 +4,7 @@ import { twMerge } from 'tailwind-merge';
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
 export function getDimensionRank(value: number): string {
   if (value < 20) return "NEOPHYTE"; 
   if (value < 40) return "INITIATE"; 
@@ -13,15 +14,20 @@ export function getDimensionRank(value: number): string {
   return "DIVINE";                   
 }
 
+/**
+ * Returns the CSS variable color for a dimension.
+ * Works perfectly with style={{ color: getDimensionColor('JIWA') }}
+ */
 export function getDimensionColor(dim: string): string {
-  const colors: Record<string, string> = {
-    JIWA: '#ff0080',
-    RAGA: '#ff4d4d',
-    HARTA: '#ffcc00',
-    ILMU: '#00ccff',
-    KARMA: '#00ffaa',
-  };
-  return colors[dim.toUpperCase()] || '#ff0080';
+  const d = dim?.toUpperCase();
+  switch(d) {
+    case 'JIWA': return 'var(--color-jiwa)';
+    case 'RAGA': return 'var(--color-raga)';
+    case 'HARTA': return 'var(--color-harta)';
+    case 'ILMU': return 'var(--color-ilmu)';
+    case 'KARMA': return 'var(--color-karma)';
+    default: return 'var(--color-jiwa)';
+  }
 }
 
 export function getRankGlow(avgStats: number): string {

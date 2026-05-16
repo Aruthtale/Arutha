@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { 
-  ArrowLeft, Shield, Star, Zap, Award, Target, TrendingUp, Heart, Brain, Dumbbell, Coins, BookOpen, Users, Clock, History, Medal, Sparkles
+  ArrowLeft, Shield, Star, Zap, Award, Target, TrendingUp, Heart, Brain, Dumbbell, Coins, BookOpen, Users, Clock, History, Medal, Sparkles, Share2
 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
 import { cn, getDimensionRank } from '../lib/utils';
@@ -21,15 +21,60 @@ interface ProfileProps {
   analysis: any;
   onBack: () => void;
   talents: string[];
+  achievements: string[];
   statHistory?: any[];
   zodiac?: string;
   usia?: number;
   userId: string;
 }
 
-export const Profile: React.FC<ProfileProps> = ({ userId, name, level, xp, stats, analysis, onBack, talents, statHistory, zodiac, usia }) => {
+import { generateHeroCard } from '../lib/generateHeroCard';
+
+export const Profile: React.FC<ProfileProps> = ({ userId, name, level, xp, stats, analysis, onBack, talents, achievements: unlockedAchievements, statHistory, zodiac, usia }) => {
+  const [isMounted, setIsMounted] = React.useState(false);
   const [reflections, setReflections] = React.useState<any[]>([]);
   const [isLoadingReflections, setIsLoadingReflections] = React.useState(true);
+  const [isSharing, setIsSharing] = React.useState(false);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setIsMounted(true), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleShareCard = async () => {
+    setIsSharing(true);
+    try {
+      const blob = await generateHeroCard({
+        name,
+        level,
+        xp,
+        stats,
+        personalityTitle: analysis?.personality_title,
+      });
+      const file = new File([blob], `arutha-${name}-lvl${level}.png`, { type: 'image/png' });
+
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: `Arutha: ${name}'s Legend`,
+          text: `Saya adalah ${analysis?.personality_title || 'The Unwritten Legend'} Level ${level} di Arutha!`,
+          files: [file]
+        });
+      } else {
+        // Desktop fallback: auto-download the PNG
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      }
+    } catch (err) {
+      console.error('Gagal generate card:', err);
+      alert('Gagal membuat kartu. Coba lagi.');
+    } finally {
+      setIsSharing(false);
+    }
+  };
   
   const zodiacInfo = React.useMemo(() => {
     if (!zodiac) return null;
@@ -59,10 +104,10 @@ export const Profile: React.FC<ProfileProps> = ({ userId, name, level, xp, stats
     fetchReflections();
   }, [userId]);
 
-  const achievements = React.useMemo(() => [
-    { title: "Langkah Pertama", desc: "Menyelesaikan quest perdana", icon: <Zap className="w-4 h-4" />, color: "bg-jiwa/20 text-jiwa" },
-    { title: "Integritas Tinggi", desc: "Lulus verifikasi AI 5 kali berturut-turut", icon: <Shield className="w-4 h-4" />, color: "bg-raga/20 text-raga" },
-    { title: "Pelajar Tekun", desc: "Mencapai level 70 di dimensi ILMU", icon: <BookOpen className="w-4 h-4" />, color: "bg-ilmu/20 text-ilmu" },
+  const achievementsData = React.useMemo(() => [
+    { id: "LANGKAH_PERTAMA", title: "Langkah Pertama", desc: "Menyelesaikan quest perdana", icon: <Zap className="w-4 h-4" />, color: "bg-jiwa/20 text-jiwa" },
+    { id: "INTEGRITAS_TINGGI", title: "Integritas Tinggi", desc: "Lulus verifikasi AI 5 kali berturut-turut", icon: <Shield className="w-4 h-4" />, color: "bg-raga/20 text-raga" },
+    { id: "PELAJAR_TEKUN", title: "Pelajar Tekun", desc: "Mencapai level 70 di dimensi ILMU", icon: <BookOpen className="w-4 h-4" />, color: "bg-ilmu/20 text-ilmu" },
   ], []);
 
   const RPG_ATTRIBUTES = React.useMemo(() => [
@@ -87,11 +132,22 @@ export const Profile: React.FC<ProfileProps> = ({ userId, name, level, xp, stats
         <header className="flex items-center justify-between">
           <button onClick={onBack} className="p-3 bg-rpg-card border border-rpg-border rounded-2xl hover:bg-rpg-border/20 transition-all flex items-center gap-3 group">
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform text-rpg-text" />
-            <span className="text-xs md:text-sm font-black tracking-widest text-rpg-text">DASHBOARD</span>
+            <span className="hidden md:inline text-xs md:text-sm font-black tracking-widest text-rpg-text">DASHBOARD</span>
           </button>
-          <div className="text-right">
-            <p className="text-xs font-black tracking-[0.4em] text-jiwa uppercase">Character Ledger</p>
-            <h2 className="text-2xl md:text-4xl font-black italic tracking-tighter text-rpg-text">CHARACTER SHEET</h2>
+          
+          <div className="flex items-center gap-4">
+            <button 
+              disabled={isSharing}
+              onClick={handleShareCard}
+              className="p-3 bg-jiwa/10 border border-jiwa/30 rounded-2xl text-jiwa hover:bg-jiwa/20 transition-all flex items-center gap-2 group shadow-[0_0_15px_rgba(var(--color-jiwa),0.2)] disabled:opacity-50"
+            >
+              <Share2 className={cn("w-5 h-5", isSharing && "animate-spin")} />
+              <span className="hidden sm:inline text-xs font-black tracking-widest uppercase">{isSharing ? 'Memproses...' : 'Bagikan Pahlawan'}</span>
+            </button>
+            <div className="text-right">
+              <p className="text-[10px] md:text-xs font-black tracking-[0.4em] text-jiwa uppercase">Character Ledger</p>
+              <h2 className="text-xl md:text-4xl font-black italic tracking-tighter text-rpg-text">CHARACTER SHEET</h2>
+            </div>
           </div>
         </header>
 
@@ -307,8 +363,8 @@ export const Profile: React.FC<ProfileProps> = ({ userId, name, level, xp, stats
                 <h3 className="text-xs font-black tracking-[0.3em] text-neutral-400 uppercase">STATISTIC EVOLUTION (Last 30 Days)</h3>
               </div>
               <div className="w-full h-[250px] bg-white/[0.02] rounded-2xl border border-rpg-border/50 p-4">
-                {statHistory && statHistory.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%" debounce={200}>
+                {isMounted && statHistory && statHistory.length > 0 ? (
+                  <ResponsiveContainer width="99%" height={250} key={isMounted ? 'mounted' : 'unmounted'}>
                     <LineChart data={statHistory}>
                       <XAxis 
                         dataKey="created_at" 
@@ -350,21 +406,33 @@ export const Profile: React.FC<ProfileProps> = ({ userId, name, level, xp, stats
                 <h3 className="text-sm font-black tracking-[0.2em] text-rpg-text/60 uppercase text-center">Hall of Fame</h3>
               </div>
               <div className="space-y-5">
-                {achievements.map((item, i) => (
-                  <motion.div 
-                    key={i} 
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    className="p-5 bg-rpg-border/5 border border-rpg-border/50 rounded-[24px] flex items-center gap-4 group hover:bg-rpg-border/10 transition-all cursor-default"
-                  >
-                    <IconBox icon={item.icon} className={item.color} size="w-6 h-6" />
-                    <div>
-                      <h4 className="text-sm md:text-base font-black tracking-widest text-rpg-text">{item.title}</h4>
-                      <p className="text-[10px] md:text-xs text-rpg-text/60 font-medium leading-relaxed">{item.desc}</p>
-                    </div>
-                  </motion.div>
-                ))}
+                {achievementsData.map((item, i) => {
+                  const isUnlocked = unlockedAchievements?.includes(item.id);
+                  return (
+                    <motion.div 
+                      key={i} 
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className={cn(
+                        "p-5 border rounded-[24px] flex items-center gap-4 transition-all cursor-default",
+                        isUnlocked 
+                          ? "bg-rpg-border/5 border-rpg-border/50 hover:bg-rpg-border/10" 
+                          : "bg-neutral-900/50 border-white/5 opacity-40 grayscale"
+                      )}
+                    >
+                      <IconBox icon={item.icon} className={isUnlocked ? item.color : "bg-neutral-800 text-neutral-600"} size="w-6 h-6" />
+                      <div>
+                        <h4 className="text-sm md:text-base font-black tracking-widest text-rpg-text">
+                          {isUnlocked ? item.title : "???"}
+                        </h4>
+                        <p className="text-[10px] md:text-xs text-rpg-text/60 font-medium leading-relaxed">
+                          {isUnlocked ? item.desc : "Selesaikan tantangan untuk membuka"}
+                        </p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
               <button className="w-full py-4 border-2 border-dashed border-rpg-border rounded-[24px] text-xs font-black text-rpg-text/40 tracking-widest hover:border-rpg-primary hover:text-rpg-primary transition-all uppercase">
                 Unlock More

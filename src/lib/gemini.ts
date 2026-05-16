@@ -1,4 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
+import { z } from "zod";
+import { supabase } from "./supabase";
+import { APP_CONFIG } from "./config";
 
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
 
@@ -32,7 +35,7 @@ export interface Quest {
   stat: Dimension;
   xp: number;
   completed: boolean;
-  quest_type?: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'WORLD';
+  quest_type?: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'WORLD' | 'RECOVERY';
   is_global?: boolean;
   is_weekly?: boolean;
   steps?: {
@@ -48,76 +51,151 @@ export interface OnboardingAnswer {
 }
 
 const MODELS_STABLE = [
-  'gemini-3.1-flash-lite',
   'gemini-3.1-flash-lite-preview',
-  'gemini-3.0-flash',
-  'gemini-3.0-flash-preview',
-  'gemini-2.5-flash',
-  'gemini-2.0-flash',
+  'gemini-3.1-flash-lite',
   'gemini-3-flash-preview',
+  'gemini-3.1-pro-preview'
 ];
 
 async function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+async function getFromCache(cacheKey: string) {
+  try {
+    const { data, error } = await supabase
+      .from('ai_cache')
+      .select('response, expires_at')
+      .eq('cache_key', cacheKey)
+      .maybeSingle();
+
+    if (error) return null;
+    if (data && new Date(data.expires_at) > new Date()) {
+      return data.response;
+    }
+  } catch (e) {
+    console.warn("AI Cache read failed:", e);
+  }
+  return null;
+}
+
+// Save to AI Cache via Supabase
+async function saveToCache(cacheKey: string, model: string, prompt: string, response: any, ttlHours: number = 24) {
+  try {
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + ttlHours);
+    
+    await supabase.from('ai_cache').upsert({
+      cache_key: cacheKey,
+      model,
+      prompt,
+      response,
+      expires_at: expiresAt.toISOString()
+    });
+  } catch (e) {
+    console.warn("AI Cache save failed:", e);
+  }
+}
+
 /**
  * Helper to generate content with multiple model fallbacks and retries on 503/429 errors.
+ * Includes caching and simplified prompt on fallback.
  */
-async function generateWithFallback(prompt: string | any[], generationConfig?: any): Promise<string> {
+async function generateWithFallbackAndCache(
+  prompt: string | any[], 
+  cacheKey: string | null = null, 
+  ttlHours: number = 24,
+  schema?: z.ZodTypeAny
+): Promise<any> {
+  if (cacheKey) {
+    const cached = await getFromCache(cacheKey);
+    if (cached) return cached;
+  }
+
   const aiClient = getClient();
-  
-  for (const modelName of MODELS_STABLE) {
-    let retries = 2; // Reduced retries per model to rotate faster
-    let backoff = 500;
-    
+  let currentPrompt = prompt;
+
+  for (let i = 0; i < MODELS_STABLE.length; i++) {
+    const modelName = MODELS_STABLE[i];
+    let retries = 2;
+    let backoff = 1000;
+
+    // Simplified prompt for fallback models (if not the primary pro model and prompt is string)
+    if (i > 0 && typeof currentPrompt === 'string') {
+        currentPrompt = currentPrompt + "\n(Beri respon singkat dan langsung).";
+    }
+
     while (retries > 0) {
       try {
         const response = await aiClient.models.generateContent({
           model: modelName,
-          contents: Array.isArray(prompt) ? prompt : prompt,
-          generationConfig
+          contents: Array.isArray(currentPrompt) ? currentPrompt : currentPrompt,
         });
-        
+
         const text = response.text;
         if (!text) {
           throw new Error("Empty response text");
         }
-        return text;
+
+        let parsedData = text;
+        
+        // If schema is provided, attempt to parse JSON
+        if (schema) {
+          let jsonStr = text.trim();
+          if (jsonStr.includes('```')) {
+            jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
+          }
+          parsedData = JSON.parse(jsonStr);
+          parsedData = schema.parse(parsedData);
+        }
+
+        if (cacheKey) {
+          await saveToCache(cacheKey, modelName, JSON.stringify(currentPrompt), parsedData, ttlHours);
+        }
+
+        return parsedData;
       } catch (e: any) {
+        console.warn(`Gemini Warning with ${modelName} (Retries left: ${retries - 1}):`, e.message || e);
+
         const status = e.status || 0;
         const message = (e.message || "").toLowerCase();
         
-        console.warn(`Gemini Log [${modelName}]: ${status} - ${message.substring(0, 50)}...`);
-
-        // If it's a 404 (Not Found), move to next model immediately
-        if (status === 404 || message.includes('not found')) {
-          break;
-        }
-
-        // If it's a 429 (Quota Exhausted), move to next model immediately
-        if (status === 429 || message.includes('quota')) {
-          console.warn(`Model ${modelName} is at quota. Trying next fallback...`);
-          break; 
-        }
-
-        // Retry on Service Unavailable (503) or Overloaded
+        // Retry only if it's a 503 or overloaded/high demand error
         const isRetryable = status === 503 || message.includes('overloaded') || message.includes('high demand');
         
-        if (isRetryable && retries > 1) {
+        // If it's a 429 or quota limit, DO NOT retry the same model, jump to fallback immediately
+        const isQuota = status === 429 || message.includes('quota') || message.includes('exhausted');
+
+        if (isRetryable) {
           retries--;
           await delay(backoff);
-          backoff *= 2;
+          backoff *= 2; // Exponential backoff
           continue;
+        } else if (isQuota) {
+          break; // Break the while loop to move to the next model in MODELS_STABLE
         }
-        
-        // For other errors or if out of retries, try next model
-        break;
+
+        break; // Move to next model on schema validation errors or fatal errors
       }
     }
   }
-  throw new Error("Critical: All AI models failed to respond. Please check your internet connection or API key.");
+  throw new Error("Critical AI Failure.");
 }
+
+/**
+ * Public export: generic AI generation with caching. Used by widgets like DailyTarotWidget.
+ * @param prompt  - text prompt
+ * @param cacheKey - supabase cache key (null = no cache)
+ * @param ttlHours - cache TTL in hours
+ */
+export async function generateWithFallback(
+  prompt: string,
+  cacheKey: string | null = null,
+  ttlHours = 24
+): Promise<string> {
+  return generateWithFallbackAndCache(prompt, cacheKey, ttlHours);
+}
+
 
 export async function generateOnboardingQuestions(userContext?: { usia?: number; gender?: string; username?: string; zodiac?: string }): Promise<string[]> {
   const contextText = userContext ? `\nTarget User: ${userContext.gender || 'Unknown'}, ${userContext.usia || '??'} tahun, Zodiak: ${userContext.zodiac || 'Unknown'}.` : '';
@@ -132,32 +210,25 @@ Tujuan dari 10 pertanyaan ini adalah untuk memetakan orang tersebut ke dalam 5 d
 Pertanyaan harus sangat pendek, santai (casual), dan disesuaikan dengan konteks usia/gender/zodiak user jika tersedia agar terasa lebih personal. Hindari pertanyaan filosofis yang terlalu dalam.
 Kembalikan HANYA array JSON berisi 10 string pertanyaan, tanpa markdown tambahan.`;
 
+  const schema = z.array(z.string()).min(5);
+
   try {
-    const text = await generateWithFallback(prompt);
-    let jsonStr = text.trim();
-    if (jsonStr.includes('```')) {
-      jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
-    }
-    const parsed = JSON.parse(jsonStr);
-    if (Array.isArray(parsed) && parsed.length >= 5) {
-      return parsed;
-    }
+    return await generateWithFallbackAndCache(prompt, null, 0, schema);
   } catch (e) {
     console.error("Critical AI Failure:", e);
+    return [
+      "Apa hobimu saat sedang bosan?",
+      "Pilih satu: Olahraga, Main Game, atau Tidur?",
+      "Jika punya 10 juta, buat apa?",
+      "Siapa tokoh idola atau panutanmu?",
+      "Hal apa yang paling sering bikin kamu kepikiran?",
+      "Apa cita-citamu waktu masih kecil?",
+      "Suka keramaian atau menyendiri?",
+      "Lebih pilih uang banyak atau teman banyak?",
+      "Apa satu hal yang ingin kamu ubah dari dirimu?",
+      "Sebutkan satu kata yang menggambarkan kamu hari ini!",
+    ];
   }
-
-  return [
-    "Apa hobimu saat sedang bosan?",
-    "Pilih satu: Olahraga, Main Game, atau Tidur?",
-    "Jika punya 10 juta, buat apa?",
-    "Siapa tokoh idola atau panutanmu?",
-    "Hal apa yang paling sering bikin kamu kepikiran?",
-    "Apa cita-citamu waktu masih kecil?",
-    "Suka keramaian atau menyendiri?",
-    "Lebih pilih uang banyak atau teman banyak?",
-    "Apa satu hal yang ingin kamu ubah dari dirimu?",
-    "Sebutkan satu kata yang menggambarkan kamu hari ini!",
-  ];
 }
 
 export async function generateSpecificQuestions(previousAnswers: OnboardingAnswer[]) {
@@ -169,27 +240,20 @@ Berdasarkan data tersebut, buatlah 5 pertanyaan tambahan yang LEBIH SPESIFIK dan
 Pertanyaan harus tetap santai, pendek, dan menggunakan gaya bahasa 'lu/gue' jika cocok atau bahasa santai lainnya.
 Kembalikan HANYA array JSON berisi 5 string pertanyaan.`;
 
+  const schema = z.array(z.string()).min(1);
+
   try {
-    const text = await generateWithFallback(prompt);
-    let jsonStr = text.trim();
-    if (jsonStr.includes('```')) {
-      jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
-    }
-    const parsed = JSON.parse(jsonStr);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed;
-    }
+    return await generateWithFallbackAndCache(prompt, null, 0, schema);
   } catch (e) {
     console.error("Failed to generate specific questions:", e);
+    return [
+      "Jika harus memilih satu hal yang paling berharga, apa itu?",
+      "Apa ketakutan terbesarmu dalam mencapai tujuan?",
+      "Bagaimana cara lu biasanya menghadapi kegagalan?",
+      "Siapa orang yang paling lu percayai saat ini?",
+      "Apa satu pencapaian yang paling lu banggakan?",
+    ];
   }
-
-  return [
-    "Jika harus memilih satu hal yang paling berharga, apa itu?",
-    "Apa ketakutan terbesarmu dalam mencapai tujuan?",
-    "Bagaimana cara lu biasanya menghadapi kegagalan?",
-    "Siapa orang yang paling lu percayai saat ini?",
-    "Apa satu pencapaian yang paling lu banggakan?",
-  ];
 }
 
 export interface CharacterAnalysis {
@@ -204,6 +268,10 @@ export interface CharacterAnalysis {
     title: string;
     desc: string;
     stat: string;
+  };
+  daily_oracle?: {
+    quote: string;
+    meaning: string;
   };
 }
 
@@ -220,55 +288,58 @@ Analisis setiap jawaban secara mendalam untuk menentukan bobot yang akurat pada 
 - ILMU: Berikan skor tinggi jika jawaban mencerminkan rasa ingin tahu, logika, atau belajar hal baru.
 - KARMA: Berikan skor tinggi jika jawaban mencerminkan empati, sosial, atau keinginan menolong.
 
-JSON format: {personality_type, personality_title, personality_desc, stats, character_summary, starter_quest}.
+JSON format: {personality_type, personality_title, personality_desc, stats: {JIWA, RAGA, HARTA, ILMU, KARMA}, character_summary, starter_quest: {title, desc, stat}}.
 PENTING: personality_type HARUS secara eksak salah satu dari: ${validMBTI.join(', ')}.
 ${contextBlock}Data Jawaban User:
 ${qaBlock}`;
 
-  try {
-    const text = await generateWithFallback(prompt);
-    let jsonStr = text.trim();
-    if (jsonStr.includes('```')) {
-      jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
-    }
-    const result = JSON.parse(jsonStr);
-    
-    const stats = result.stats || {};
-    const normalizedStats = {
-      JIWA: Math.min(50, Number(stats.JIWA || stats.jiwa) || 30),
-      RAGA: Math.min(50, Number(stats.RAGA || stats.raga) || 30),
-      HARTA: Math.min(50, Number(stats.HARTA || stats.harta) || 30),
-      ILMU: Math.min(50, Number(stats.ILMU || stats.ilmu) || 30),
-      KARMA: Math.min(50, Number(stats.KARMA || stats.karma) || 30),
-    };
+  const schema = z.object({
+    personality_type: z.string(),
+    personality_title: z.string(),
+    personality_desc: z.string(),
+    stats: z.object({
+      JIWA: z.number().max(50),
+      RAGA: z.number().max(50),
+      HARTA: z.number().max(50),
+      ILMU: z.number().max(50),
+      KARMA: z.number().max(50),
+    }),
+    character_summary: z.string(),
+    starter_quest: z.object({
+      title: z.string(),
+      desc: z.string(),
+      stat: z.string()
+    })
+  });
 
+  try {
+    const result = await generateWithFallbackAndCache(prompt, null, 0, schema);
+    
     return {
-      personality_type: (result.personality_type || 'INFJ').toUpperCase(),
-      personality_title: result.personality_title || 'The Advocate',
-      personality_desc: result.personality_desc || 'Karakter dalam pencarian jati diri.',
-      character_summary: result.character_summary || 'Karakter belum sepenuhnya terbaca oleh sistem.',
-      rationale: text.split('```').pop()?.trim() || '',
-      stats: normalizedStats,
-      starter_quest: result.starter_quest || { title: 'Mulai Petualangan', desc: 'Lakukan langkah pertama hari ini.', stat: 'JIWA' }
+      personality_type: result.personality_type.toUpperCase(),
+      personality_title: result.personality_title,
+      personality_desc: result.personality_desc,
+      character_summary: result.character_summary,
+      stats: result.stats,
+      starter_quest: result.starter_quest
     };
   } catch (e) {
     console.error("Analysis Failure:", e);
+    return {
+      personality_type: 'INFJ',
+      personality_title: 'The Advocate',
+      personality_desc: 'Jiwa yang visioner dan penuh empati.',
+      stats: { JIWA: 45, RAGA: 30, HARTA: 25, ILMU: 48, KARMA: 35 },
+      character_summary: 'Analisis tertunda karena server AI Google sedang penuh.',
+      starter_quest: { title: 'Langkah Awal', desc: 'Lakukan meditasi 5 menit.', stat: 'JIWA' }
+    };
   }
-
-  return {
-    personality_type: 'INFJ',
-    personality_title: 'The Advocate',
-    personality_desc: 'Jiwa yang visioner dan penuh empati.',
-    stats: { JIWA: 45, RAGA: 30, HARTA: 25, ILMU: 48, KARMA: 35 },
-    character_summary: 'Analisis tertunda karena server AI Google sedang penuh.',
-    starter_quest: { title: 'Langkah Awal', desc: 'Lakukan meditasi 5 menit.', stat: 'JIWA' }
-  };
 }
 
-export async function generateDailyQuests(stats: Stats, moodContext?: string, isWeeklyPool?: boolean): Promise<Quest[]> {
+export async function generateDailyQuests(stats: Stats, moodContext?: string, isWeeklyPool?: boolean, userId?: string): Promise<Quest[]> {
   const moodPrompt = moodContext ? `\nMood User: "${moodContext}".` : '';
   const burnoutPrompt = isWeeklyPool ? `\nPENTING: Hasilkan 3 opsi misi WEEKLY progresif (butuh disiplin beberapa hari). XP: 1000-2000.` : '';
-  
+
   const prompt = `Game master ARUTHA. Buat paket misi lengkap berdasarkan stats: JIWA:${stats.JIWA}, RAGA:${stats.RAGA}, HARTA:${stats.HARTA}, ILMU:${stats.ILMU}, KARMA:${stats.KARMA}.${moodPrompt}${burnoutPrompt} 
 
   ${isWeeklyPool ? '' : `Hasilkan total 6 misi dalam format JSON:
@@ -278,31 +349,36 @@ export async function generateDailyQuests(stats: Stats, moodContext?: string, is
 
   JSON format: [{id, title, desc, stat, xp, quest_type: "DAILY"|"WEEKLY"|"MONTHLY"}].`;
 
+  const schema = z.array(z.object({
+    id: z.string().or(z.number()).transform(v => v.toString()),
+    title: z.string(),
+    desc: z.string(),
+    stat: z.string(),
+    xp: z.number(),
+    quest_type: z.enum(["DAILY", "WEEKLY", "MONTHLY"]).optional()
+  }));
+
+  const cacheKey = userId ? `quests_${userId}_${new Date().toISOString().split('T')[0]}_${isWeeklyPool ? 'weekly' : 'daily'}` : null;
+
   try {
-    const text = await generateWithFallback(prompt);
-    let jsonStr = text.trim();
-    if (jsonStr.includes('```')) {
-      jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
-    }
-    const quests = JSON.parse(jsonStr);
+    const quests = await generateWithFallbackAndCache(prompt, cacheKey, 24, schema);
     return quests.map((q: any) => ({ ...q, completed: false }));
   } catch (e) {
     console.error("Quest Generation Failure:", e);
+    return [
+      { id: 'f1', title: 'Refleksi Singkat', desc: 'Tulis 1 pencapaian kecil hari ini.', stat: 'JIWA', xp: 100, quest_type: 'DAILY', completed: false },
+      { id: 'f2', title: 'Aksi Disiplin', desc: 'Lakukan peregangan selama 5 menit.', stat: 'RAGA', xp: 150, quest_type: 'DAILY', completed: false },
+      { id: 'f3', title: 'Audit Kecil', desc: 'Cek pengeluaran hari ini dan catat.', stat: 'HARTA', xp: 120, quest_type: 'DAILY', completed: false },
+      { id: 'f4', title: 'Eksplorasi Baru', desc: 'Pelajari 3 kata baru dalam bahasa asing.', stat: 'ILMU', xp: 600, quest_type: 'WEEKLY', completed: false },
+      { id: 'f5', title: 'Kebaikan Berantai', desc: 'Bantu satu orang teman atau orang asing.', stat: 'KARMA', xp: 550, quest_type: 'WEEKLY', completed: false },
+      { id: 'f6', title: 'Mastery Skill', desc: 'Selesaikan satu bab buku atau kursus.', stat: 'ILMU', xp: 3000, quest_type: 'MONTHLY', completed: false }
+    ];
   }
-
-  return [
-    { id: 'f1', title: 'Refleksi Singkat', desc: 'Tulis 1 pencapaian kecil hari ini.', stat: 'JIWA', xp: 100, quest_type: 'DAILY', completed: false },
-    { id: 'f2', title: 'Aksi Disiplin', desc: 'Lakukan peregangan selama 5 menit.', stat: 'RAGA', xp: 150, quest_type: 'DAILY', completed: false },
-    { id: 'f3', title: 'Audit Kecil', desc: 'Cek pengeluaran hari ini dan catat.', stat: 'HARTA', xp: 120, quest_type: 'DAILY', completed: false },
-    { id: 'f4', title: 'Eksplorasi Baru', desc: 'Pelajari 3 kata baru dalam bahasa asing.', stat: 'ILMU', xp: 600, quest_type: 'WEEKLY', completed: false },
-    { id: 'f5', title: 'Kebaikan Berantai', desc: 'Bantu satu orang teman atau orang asing.', stat: 'KARMA', xp: 550, quest_type: 'WEEKLY', completed: false },
-    { id: 'f6', title: 'Mastery Skill', desc: 'Selesaikan satu bab buku atau kursus.', stat: 'ILMU', xp: 3000, quest_type: 'MONTHLY', completed: false }
-  ];
 }
 
 export async function verifyQuestCompletion(
-  questTitle: string, 
-  questDesc: string, 
+  questTitle: string,
+  questDesc: string,
   userNote: string,
   imageBase64?: string,
   imageMimeType?: string
@@ -323,40 +399,43 @@ export async function verifyQuestCompletion(
     });
   }
 
+  const schema = z.object({
+    success: z.boolean(),
+    feedback: z.string()
+  });
+
   try {
-    const text = await generateWithFallback(contents);
-    let jsonStr = text.trim();
-    if (jsonStr.includes('```')) {
-      jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
-    }
-    return JSON.parse(jsonStr);
+    return await generateWithFallbackAndCache(contents, null, 0, schema);
   } catch (e) {
     console.error("Verification Failure:", e);
+    return { success: true, feedback: "Progres diterima otomatis." };
   }
-  return { success: true, feedback: "Progres diterima otomatis." };
 }
 
 export async function generateRecoveryQuests(fatigueDays: number): Promise<Quest[]> {
   const prompt = `Hasilkan 3 misi pemulihan ringan (berbeda dari biasanya) untuk user yang absen ${fatigueDays} hari. Gunakan variasi tema kegiatan (fisik, mental, atau sosial). Seed: ${Date.now()}. JSON format: [{id, title, desc, stat, xp: 150}].`;
 
+  const schema = z.array(z.object({
+    id: z.string().or(z.number()).transform(v => v.toString()),
+    title: z.string(),
+    desc: z.string(),
+    stat: z.string(),
+    xp: z.number()
+  }));
+
   try {
-    const text = await generateWithFallback(prompt);
-    let jsonStr = text.trim();
-    if (jsonStr.includes('```')) {
-      jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
-    }
-    const quests = JSON.parse(jsonStr);
-    return quests.map((q: any) => ({ ...q, completed: false }));
+    const quests = await generateWithFallbackAndCache(prompt, null, 0, schema);
+    return quests.map((q: any) => ({ ...q, completed: false, quest_type: 'RECOVERY' }));
   } catch (e) {
     console.error("Recovery Quest Failure:", e);
+    return [{ id: 'rec-1', title: 'Hening Sejenak', desc: 'Duduk tenang selama 2 menit.', stat: 'JIWA', xp: 150, completed: false, quest_type: 'RECOVERY' }];
   }
-  return [{ id: 'rec-1', title: 'Hening Sejenak', desc: 'Duduk tenang selama 2 menit.', stat: 'JIWA', xp: 150, completed: false }];
 }
 
 export async function chatWithArbiter(
-  message: string, 
-  history: { role: 'user' | 'assistant', content: string }[], 
-  userStats: Stats, 
+  message: string,
+  history: { role: 'user' | 'assistant', content: string }[],
+  userStats: Stats,
   username: string
 ): Promise<string> {
   const systemPrompt = `
@@ -379,9 +458,11 @@ export async function chatWithArbiter(
   ];
 
   try {
-    return await generateWithFallback(contents);
+    const responseText = await generateWithFallbackAndCache(contents);
+    // Caching handled in caller if needed, or chat is volatile.
+    return responseText;
   } catch (e) {
-    return "Dimensi astral sedang terganggu.";
+    return "Sang Arbiter sedang merenung, coba sebentar lagi…";
   }
 }
 
@@ -432,12 +513,9 @@ export async function chatWithSoulGuard(
   ];
 
   try {
-    return await generateWithFallback(contents, {
-      maxOutputTokens: style === 'concise' ? 150 : 500,
-      temperature: 0.7,
-    });
+    return await generateWithFallbackAndCache(contents);
   } catch (e) {
-    return "Koneksiku terganggu. Aku tetap di sini.";
+    return "Soul Guard sedang mencari ketenangan, mari coba lagi nanti…";
   }
 }
 
@@ -454,13 +532,18 @@ export async function analyzeMentalState(
 
   const prompt = `Analis psikologis ARUTHA. JSON format. Percakapan: ${conversationText}. Output JSON {dominantCondition, riskLevel, primaryPattern, recommendation, emotionalKeywords, phase, confidence}.`;
 
+  const schema = z.object({
+    dominantCondition: z.string(),
+    riskLevel: z.enum(["GREEN", "YELLOW", "RED"]),
+    primaryPattern: z.string(),
+    recommendation: z.string(),
+    emotionalKeywords: z.array(z.string()),
+    phase: z.number(),
+    confidence: z.number()
+  });
+
   try {
-    const text = await generateWithFallback(prompt);
-    let jsonStr = text.trim();
-    if (jsonStr.includes('```')) {
-      jsonStr = jsonStr.split('```')[1].replace(/^json/, '').replace(/```.*/, '').trim();
-    }
-    return JSON.parse(jsonStr) as MentalStateAnalysis;
+    return await generateWithFallbackAndCache(prompt, null, 0, schema);
   } catch (e) {
     return null;
   }

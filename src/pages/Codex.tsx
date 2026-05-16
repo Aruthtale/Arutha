@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Book, Sparkles, Shield, Zap, Brain, Dumbbell, Coins, Users, BookOpen, 
-  Info, HelpCircle, Star, TrendingUp, AlertTriangle, RefreshCcw, ChevronDown
+  Info, HelpCircle, Star, TrendingUp, AlertTriangle, RefreshCcw, ChevronDown, Award
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { TALENTS } from '../lib/talents';
@@ -24,6 +24,8 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   AlertTriangle: <AlertTriangle className="w-5 h-5 text-raga" />,
   RefreshCcw: <RefreshCcw className="w-5 h-5 text-ilmu" />,
   Info: <Info className="w-5 h-5" />,
+  Star: <Star className="w-5 h-5 text-amber-400" />,
+  Award: <Award className="w-5 h-5 text-amber-400" />,
 };
 
 const resolveIcon = (key: string, className?: string) => {
@@ -38,12 +40,13 @@ interface CodexProps {
 }
 
 export const Codex: React.FC<CodexProps> = ({ onBack }) => {
-  const [activeCategory, setActiveCategory] = useState<'PANDUAN' | 'DIMENSI' | 'BAKAT' | 'HUKUM' | 'ARKETIPE' | 'MISTIK' | 'ZODIAK'>('PANDUAN');
+  const [activeCategory, setActiveCategory] = useState<'PANDUAN' | 'DIMENSI' | 'BAKAT' | 'HUKUM' | 'ARKETIPE' | 'MISTIK' | 'ZODIAK' | 'PENCAPAIAN'>('PANDUAN');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const DIMENSIONS = codexData.dimensions;
   const RULES = codexData.rules;
   const MYSTIC_ITEMS = codexData.mysticItems;
+  const ACHIEVEMENTS = (codexData as any).achievements || [];
   const ARCHETYPES = archetypeData;
 
   const categories = [
@@ -52,6 +55,7 @@ export const Codex: React.FC<CodexProps> = ({ onBack }) => {
     { id: 'MISTIK', label: 'Mistik & Soul', icon: <Sparkles className="w-4 h-4" /> },
     { id: 'BAKAT', label: 'Katalog Bakat', icon: <Book className="w-4 h-4" /> },
     { id: 'ARKETIPE', label: 'Daftar Arketipe', icon: <Users className="w-4 h-4" /> },
+    { id: 'PENCAPAIAN', label: 'Daftar Pencapaian', icon: <Award className="w-4 h-4 text-amber-400" /> },
     { id: 'ZODIAK', label: 'Rasi Bintang', icon: <Star className="w-4 h-4 text-amber-400" /> },
     { id: 'HUKUM', label: 'Hukum Semesta', icon: <Shield className="w-4 h-4" /> }
   ];
@@ -164,8 +168,9 @@ export const Codex: React.FC<CodexProps> = ({ onBack }) => {
                     <div className="grid gap-4">
                       {[
                         { step: 1, text: 'Buka Dashboard dan lihat <span class="text-rpg-text font-bold">Misi Harian</span> yang telah disiapkan AI khusus untuk Anda.' },
-                        { step: 2, text: 'Kerjakan misi di dunia nyata, lalu tekan <span class="text-rpg-text font-bold">"Buktikan Quest"</span> dan tuliskan bukti atau catatan Anda.' },
-                        { step: 3, text: 'AI akan <span class="text-rpg-text font-bold">memverifikasi</span> jawaban Anda. Jika lolos, Anda mendapatkan XP dan statistik dimensi meningkat!' },
+                        { step: 2, text: 'Catat perasaanmu di <span class="text-amber-400 font-bold">Jurnal Mood</span> untuk membantu AI memahami kondisimu hari ini.' },
+                        { step: 3, text: 'Kerjakan misi di dunia nyata, lalu tekan <span class="text-rpg-text font-bold">"Buktikan Quest"</span> dan tuliskan bukti atau catatan Anda.' },
+                        { step: 4, text: 'AI akan <span class="text-rpg-text font-bold">memverifikasi</span> jawaban Anda. Jika lolos, Anda mendapatkan XP dan statistik dimensi meningkat!' },
                       ].map(s => (
                         <div key={s.step} className="flex items-start gap-4 p-5 bg-rpg-border/5 border border-rpg-border/50 rounded-2xl">
                           <span className="w-8 h-8 flex items-center justify-center bg-jiwa/20 text-jiwa font-black rounded-lg shrink-0">{s.step}</span>
@@ -201,8 +206,15 @@ export const Codex: React.FC<CodexProps> = ({ onBack }) => {
                       <div className="flex items-center gap-4 p-5 bg-rpg-border/5 border border-rpg-border/50 rounded-2xl group hover:border-ilmu/30 transition-all">
                         <Sparkles className="w-6 h-6 text-ilmu shrink-0" />
                         <p className="text-sm text-rpg-text/80 font-medium leading-relaxed">
-                          <span className="text-rpg-text font-black italic block mb-1">ORACLE AI</span>
-                          Setiap hari Anda menerima pesan motivasi dan ramalan pertumbuhan yang dipersonalisasi khusus untuk kondisi jiwa Anda.
+                          <span className="text-rpg-text font-black italic block mb-1">ORACLE & TAROT</span>
+                          Dapatkan ramalan harian dan interpretasi Tarot berbasis statistik dimensimu untuk panduan spiritual.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4 p-5 bg-rpg-border/5 border border-rpg-border/50 rounded-2xl group hover:border-amber-500/30 transition-all">
+                        <TrendingUp className="w-6 h-6 text-amber-500 shrink-0" />
+                        <p className="text-sm text-rpg-text/80 font-medium leading-relaxed">
+                          <span className="text-rpg-text font-black italic block mb-1">WEEKLY CHALLENGE</span>
+                          Selesaikan misi mingguan yang lebih menantang untuk mendapatkan hadiah XP masif dan Bakat langka.
                         </p>
                       </div>
                     </div>
@@ -387,6 +399,49 @@ export const Codex: React.FC<CodexProps> = ({ onBack }) => {
                     </div>
                   </div>
                 ))}
+              </motion.div>
+            )}
+
+             {activeCategory === 'PENCAPAIAN' && (
+              <motion.div
+                key="pencapaian"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-6"
+              >
+                <div className="glass-panel p-8 bg-gradient-to-br from-amber-500/10 to-transparent border-rpg-border/50 text-center">
+                  <Award className="w-12 h-12 text-amber-400 mx-auto mb-4" />
+                  <h3 className="text-2xl font-black italic">Hall of Fame Codex</h3>
+                  <p className="text-sm text-rpg-text/60 mt-2">Daftar tantangan sakral yang menunggumu untuk ditaklukkan.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {ACHIEVEMENTS.map((ach: any, i: number) => (
+                    <div key={i} className="glass-panel p-6 border border-rpg-border/30 hover:border-amber-500/30 transition-all group">
+                      <div className="flex gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-rpg-black/50 border border-rpg-border flex items-center justify-center text-amber-400">
+                          {resolveIcon(ach.iconKey)}
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-black uppercase tracking-widest">{ach.title}</h4>
+                            <span className={cn(
+                              "text-[8px] font-black px-2 py-0.5 rounded-full border",
+                              ach.rarity === 'COMMON' ? 'border-neutral-500/30 text-neutral-400' :
+                              ach.rarity === 'RARE' ? 'border-blue-500/30 text-blue-400' :
+                              ach.rarity === 'EPIC' ? 'border-purple-500/30 text-purple-400' :
+                              'border-amber-500/30 text-amber-400 animate-pulse'
+                            )}>
+                              {ach.rarity}
+                            </span>
+                          </div>
+                          <p className="text-xs text-rpg-text/50 font-medium leading-relaxed">{ach.desc}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </motion.div>
             )}
 
