@@ -42,6 +42,7 @@ export const Profile: React.FC<ProfileProps> = ({ userId, name, level, xp, stats
   const [showShareModal, setShowShareModal] = React.useState(false);
   const [shareLink, setShareLink] = React.useState('');
   const [copied, setCopied] = React.useState(false);
+  const [copiedImage, setCopiedImage] = React.useState(false);
   const [localBlobUrl, setLocalBlobUrl] = React.useState('');
   const [uploadError, setUploadError] = React.useState(false);
   const [shareMessage, setShareMessage] = React.useState('');
@@ -205,20 +206,21 @@ export const Profile: React.FC<ProfileProps> = ({ userId, name, level, xp, stats
         });
       } else {
         // Fallback for desktop or browser with no native file share support
-        await navigator.clipboard.writeText(shareLink);
+        const aruthaPortalUrl = `${shareMessage}\n\nLihat prestasiku di Arutha:\n${window.location.origin}`;
+        await navigator.clipboard.writeText(aruthaPortalUrl);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
         
         if (target === 'instagram') {
           setFallbackNotice({
             type: 'info',
-            message: "✨ Link gambar berhasil disalin! Silakan buat Instagram Story baru, lalu tempel link menggunakan stiker Tautan (Link Sticker)."
+            message: "✨ Pesan & Link Arutha berhasil disalin! Silakan buat Instagram Story baru, lalu tempel link menggunakan stiker Tautan (Link Sticker)."
           });
           window.open("https://www.instagram.com/", "_blank");
         } else {
           setFallbackNotice({
             type: 'info',
-            message: "✨ Link gambar berhasil disalin! Silakan buka WhatsApp, lalu tempel link pada Status (Story) Anda."
+            message: "✨ Pesan & Link Arutha berhasil disalin! Silakan buka WhatsApp, lalu tempel link pada Status (Story) Anda."
           });
           window.open("https://web.whatsapp.com/", "_blank");
         }
@@ -712,27 +714,64 @@ export const Profile: React.FC<ProfileProps> = ({ userId, name, level, xp, stats
               </div>
 
               {/* Dynamic Link Display & Copy */}
-              <div className="space-y-2 mb-6">
-                <label className="text-[9px] font-black tracking-widest text-neutral-500 uppercase">Link Awan Astral (Gambar Dinamis)</label>
-                <div className="flex gap-2">
-                  <input 
-                    type="text" 
-                    readOnly 
-                    value={shareLink} 
-                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-neutral-300 focus:outline-none select-all"
-                  />
-                  <button 
-                    onClick={async () => {
-                      await navigator.clipboard.writeText(shareLink);
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
-                    }}
-                    className="px-4 bg-jiwa text-black rounded-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 font-bold text-xs"
-                  >
-                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    <span>{copied ? 'Tersalin' : 'Salin'}</span>
-                  </button>
+              <div className="space-y-4 mb-6 text-left">
+                {/* 1. Portal Arutha (App Link) */}
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black tracking-widest text-neutral-500 uppercase">Link Portal Arutha (Web App)</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      readOnly 
+                      value={window.location.origin} 
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-neutral-300 focus:outline-none select-all"
+                    />
+                    <button 
+                      onClick={async () => {
+                        const aruthaPortalUrl = `${shareMessage}\n\nLihat prestasiku di Arutha:\n${window.location.origin}`;
+                        await navigator.clipboard.writeText(aruthaPortalUrl);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                        setFallbackNotice({
+                          type: 'success',
+                          message: "✨ Pesan & Link Arutha berhasil disalin! Silakan bagikan ke teman Anda."
+                        });
+                      }}
+                      className="px-4 bg-jiwa text-black rounded-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 font-bold text-xs"
+                    >
+                      {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      <span>{copied ? 'Tersalin' : 'Salin'}</span>
+                    </button>
+                  </div>
                 </div>
+
+                {/* 2. Kartu Gambar Dinamis */}
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black tracking-widest text-neutral-500 uppercase">Link Gambar Dinamis (Kartu Pahlawan)</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      readOnly 
+                      value={shareLink} 
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-neutral-300 focus:outline-none select-all"
+                    />
+                    <button 
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(shareLink);
+                        setCopiedImage(true);
+                        setTimeout(() => setCopiedImage(false), 2000);
+                        setFallbackNotice({
+                          type: 'success',
+                          message: "✨ Link langsung gambar berhasil disalin!"
+                        });
+                      }}
+                      className="px-4 bg-white/10 text-white border border-white/10 rounded-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 font-bold text-xs"
+                    >
+                      {copiedImage ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                      <span>{copiedImage ? 'Tersalin' : 'Salin'}</span>
+                    </button>
+                  </div>
+                </div>
+
                 {uploadError && (
                   <p className="text-[10px] text-red-400 font-semibold mt-1">
                     ⚠️ Cloud service sibuk. Menggunakan link lokal. Fitur share langsung disarankan via unduhan.
@@ -745,7 +784,7 @@ export const Profile: React.FC<ProfileProps> = ({ userId, name, level, xp, stats
                 {/* WHATSAPP CHAT */}
                 <button 
                   onClick={() => {
-                    const waText = encodeURIComponent(`${shareMessage}\n\nLihat prestasiku di Arutha:\n${shareLink}`);
+                    const waText = encodeURIComponent(`${shareMessage}\n\nLihat prestasiku di Arutha:\n${window.location.origin}`);
                     window.open(`https://wa.me/?text=${waText}`, '_blank');
                   }}
                   className="p-4 bg-green-950/30 hover:bg-green-900/40 border border-green-500/20 hover:border-green-500/50 rounded-2xl transition-all flex flex-col items-center justify-center gap-2 group text-center"
@@ -784,12 +823,13 @@ export const Profile: React.FC<ProfileProps> = ({ userId, name, level, xp, stats
                 {/* INSTAGRAM CHAT */}
                 <button 
                   onClick={async () => {
-                    await navigator.clipboard.writeText(shareLink);
+                    const aruthaPortalUrl = `${shareMessage}\n\nLihat prestasiku di Arutha:\n${window.location.origin}`;
+                    await navigator.clipboard.writeText(aruthaPortalUrl);
                     setCopied(true);
                     setTimeout(() => setCopied(false), 2000);
                     setFallbackNotice({
                       type: 'success',
-                      message: "✨ Link disalin! Silakan kirimkan langsung via Direct Message Instagram Anda."
+                      message: "✨ Pesan & Link Arutha berhasil disalin! Silakan kirimkan langsung via Direct Message Instagram Anda."
                     });
                     window.open("https://www.instagram.com/direct/inbox/", "_blank");
                   }}
@@ -812,7 +852,7 @@ export const Profile: React.FC<ProfileProps> = ({ userId, name, level, xp, stats
                         await navigator.share({
                           title: `Arutha: ${name}'s Legend`,
                           text: shareMessage,
-                          url: shareLink
+                          url: window.location.origin
                         });
                       } catch (e) {
                         console.warn(e);
