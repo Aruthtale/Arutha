@@ -9,6 +9,7 @@ import { cn } from './lib/utils';
 import { useStore } from './store/useStore';
 import { useAppCore } from './hooks/useAppCore';
 import { Navbar } from './components/Navbar';
+import { AIChatWidget } from './components/AIChatWidget';
 import { SplashScreen } from './components/SplashScreen';
 import { PullToRefresh } from './components/PullToRefresh';
 import { PageSkeleton } from './components/Skeleton';
@@ -188,6 +189,9 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+      {session && dbUserId && stats && (
+        <AIChatWidget userId={dbUserId} username={name} stats={stats} />
+      )}
       <ToastContainer />
     </div>
     </LazyMotion>

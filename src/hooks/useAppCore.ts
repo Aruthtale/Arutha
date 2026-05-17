@@ -58,26 +58,53 @@ export function useAppCore() {
   const initLockRef = useRef(false);
   const refreshLockRef = useRef(false);
 
-  const fetchGlobalQuests = useCallback(async () => {
+  const fetchGlobalQuests = useCallback(async (overrideUserId?: string) => {
+    const userIdToUse = overrideUserId || dbUserId;
+    if (!userIdToUse) return;
     try {
-      const { data, error } = await supabase
+      const { data: questsData, error: questsError } = await supabase
         .from('arutha_global_quests')
         .select('*')
-        .eq('is_claimed', false)
         .gt('expires_at', getLocalTimestamp());
       
-      if (error) throw error;
-      if (data) {
-        setGlobalQuests(data.map(q => ({
-          ...q,
-          stat: q.stat_type as Dimension,
-          is_global: true
-        })));
+      if (questsError) throw questsError;
+
+      const { data: subsData, error: subsError } = await supabase
+        .from('arutha_global_quest_submissions')
+        .select('quest_id, status')
+        .eq('user_id', userIdToUse);
+      
+      if (subsError) throw subsError;
+
+      if (questsData) {
+        const approvedQuestIds = new Set(
+          (subsData || [])
+            .filter(s => s.status === 'APPROVED')
+            .map(s => s.quest_id)
+        );
+
+        const filteredQuests = questsData.filter(q => !approvedQuestIds.has(q.id));
+
+        setGlobalQuests(filteredQuests.map(q => {
+          const userSub = (subsData || []).find(s => s.quest_id === q.id);
+          return {
+            ...q,
+            stat: q.stat_type as Dimension,
+            is_global: true,
+            submission_status: userSub ? userSub.status : null
+          };
+        }));
       }
     } catch (err) {
       console.error("Fetch global quests error:", err);
     }
-  }, [setGlobalQuests]);
+  }, [dbUserId, setGlobalQuests]);
+
+  useEffect(() => {
+    if (dbUserId) {
+      fetchGlobalQuests();
+    }
+  }, [dbUserId, fetchGlobalQuests]);
 
   const fetchStatHistory = async (userId: string) => {
     try {
@@ -121,7 +148,11 @@ export function useAppCore() {
       const latestProfile = profiles?.[0];
       if (latestProfile) {
         await supabase.from('character_profile').update({
-          jiwa: newStats.JIWA, raga: newStats.RAGA, harta: newStats.HARTA, ilmu: newStats.ILMU, karma: newStats.KARMA,
+          jiwa: Math.round(newStats.JIWA || 0),
+          raga: Math.round(newStats.RAGA || 0),
+          harta: Math.round(newStats.HARTA || 0),
+          ilmu: Math.round(newStats.ILMU || 0),
+          karma: Math.round(newStats.KARMA || 0),
         }).eq('id', latestProfile.id);
       }
 
@@ -154,7 +185,7 @@ export function useAppCore() {
 
     try {
       const userEmail = currentSession.user.email || `user_${currentSession.user.id.slice(0, 8)}@arutha.local`;
-      const USER_COLUMNS = 'id, supabase_id, email, username, level, xp, streak, last_streak_date, name_change_count, last_name_change, last_evolution_date, refresh_count, talents, achievements, last_weekly_reset, available_weekly_quests, active_weekly_quests, talent_choices_available, total_choices_granted, pending_talent_pool, usia, gender, birth_date, zodiac, last_quest_update, active_quests';
+      const USER_COLUMNS = 'id, supabase_id, email, username, level, xp, streak, last_streak_date, name_change_count, last_name_change, last_evolution_date, refresh_count, last_refresh_date, talents, achievements, last_weekly_reset, available_weekly_quests, active_weekly_quests, talent_choices_available, total_choices_granted, pending_talent_pool, usia, gender, birth_date, zodiac, last_quest_update, active_quests';
       
       let { data: userData, error: fetchError } = await supabase.from('arutha_user').select(USER_COLUMNS).eq('supabase_id', currentSession.user.id).maybeSingle();
 
@@ -195,7 +226,14 @@ export function useAppCore() {
         setNameChangeCount(userData.name_change_count || 0);
         setLastNameChange(userData.last_name_change);
         setLastEvolutionDate(userData.last_evolution_date);
-        setRefreshCount(userData.refresh_count || 0);
+        let currentRefreshCount = userData.refresh_count || 0;
+        if (userData.last_refresh_date && isNewDay(userData.last_refresh_date)) {
+          currentRefreshCount = 0;
+          supabase.from('arutha_user').update({ refresh_count: 0 }).eq('id', userData.id).then(({ error }) => {
+            if (error) console.error("Error resetting refresh count:", error);
+          });
+        }
+        setRefreshCount(currentRefreshCount);
         setTalents(userData.talents || []);
         setAchievements(userData.achievements || []);
         setLastWeeklyReset(userData.last_weekly_reset);
@@ -269,7 +307,7 @@ export function useAppCore() {
             setQuests(existingQuests as Quest[]);
           }
           fetchStatHistory(userData.id);
-          fetchGlobalQuests();
+          fetchGlobalQuests(userData.id);
 
           // Handle Weekly Reset (Monday or First Time)
           const hasNoWeeklyQuests = (!userData.available_weekly_quests || (userData.available_weekly_quests as any[]).length === 0) && 
@@ -354,6 +392,9 @@ export function useAppCore() {
   }, [level, xp, stats, talents, talentChoicesAvailable, totalChoicesGranted, streak, setTalentChoicesAvailable, setTotalChoicesGranted, setLevelUpStage, setShowLevelUp, setLevel, setXp, setStats, syncProgress]);
 
   const completeQuest = useCallback(async (id: string, note: string, photoBase64?: string, photoMimeType?: string) => {
+    if (!dbUserId) {
+      return { success: false, feedback: "Sesi Anda belum siap, silakan tunggu sebentar atau muat ulang halaman." };
+    }
     // 1. Find the quest in all possible lists
     const isGlobal = globalQuests.find(q => q.id === id);
     const isWeeklyActive = activeWeeklyQuests.find(q => q.id === id);
@@ -396,18 +437,23 @@ export function useAppCore() {
       }
     }
 
+    let storedPhotoUrl: string | null = null;
     // Basic AI Verification Hardening (EXIF/Hash detection concept)
     if (photoBase64) {
       // Create a rough hash to detect immediate duplicates
       const imageHash = btoa(photoBase64.substring(0, 100) + photoBase64.substring(photoBase64.length - 100));
-      const { data: existing } = await supabase.from('arutha_quest_log').select('id').eq('proof_photo_url', imageHash).single();
-      if (existing) {
-         revertOptimisticUI();
-         return { success: false, feedback: "Gagal: Gambar ini terdeteksi sudah pernah digunakan sebelumnya (Duplikasi)." };
-      }
+      storedPhotoUrl = imageHash;
       photoMimeType = photoMimeType || 'image/jpeg';
-      // Store the hash instead of full image URL to mock hash check
-      photoBase64 = imageHash; 
+      
+      try {
+        const { data: existing } = await supabase.from('arutha_quest_log').select('id').eq('proof_photo_url', imageHash).limit(1).maybeSingle();
+        if (existing) {
+           revertOptimisticUI();
+           return { success: false, feedback: "Gagal: Gambar ini terdeteksi sudah pernah digunakan sebelumnya (Duplikasi)." };
+        }
+      } catch (err) {
+        console.warn("Duplicate image check skipped or restricted by RLS:", err);
+      }
     }
 
     // Offline Handling
@@ -440,6 +486,7 @@ export function useAppCore() {
           status: 'PENDING'
         });
         if (subError) throw subError;
+        await fetchGlobalQuests();
         return { success: true, feedback: "Bukti terkirim! Menunggu verifikasi Admin." };
       } catch (err: any) {
         revertOptimisticUI();
@@ -474,46 +521,46 @@ export function useAppCore() {
             // Sync to DB (User profile)
             await supabase.from('arutha_user').update({ active_weekly_quests: updatedActiveWeekly }).eq('id', dbUserId);
             
-            // Log to arutha_quest_log
-            await supabase.from('arutha_quest_log')
-              .update({ 
-                current_step: newCurrent,
-                status: isFullyComplete ? 'COMPLETED' : 'IN_PROGRESS',
-                proof_note: note,
-                ai_feedback: verification.feedback,
-                proof_photo_url: photoBase64 
-              })
-              .eq('user_id', dbUserId)
-              .eq('quest_id', id);
-
-            if (isFullyComplete) {
-              addXp(quest.xp, quest.stat as Dimension);
-              verification.feedback = `LUAR BIASA! Misi Mingguan Selesai. +${quest.xp} XP!`;
-            } else {
-              verification.feedback = `Laporan diterima! Progres: ${newCurrent}/${quest.steps.total}. Sampai jumpa besok!`;
-            }
-          }
-        } else {
-          // Regular Daily Quest Logic
-          const updatedDailies = quests.map(q => q.id === id ? { ...q, completed: true, is_verifying: false } : q);
-          setQuests(updatedDailies);
-          addXp(quest.xp, quest.stat as Dimension, updatedDailies);
-          
-          // Log to arutha_quest_log
-          await supabase.from('arutha_quest_log').insert({
-            user_id: dbUserId,
-            quest_id: id,
-            quest_type: 'DAILY',
-            title: quest.title,
-            stat_type: quest.stat,
-            xp_reward: quest.xp,
-            proof_note: note,
-            ai_feedback: verification.feedback,
-            status: 'COMPLETED',
-            current_step: 1,
-            total_steps: 1,
-            proof_photo_url: photoBase64
-          });
+             // Log to arutha_quest_log
+             await supabase.from('arutha_quest_log')
+               .update({ 
+                 current_step: newCurrent,
+                 status: isFullyComplete ? 'COMPLETED' : 'IN_PROGRESS',
+                 proof_note: note,
+                 ai_feedback: verification.feedback,
+                 proof_photo_url: storedPhotoUrl || null 
+               })
+               .eq('user_id', dbUserId)
+               .eq('quest_id', id);
+ 
+             if (isFullyComplete) {
+               addXp(quest.xp, quest.stat as Dimension);
+               verification.feedback = `LUAR BIASA! Misi Mingguan Selesai. +${quest.xp} XP!`;
+             } else {
+               verification.feedback = `Laporan diterima! Progres: ${newCurrent}/${quest.steps.total}. Sampai jumpa besok!`;
+             }
+           }
+         } else {
+           // Regular Daily Quest Logic
+           const updatedDailies = quests.map(q => q.id === id ? { ...q, completed: true, is_verifying: false } : q);
+           setQuests(updatedDailies);
+           addXp(quest.xp, quest.stat as Dimension, updatedDailies);
+           
+           // Log to arutha_quest_log
+           await supabase.from('arutha_quest_log').insert({
+             user_id: dbUserId,
+             quest_id: id,
+             quest_type: 'DAILY',
+             title: quest.title,
+             stat_type: quest.stat,
+             xp_reward: quest.xp,
+             proof_note: note,
+             ai_feedback: verification.feedback,
+             status: 'COMPLETED',
+             current_step: 1,
+             total_steps: 1,
+             proof_photo_url: storedPhotoUrl || null
+           });
 
           if (dbUserId) await resetFatigue(dbUserId);
           setDecayResult(prev => prev ? { ...prev, status: 'ok', fatigueDays: 0 } : null);
@@ -527,8 +574,10 @@ export function useAppCore() {
             useToast.getState().addToast("Pencapaian Terbuka: Langkah Pertama!", "success");
           }
         }
+        useToast.getState().addToast(verification.feedback || "Misi berhasil diselesaikan pahlawan!", "success");
       } else {
          revertOptimisticUI();
+         useToast.getState().addToast(verification.feedback || "Misi ditolak oleh Mentor.", "error");
       }
       return verification;
     } catch (err) {
@@ -700,10 +749,12 @@ export function useAppCore() {
   }, [userContext, setOnboardingQuestions, setPage, setLoading]);
 
   const refreshQuests = useCallback(async () => {
-    if (!dbUserId || refreshCount >= 1) return;
+    const currentQuests = useStore.getState().quests || [];
+    const hasRecovery = currentQuests.some((q: any) => q.quest_type === 'RECOVERY');
+    if (!dbUserId || refreshCount >= 1 || hasRecovery) return;
     setIsRefreshing(true);
     try {
-      const newQuests = await generateDailyQuests(stats);
+      const newQuests = await generateDailyQuests(stats, undefined, false, dbUserId, true);
       setQuests(newQuests);
       setRefreshCount(1);
       await supabase.from('arutha_user').update({ active_quests: newQuests, refresh_count: 1, last_refresh_date: getLocalTimestamp() }).eq('id', dbUserId);

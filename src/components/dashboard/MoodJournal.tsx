@@ -79,21 +79,24 @@ export const MoodJournal: React.FC<MoodJournalProps> = ({ userId }) => {
     const entry = {
       user_id: userId,
       mood: selectedMood,
-      note: note.trim(),
+      note: note.trim() || null,
       date: today,
     };
 
     try {
       const { data, error } = await supabase
         .from('arutha_mood_journal')
-        .insert([entry])
+        .upsert(entry, { onConflict: 'user_id,date' })
         .select()
         .single();
 
       if (error) throw error;
 
       if (data) {
-        setEntries(prev => [data as MoodEntry, ...prev].slice(0, 7));
+        setEntries(prev => {
+          const filtered = prev.filter(e => e.date !== today);
+          return [data as MoodEntry, ...filtered].slice(0, 7);
+        });
       }
     } catch (_) {
       // Fallback to localStorage
@@ -105,9 +108,13 @@ export const MoodJournal: React.FC<MoodJournalProps> = ({ userId }) => {
         created_at: new Date().toISOString()
       };
       const cached = JSON.parse(localStorage.getItem(`arutha_mood_${userId}`) || '[]');
-      cached.unshift(localEntry);
-      localStorage.setItem(`arutha_mood_${userId}`, JSON.stringify(cached.slice(0, 30)));
-      setEntries(prev => [localEntry, ...prev].slice(0, 7));
+      const filteredCached = cached.filter((e: MoodEntry) => e.date !== today);
+      filteredCached.unshift(localEntry);
+      localStorage.setItem(`arutha_mood_${userId}`, JSON.stringify(filteredCached.slice(0, 30)));
+      setEntries(prev => {
+        const filtered = prev.filter(e => e.date !== today);
+        return [localEntry, ...filtered].slice(0, 7);
+      });
     }
 
     setTodayDone(true);

@@ -51,6 +51,8 @@ export interface OnboardingAnswer {
 }
 
 const MODELS_STABLE = [
+  'gemini-2.5-flash',
+  'gemini-1.5-flash',
   'gemini-3.1-flash-lite-preview',
   'gemini-3.1-flash-lite',
   'gemini-3-flash-preview',
@@ -336,11 +338,12 @@ ${qaBlock}`;
   }
 }
 
-export async function generateDailyQuests(stats: Stats, moodContext?: string, isWeeklyPool?: boolean, userId?: string): Promise<Quest[]> {
+export async function generateDailyQuests(stats: Stats, moodContext?: string, isWeeklyPool?: boolean, userId?: string, forceRefresh?: boolean): Promise<Quest[]> {
   const moodPrompt = moodContext ? `\nMood User: "${moodContext}".` : '';
   const burnoutPrompt = isWeeklyPool ? `\nPENTING: Hasilkan 3 opsi misi WEEKLY progresif (butuh disiplin beberapa hari). XP: 1000-2000.` : '';
+  const refreshPrompt = forceRefresh ? `\nPENTING: Ini adalah proses refresh manual misi harian. Hasilkan misi yang BENAR-BENAR BARU, UNIK, dan KREATIF! Hindari menghasilkan misi yang sama dengan sebelum-sebelumnya agar petualangan terasa segar. Gunakan variasi aktivitas fisik, mental, atau finansial yang unik.` : '';
 
-  const prompt = `Game master ARUTHA. Buat paket misi lengkap berdasarkan stats: JIWA:${stats.JIWA}, RAGA:${stats.RAGA}, HARTA:${stats.HARTA}, ILMU:${stats.ILMU}, KARMA:${stats.KARMA}.${moodPrompt}${burnoutPrompt} 
+  const prompt = `Game master ARUTHA. Buat paket misi lengkap berdasarkan stats: JIWA:${stats.JIWA}, RAGA:${stats.RAGA}, HARTA:${stats.HARTA}, ILMU:${stats.ILMU}, KARMA:${stats.KARMA}.${moodPrompt}${burnoutPrompt}${refreshPrompt} 
 
   ${isWeeklyPool ? '' : `Hasilkan total 6 misi dalam format JSON:
   - 3 misi "DAILY" (Ritual harian ringan, XP: 100-200)
@@ -358,7 +361,7 @@ export async function generateDailyQuests(stats: Stats, moodContext?: string, is
     quest_type: z.enum(["DAILY", "WEEKLY", "MONTHLY"]).optional()
   }));
 
-  const cacheKey = userId ? `quests_${userId}_${new Date().toISOString().split('T')[0]}_${isWeeklyPool ? 'weekly' : 'daily'}` : null;
+  const cacheKey = (userId && !forceRefresh) ? `quests_${userId}_${new Date().toISOString().split('T')[0]}_${isWeeklyPool ? 'weekly' : 'daily'}` : null;
 
   try {
     const quests = await generateWithFallbackAndCache(prompt, cacheKey, 24, schema);
@@ -383,11 +386,35 @@ export async function verifyQuestCompletion(
   imageBase64?: string,
   imageMimeType?: string
 ): Promise<{ success: boolean; feedback: string }> {
-  let promptText = `Validator Mentor Arutha. Verifikasi misi: "${questTitle}". Bukti catatan: "${userNote}".`;
-  if (imageBase64) {
-    promptText += ` Terdapat lampiran foto bukti.`;
-  }
-  promptText += ` Output JSON {success: boolean, feedback: string}.`;
+  let promptText = `Anda adalah Mentor Stoik Arutha yang bertugas memverifikasi penyelesaian misi (quest) pahlawan secara bijaksana, adil, dan tegas.
+  
+Misi yang dikerjakan:
+- Judul Misi: "${questTitle}"
+- Deskripsi Misi: "${questDesc}"
+
+Bukti dari Pahlawan:
+- Catatan Bukti: "${userNote}"
+${imageBase64 ? "- Terlampir juga foto bukti fisik untuk Anda analisis." : "- Pahlawan TIDAK melampirkan foto bukti fisik (Ini diperbolehkan)."}
+
+PENTING - ATURAN BUKTI FOTO:
+- Foto bukti bersifat SEPENUHNYA OPSIONAL. 
+- Jika pahlawan TIDAK mengirimkan foto, itu adalah tindakan yang sepenuhnya sah dan jujur. Anda TIDAK BOLEH menolak misi atau menuduh mereka berbohong/curang hanya karena mereka tidak melampirkan foto.
+- Evaluasi kelayakan misi jika tidak ada foto harus didasarkan SEPENUHNYA pada isi "Catatan Bukti" mereka.
+
+Tugas Anda:
+1. Evaluasi apakah bukti catatan valid, jujur, relevan dengan Deskripsi Misi, dan bermakna. (Gunakan foto untuk validasi tambahan jika terlampir, tetapi abaikan jika tidak ada).
+2. TOLAK (success = false) jika dan hanya jika:
+   - Catatan pahlawan terdeteksi asal-asalan, berupa ketikan asal (seperti "asdf", "asdfgh", "qwerty", "123", "a"), spam, atau teks tidak bermakna lainnya.
+   - Catatan terlalu pendek/low-effort (hanya 1-2 kata tidak bermakna seperti "ok", "done", "sudah", "test", "a") sementara misinya membutuhkan refleksi atau deskripsi tindakan.
+   - Bukti catatan sama sekali tidak relevan dengan apa yang diminta oleh misi.
+3. Jika ditolak, berikan feedback berupa nasihat bijak ala Mentor Stoik yang tegas namun tetap memotivasi. Jelaskan dengan detail kesalahan mereka secara spesifik pada CATATANNYA dan apa yang harus mereka perbaiki (misalnya meminta mereka menulis refleksi yang jujur). Jangan sebut-sebut masalah foto jika mereka memang memilih tidak melampirkannya.
+4. Jika disetujui (success = true), berikan feedback berupa apresiasi Stoik yang mendalam, mengaitkannya dengan pertumbuhan karakter mereka.
+
+Output HARUS berupa JSON dengan skema berikut:
+{
+  "success": boolean,
+  "feedback": "Pesan dari Mentor Stoik Arutha dalam bahasa Indonesia"
+}`;
 
   const contents: any[] = [{ text: promptText }];
   if (imageBase64 && imageMimeType) {

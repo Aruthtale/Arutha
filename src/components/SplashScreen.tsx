@@ -12,16 +12,22 @@ const quotes = [
 ];
 
 export const SplashScreen: React.FC<{ isReady: boolean }> = ({ isReady }) => {
-  const [show, setShow] = useState(true);
+  const [show, setShow] = useState(() => {
+    const shown = sessionStorage.getItem('arutha_splash_shown');
+    return !shown;
+  });
   const [quote] = useState(() => quotes[Math.floor(Math.random() * quotes.length)]);
 
   useEffect(() => {
-    if (isReady) {
+    if (isReady && show) {
       // Give it a small extra delay for smooth feel
-      const timer = setTimeout(() => setShow(false), 1000);
+      const timer = setTimeout(() => {
+        setShow(false);
+        sessionStorage.setItem('arutha_splash_shown', 'true');
+      }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [isReady]);
+  }, [isReady, show]);
 
   return (
     <AnimatePresence>

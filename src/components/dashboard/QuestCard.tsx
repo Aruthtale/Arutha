@@ -36,6 +36,7 @@ export const QuestCard = React.memo(({ quest, onAction, isGlobal }: QuestCardPro
   const isWeekly = quest.is_weekly;
   const theme = useStore(state => state.theme);
   const isLight = theme === 'DIVINE';
+  const isPending = (quest as any).submission_status === 'PENDING';
   
   const getDifficulty = (xp: number) => {
     if (xp <= 150) return '⭐ Easy';
@@ -108,13 +109,15 @@ export const QuestCard = React.memo(({ quest, onAction, isGlobal }: QuestCardPro
           <div className="flex flex-col gap-4">
             <button 
               onClick={() => onAction(quest.id)}
-              disabled={quest.is_verifying}
+              disabled={quest.is_verifying || isPending}
               className={cn(
                 "w-full py-6 rounded-[24px] font-black text-sm uppercase tracking-[0.2em] transition-all transform hover:scale-[1.02] active:scale-95 shadow-xl disabled:opacity-50",
-                isLight ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-amber-500 hover:bg-amber-400 text-black shadow-amber-500/30"
+                isPending
+                  ? "bg-neutral-600/40 border border-neutral-700/50 text-neutral-400 cursor-not-allowed"
+                  : isLight ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-amber-500 hover:bg-amber-400 text-black shadow-amber-500/30"
               )}
             >
-              {quest.is_verifying ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'TERIMA TANTANGAN'}
+              {quest.is_verifying ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : isPending ? 'MENUNGGU VERIFIKASI ADMIN' : 'KIRIM BUKTI QUEST'}
             </button>
           </div>
         </div>

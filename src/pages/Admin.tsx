@@ -373,14 +373,7 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
     const { error } = await supabase.from('arutha_global_quest_submissions').update({ status }).eq('id', subId);
     
     if (!error && status === 'APPROVED') {
-      // Mark quest as claimed if it was a World Quest
-      if (questId) {
-        await supabase.from('arutha_global_quests').update({ 
-          is_claimed: true, 
-          claimed_by: userId, 
-          claimed_at: new Date().toISOString() 
-        }).eq('id', questId);
-      }
+      // Do NOT mark global quest as globally claimed so other users can still complete it!
 
       // Award XP to user
       // Need to fetch current level/xp for accurate level up logic
@@ -399,7 +392,8 @@ export const Admin: React.FC<AdminProps> = ({ onBack }) => {
         }).eq('id', userId);
         
         // Also update stats in character_profile
-        const { data: profile } = await supabase.from('character_profile').select('id, jiwa, raga, harta, ilmu, karma').eq('user_id', userId).single();
+        const { data: profiles } = await supabase.from('character_profile').select('id, jiwa, raga, harta, ilmu, karma').eq('user_id', userId).limit(1);
+        const profile = profiles?.[0];
         if (profile) {
           const updatedStats = {
             jiwa: profile.jiwa + (stat === 'JIWA' ? 2 : 0),

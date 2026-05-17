@@ -16,7 +16,7 @@ import { cn } from '../lib/utils';
 export default function Dashboard() {
   // Actions from useAppCore
   const { 
-    refreshQuests, handleClaimStreak, completeQuest, handleClaimWeeklyQuest 
+    refreshQuests, handleClaimStreak, completeQuest, handleClaimWeeklyQuest, handleClaimGlobalQuest 
   } = useAppCore();
 
   // State from useStore
@@ -24,7 +24,7 @@ export default function Dashboard() {
     level, xp, streak, lastStreakDate, stats, quests, 
     characterAnalysis, dbUserId, name, lastEvolutionDate,
     isRefreshing, refreshCount, globalQuests,
-    activeWeeklyQuests, availableWeeklyQuests, theme
+    activeWeeklyQuests, availableWeeklyQuests, theme, session
   } = useStore();
 
   const isLight = theme === 'DIVINE';
@@ -167,7 +167,7 @@ export default function Dashboard() {
                 
                 <button 
                   onClick={refreshQuests} 
-                  disabled={isRefreshing || refreshCount >= 1} 
+                  disabled={isRefreshing || refreshCount >= 1 || quests.some(q => q.quest_type === 'RECOVERY')} 
                   className={cn(
                     "flex items-center gap-2 px-6 py-3.5 rounded-2xl text-[10px] font-black border transition-all disabled:opacity-30",
                     isLight 
@@ -278,8 +278,8 @@ export default function Dashboard() {
               <DailyTarotWidget userId={dbUserId} stats={stats} username={name} />
             )}
 
-            {dbUserId && (
-              <MoodJournal userId={dbUserId} />
+            {session?.user?.id && (
+              <MoodJournal userId={session.user.id} />
             )}
           </aside>
         </div>
@@ -295,7 +295,7 @@ export default function Dashboard() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button onClick={() => document.getElementById('photo-upload')?.click()} className="h-44 bg-white/5 border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center gap-3">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-neutral-600">Unggah Foto</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-neutral-600">Unggah Foto (Opsional)</span>
                 </button>
                 {photoPreview && <img src={photoPreview} className="h-44 w-full object-cover rounded-2xl" />}
               </div>
@@ -315,10 +315,15 @@ export default function Dashboard() {
               <div className="flex gap-4">
                 <button onClick={() => setActiveQuestInput(null)} className="flex-1 py-5 bg-white/5 border border-white/10 text-neutral-400 rounded-2xl font-black uppercase text-xs">Batal</button>
                 <button onClick={async () => {
-                  if (!photoData) return alert("Sertakan bukti foto!");
+                  if (!photoData && !userNote.trim()) return alert("Sertakan catatan atau foto sebagai bukti!");
                   setIsVerifying(true);
                   try {
-                    const res = await completeQuest(activeQuestInput!, userNote, photoData.base64, photoData.mimeType);
+                    const res = await completeQuest(
+                      activeQuestInput!, 
+                      userNote, 
+                      photoData ? photoData.base64 : undefined, 
+                      photoData ? photoData.mimeType : undefined
+                    );
                     if (res.success) setActiveQuestInput(null);
                   } finally { setIsVerifying(false); }
                 }} disabled={isVerifying} className="flex-[2] py-5 bg-rpg-primary text-rpg-primary-text rounded-2xl font-black uppercase text-xs">
