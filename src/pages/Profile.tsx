@@ -1,7 +1,8 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowLeft, Shield, Star, Zap, Award, Target, TrendingUp, Heart, Brain, Dumbbell, Coins, BookOpen, Users, Clock, History, Medal, Sparkles, Share2
+  ArrowLeft, Shield, Star, Zap, Award, Target, TrendingUp, Heart, Brain, Dumbbell, Coins, BookOpen, Users, Clock, History, Medal, Sparkles, Share2,
+  Copy, Check, MessageCircle, Instagram, ExternalLink, X, Smartphone, Globe
 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
 import { cn, getDimensionRank } from '../lib/utils';
@@ -35,15 +36,50 @@ export const Profile: React.FC<ProfileProps> = ({ userId, name, level, xp, stats
   const [reflections, setReflections] = React.useState<any[]>([]);
   const [isLoadingReflections, setIsLoadingReflections] = React.useState(true);
   const [isSharing, setIsSharing] = React.useState(false);
+  const [pregeneratedFile, setPregeneratedFile] = React.useState<File | null>(null);
+
+  // Dynamic Sharing Picker states
+  const [showShareModal, setShowShareModal] = React.useState(false);
+  const [shareLink, setShareLink] = React.useState('');
+  const [copied, setCopied] = React.useState(false);
+  const [localBlobUrl, setLocalBlobUrl] = React.useState('');
+  const [uploadError, setUploadError] = React.useState(false);
+  const [shareMessage, setShareMessage] = React.useState('');
+  const [generatedBlob, setGeneratedBlob] = React.useState<Blob | null>(null);
+  const [fallbackNotice, setFallbackNotice] = React.useState<{ type: 'info' | 'warning' | 'success'; message: string } | null>(null);
 
   React.useEffect(() => {
     const timer = setTimeout(() => setIsMounted(true), 800);
     return () => clearTimeout(timer);
   }, []);
 
-  const handleShareCard = async () => {
+  React.useEffect(() => {
+    const pregenerate = async () => {
+      try {
+        const blob = await generateHeroCard({
+          name,
+          level,
+          xp,
+          stats,
+          personalityTitle: analysis?.personality_title,
+        });
+        const file = new File([blob], `arutha-${name}-lvl${level}.png`, { type: 'image/png' });
+        setPregeneratedFile(file);
+      } catch (err) {
+        console.error('Gagal melakukan pre-generate hero card:', err);
+      }
+    };
+    if (name && level && stats) {
+      pregenerate();
+    }
+  }, [name, level, xp, stats, analysis]);
+
+  const handleShareClick = async () => {
     setIsSharing(true);
+    setUploadError(false);
+    
     try {
+      // 1. Generate card blob
       const blob = await generateHeroCard({
         name,
         level,
@@ -51,28 +87,144 @@ export const Profile: React.FC<ProfileProps> = ({ userId, name, level, xp, stats
         stats,
         personalityTitle: analysis?.personality_title,
       });
-      const file = new File([blob], `arutha-${name}-lvl${level}.png`, { type: 'image/png' });
 
+      // Maintain a local object URL for offline/download backup
+      const localUrl = URL.createObjectURL(blob);
+      setLocalBlobUrl(localUrl);
+      setGeneratedBlob(blob);
+
+      let directImageUrl = '';
+
+      // Try tmpfiles.org (Primary upload provider)
+      try {
+        const formData = new FormData();
+        formData.append('file', blob, `arutha-${name}-lvl${level}.png`);
+
+        const res = await fetch('https://tmpfiles.org/api/v1/upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (res.ok) {
+          const resData = await res.json();
+          const rawUrl = resData.data.url;
+          directImageUrl = rawUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+        }
+      } catch (e) {
+        console.warn('tmpfiles.org upload failed, trying backup provider...', e);
+      }
+
+      // If tmpfiles failed, try 0x0.st (Secondary upload provider)
+      if (!directImageUrl) {
+        try {
+          const formData = new FormData();
+          formData.append('file', blob);
+          
+          const res = await fetch('https://0x0.st', {
+            method: 'POST',
+            body: formData
+          });
+          
+          if (res.ok) {
+            const textUrl = await res.text();
+            directImageUrl = textUrl.trim();
+          }
+        } catch (e) {
+          console.warn('0x0.st upload failed, trying Supabase storage...', e);
+        }
+      }
+
+      // If both failed, try Supabase Storage under a public bucket if possible
+      if (!directImageUrl) {
+        try {
+          const fileName = `hero-card-${userId}-${Date.now()}.png`;
+          const { data, error } = await supabase.storage
+            .from('shares')
+            .upload(fileName, blob, {
+              contentType: 'image/png',
+              cacheControl: '3600',
+              upsert: true
+            });
+            
+          if (!error && data) {
+            const { data: publicUrlData } = supabase.storage
+              .from('shares')
+              .getPublicUrl(data.path);
+            directImageUrl = publicUrlData.publicUrl;
+          }
+        } catch (e) {
+          console.warn('Supabase storage upload failed...', e);
+        }
+      }
+
+      // If ALL uploads failed, use local blob URL and flag error
+      if (!directImageUrl) {
+        console.warn('All cloud upload providers failed. Falling back to local URL.');
+        directImageUrl = localUrl;
+        setUploadError(true);
+      }
+
+      // Store the link and message, then show the share modal!
+      setShareLink(directImageUrl);
+      
+      const shareText = `Saya adalah ${analysis?.personality_title || 'The Unwritten Legend'} Level ${level} di Arutha!`;
+      setShareMessage(shareText);
+
+      // Open the custom RPG Share Modal!
+      setShowShareModal(true);
+
+    } catch (err) {
+      console.error('Gagal me-render kartu pahlawan secara dinamis:', err);
+      setFallbackNotice({
+        type: 'warning',
+        message: 'Gagal mentransendensikan kartu pahlawan Anda. Silakan coba lagi.'
+      });
+      setShowShareModal(true);
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const handleNativeShare = async (target: 'instagram' | 'whatsapp') => {
+    setFallbackNotice(null);
+    if (!generatedBlob) {
+      setFallbackNotice({ 
+        type: 'warning', 
+        message: "Gambar belum siap ditransendensikan. Silakan tunggu beberapa saat." 
+      });
+      return;
+    }
+    
+    try {
+      const file = new File([generatedBlob], `arutha-${name}-lvl${level}.png`, { type: 'image/png' });
+      
+      // On mobile devices supporting navigator.share with files
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
-          title: `Arutha: ${name}'s Legend`,
-          text: `Saya adalah ${analysis?.personality_title || 'The Unwritten Legend'} Level ${level} di Arutha!`,
           files: [file]
         });
       } else {
-        // Desktop fallback: auto-download the PNG
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = file.name;
-        link.click();
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        // Fallback for desktop or browser with no native file share support
+        await navigator.clipboard.writeText(shareLink);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        
+        if (target === 'instagram') {
+          setFallbackNotice({
+            type: 'info',
+            message: "✨ Link gambar berhasil disalin! Silakan buat Instagram Story baru, lalu tempel link menggunakan stiker Tautan (Link Sticker)."
+          });
+          window.open("https://www.instagram.com/", "_blank");
+        } else {
+          setFallbackNotice({
+            type: 'info',
+            message: "✨ Link gambar berhasil disalin! Silakan buka WhatsApp, lalu tempel link pada Status (Story) Anda."
+          });
+          window.open("https://web.whatsapp.com/", "_blank");
+        }
       }
     } catch (err) {
-      console.error('Gagal generate card:', err);
-      alert('Gagal membuat kartu. Coba lagi.');
-    } finally {
-      setIsSharing(false);
+      console.warn("Native file sharing failed or cancelled:", err);
     }
   };
   
@@ -138,11 +290,11 @@ export const Profile: React.FC<ProfileProps> = ({ userId, name, level, xp, stats
           <div className="flex items-center gap-4">
             <button 
               disabled={isSharing}
-              onClick={handleShareCard}
+              onClick={handleShareClick}
               className="p-3 bg-jiwa/10 border border-jiwa/30 rounded-2xl text-jiwa hover:bg-jiwa/20 transition-all flex items-center gap-2 group shadow-[0_0_15px_rgba(var(--color-jiwa),0.2)] disabled:opacity-50"
             >
               <Share2 className={cn("w-5 h-5", isSharing && "animate-spin")} />
-              <span className="hidden sm:inline text-xs font-black tracking-widest uppercase">{isSharing ? 'Memproses...' : 'Bagikan Pahlawan'}</span>
+              <span className="hidden sm:inline text-xs font-black tracking-widest uppercase">{isSharing ? 'Mentransendensikan...' : 'Bagikan Pahlawan'}</span>
             </button>
             <div className="text-right">
               <p className="text-[10px] md:text-xs font-black tracking-[0.4em] text-jiwa uppercase">Character Ledger</p>
@@ -472,6 +624,220 @@ export const Profile: React.FC<ProfileProps> = ({ userId, name, level, xp, stats
           </div>
         </div>
       </div>
+
+      {/* RPG SHARE MODAL */}
+      <AnimatePresence>
+        {showShareModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => { setShowShareModal(false); setFallbackNotice(null); }}
+              className="absolute inset-0 bg-black/85 backdrop-blur-md"
+            />
+            
+            {/* Modal Body */}
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-lg overflow-hidden glass-panel border border-white/10 rounded-[32px] bg-neutral-950/95 shadow-[0_0_50px_rgba(var(--color-jiwa),0.15)] flex flex-col p-6 sm:p-8 font-sans z-10"
+            >
+              {/* Close Button */}
+              <button 
+                onClick={() => { setShowShareModal(false); setFallbackNotice(null); }}
+                className="absolute right-6 top-6 p-2 hover:bg-white/10 rounded-full transition-colors text-neutral-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {/* Title */}
+              <div className="text-center mb-6">
+                <span className="text-[10px] font-black tracking-[0.4em] text-jiwa uppercase">Transcended Artifact</span>
+                <h3 className="text-xl sm:text-2xl font-serif font-black italic text-rpg-text mt-1">BAGIKAN KISAH LEGENDAMU</h3>
+              </div>
+
+              {/* Dynamic Notification Banner */}
+              <AnimatePresence>
+                {fallbackNotice && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, height: 'auto', scale: 1 }}
+                    exit={{ opacity: 0, height: 0, scale: 0.95 }}
+                    className={cn(
+                      "mb-6 p-4 rounded-2xl border flex items-start gap-3 relative overflow-hidden backdrop-blur-md text-left",
+                      fallbackNotice.type === 'warning' && "bg-amber-950/40 border-amber-500/30 text-amber-200",
+                      fallbackNotice.type === 'info' && "bg-cyan-950/40 border-cyan-500/30 text-cyan-200",
+                      fallbackNotice.type === 'success' && "bg-emerald-950/40 border-emerald-500/30 text-emerald-200"
+                    )}
+                  >
+                    <div className="mt-0.5 flex-shrink-0">
+                      {fallbackNotice.type === 'warning' && <Shield className="w-4 h-4 text-amber-400" />}
+                      {fallbackNotice.type === 'info' && <Sparkles className="w-4 h-4 text-cyan-400" />}
+                      {fallbackNotice.type === 'success' && <Medal className="w-4 h-4 text-emerald-400" />}
+                    </div>
+                    <div className="flex-1 pr-6">
+                      <p className="text-xs font-bold leading-relaxed">{fallbackNotice.message}</p>
+                    </div>
+                    <button 
+                      onClick={() => setFallbackNotice(null)}
+                      className="absolute right-3 top-3.5 p-0.5 hover:bg-white/10 rounded-full transition-colors text-white/50 hover:text-white"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Dynamic Card Preview */}
+              <div className="relative aspect-[16/9] w-full bg-neutral-900 border border-white/10 rounded-2xl overflow-hidden shadow-inner flex items-center justify-center mb-6 group">
+                <img 
+                  src={shareLink || localBlobUrl} 
+                  alt="Legend Card" 
+                  className="w-full h-full object-contain"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 justify-between">
+                  <span className="text-[10px] font-black text-white/75 tracking-wider uppercase">Preview Kartu Pahlawan</span>
+                  <a 
+                    href={shareLink || localBlobUrl} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="p-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-white transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Dynamic Link Display & Copy */}
+              <div className="space-y-2 mb-6">
+                <label className="text-[9px] font-black tracking-widest text-neutral-500 uppercase">Link Awan Astral (Gambar Dinamis)</label>
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    readOnly 
+                    value={shareLink} 
+                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-neutral-300 focus:outline-none select-all"
+                  />
+                  <button 
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(shareLink);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="px-4 bg-jiwa text-black rounded-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 font-bold text-xs"
+                  >
+                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    <span>{copied ? 'Tersalin' : 'Salin'}</span>
+                  </button>
+                </div>
+                {uploadError && (
+                  <p className="text-[10px] text-red-400 font-semibold mt-1">
+                    ⚠️ Cloud service sibuk. Menggunakan link lokal. Fitur share langsung disarankan via unduhan.
+                  </p>
+                )}
+              </div>
+
+              {/* Custom Sharing Buttons */}
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                {/* WHATSAPP CHAT */}
+                <button 
+                  onClick={() => {
+                    const waText = encodeURIComponent(`${shareMessage}\n\nLihat prestasiku di Arutha:\n${shareLink}`);
+                    window.open(`https://wa.me/?text=${waText}`, '_blank');
+                  }}
+                  className="p-4 bg-green-950/30 hover:bg-green-900/40 border border-green-500/20 hover:border-green-500/50 rounded-2xl transition-all flex flex-col items-center justify-center gap-2 group text-center"
+                >
+                  <MessageCircle className="w-6 h-6 text-green-400 group-hover:scale-110 transition-transform" />
+                  <div>
+                    <p className="text-xs font-black text-green-300 uppercase tracking-wider">WA Chat</p>
+                    <p className="text-[9px] text-green-400/60 font-semibold mt-0.5">Kirim ke Teman</p>
+                  </div>
+                </button>
+
+                {/* WHATSAPP STATUS */}
+                <button 
+                  onClick={() => handleNativeShare('whatsapp')}
+                  className="p-4 bg-teal-950/30 hover:bg-teal-900/40 border border-teal-500/20 hover:border-teal-500/50 rounded-2xl transition-all flex flex-col items-center justify-center gap-2 group text-center"
+                >
+                  <Smartphone className="w-6 h-6 text-teal-400 group-hover:scale-110 transition-transform" />
+                  <div>
+                    <p className="text-xs font-black text-teal-300 uppercase tracking-wider">WA Story</p>
+                    <p className="text-[9px] text-teal-400/60 font-semibold mt-0.5">Terpampang Langsung</p>
+                  </div>
+                </button>
+
+                {/* INSTAGRAM STORY */}
+                <button 
+                  onClick={() => handleNativeShare('instagram')}
+                  className="p-4 bg-pink-950/30 hover:bg-pink-900/40 border border-pink-500/20 hover:border-pink-500/50 rounded-2xl transition-all flex flex-col items-center justify-center gap-2 group text-center"
+                >
+                  <Instagram className="w-6 h-6 text-pink-400 group-hover:scale-110 transition-transform" />
+                  <div>
+                    <p className="text-xs font-black text-pink-300 uppercase tracking-wider">IG Story</p>
+                    <p className="text-[9px] text-pink-400/60 font-semibold mt-0.5">Terpampang Langsung</p>
+                  </div>
+                </button>
+
+                {/* INSTAGRAM CHAT */}
+                <button 
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(shareLink);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                    setFallbackNotice({
+                      type: 'success',
+                      message: "✨ Link disalin! Silakan kirimkan langsung via Direct Message Instagram Anda."
+                    });
+                    window.open("https://www.instagram.com/direct/inbox/", "_blank");
+                  }}
+                  className="p-4 bg-purple-950/30 hover:bg-purple-900/40 border border-purple-500/20 hover:border-purple-500/50 rounded-2xl transition-all flex flex-col items-center justify-center gap-2 group text-center"
+                >
+                  <Globe className="w-6 h-6 text-purple-400 group-hover:scale-110 transition-transform" />
+                  <div>
+                    <p className="text-xs font-black text-purple-300 uppercase tracking-wider">IG Chat / DM</p>
+                    <p className="text-[9px] text-purple-400/60 font-semibold mt-0.5">Kirim Direct Link</p>
+                  </div>
+                </button>
+              </div>
+
+              {/* Extra Backup Options */}
+              <div className="flex gap-2 w-full">
+                {navigator.share && (
+                  <button 
+                    onClick={async () => {
+                      try {
+                        await navigator.share({
+                          title: `Arutha: ${name}'s Legend`,
+                          text: shareMessage,
+                          url: shareLink
+                        });
+                      } catch (e) {
+                        console.warn(e);
+                      }
+                    }}
+                    className="flex-1 py-3 bg-neutral-900 hover:bg-neutral-850 border border-white/10 hover:border-white/20 rounded-xl text-neutral-300 transition-all font-black text-[10px] tracking-widest uppercase flex items-center justify-center gap-1.5"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>Bagikan Sistem</span>
+                  </button>
+                )}
+                
+                <a 
+                  href={localBlobUrl} 
+                  download={`arutha-${name}-lvl${level}.png`}
+                  className="flex-1 py-3 bg-neutral-900 hover:bg-neutral-850 border border-white/10 hover:border-white/20 rounded-xl text-neutral-300 transition-all font-black text-[10px] tracking-widest uppercase flex items-center justify-center gap-1.5 text-center"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Simpan Gambar</span>
+                </a>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
