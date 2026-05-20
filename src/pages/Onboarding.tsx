@@ -67,7 +67,6 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, userContext,
     setIsLoadingQuestions(true);
     try {
       const generated = await generateOnboardingQuestions(userContext);
-      console.log("Pertanyaan diterima:", generated);
       if (!generated || generated.length === 0) {
         console.error("AI mengembalikan array kosong!");
       }

@@ -211,15 +211,13 @@ export const Landing: React.FC<LandingProps> = ({ session, hasProfile, setPage }
               
               <div className="absolute inset-0 p-8 md:p-16 flex items-center justify-center">
                 {isMounted && (
-                  <ResponsiveContainer width="100%" aspect={1} debounce={200}>
-                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={[
-                      { subject: 'JIWA', A: 85 }, { subject: 'RAGA', A: 70 }, { subject: 'HARTA', A: 50 }, { subject: 'ILMU', A: 95 }, { subject: 'KARMA', A: 65 },
-                    ]}>
-                      <PolarGrid stroke="#333" strokeDasharray="3 3" />
-                      <PolarAngleAxis dataKey="subject" tick={{ fill: '#666', fontSize: 10, fontWeight: '900', letterSpacing: '0.2em' }} />
-                      <Radar name="Status" dataKey="A" stroke="var(--rpg-primary)" fill="var(--rpg-primary)" fillOpacity={0.1} strokeWidth={2} />
-                    </RadarChart>
-                  </ResponsiveContainer>
+                  <RadarChart width={280} height={280} cx="50%" cy="50%" outerRadius="80%" data={[
+                    { subject: 'JIWA', A: 85 }, { subject: 'RAGA', A: 70 }, { subject: 'HARTA', A: 50 }, { subject: 'ILMU', A: 95 }, { subject: 'KARMA', A: 65 },
+                  ]}>
+                    <PolarGrid stroke="#333" strokeDasharray="3 3" />
+                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#666', fontSize: 10, fontWeight: '900', letterSpacing: '0.2em' }} />
+                    <Radar name="Status" dataKey="A" stroke="var(--rpg-primary)" fill="var(--rpg-primary)" fillOpacity={0.1} strokeWidth={2} />
+                  </RadarChart>
                 )}
               </div>
 

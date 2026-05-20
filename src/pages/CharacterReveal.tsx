@@ -123,7 +123,7 @@ export const CharacterReveal: React.FC<CharacterRevealProps> = ({ analysis, onCo
               <div className="w-full h-[300px] md:h-[350px] relative">
                 {isMounted && phase >= 1 && (
                   <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
+                    <RadarChart width={300} height={300} cx="50%" cy="50%" outerRadius="80%" data={chartData}>
                       <PolarGrid stroke="rgba(255,255,255,0.1)" />
                       <PolarAngleAxis 
                         dataKey="subject" 
