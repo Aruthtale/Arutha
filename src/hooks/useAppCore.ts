@@ -198,7 +198,7 @@ export function useAppCore() {
 
       if (!userData) {
         const now = new Date().toISOString();
-        const { data: newList, error: insertError } = await supabase.from('arutha_user').insert({
+        const insertPayload: any = {
           supabase_id: currentSession.user.id, 
           email: userEmail, 
           username: displayName, 
@@ -207,7 +207,14 @@ export function useAppCore() {
           streak: 0,
           created_at: now,
           updated_at: now
-        }).select();
+        };
+        // Populate birth data from auth metadata (from regular registration)
+        if (userMetadata.birth_date) insertPayload.birth_date = userMetadata.birth_date;
+        if (userMetadata.usia) insertPayload.usia = userMetadata.usia;
+        if (userMetadata.gender) insertPayload.gender = userMetadata.gender;
+        if (userMetadata.zodiac) insertPayload.zodiac = userMetadata.zodiac;
+
+        const { data: newList, error: insertError } = await supabase.from('arutha_user').insert(insertPayload).select();
         
         if (insertError) {
           console.error("User Creation Error:", insertError);

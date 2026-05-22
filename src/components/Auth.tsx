@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Capacitor } from '@capacitor/core';
 import { LogIn, UserPlus, Chrome, Mail, Lock, User as UserIcon, Calendar, VenusAndMars } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { getZodiacFromDate } from '../lib/zodiacs';
 
 export const Auth: React.FC<{ initialIsRegister?: boolean }> = ({ initialIsRegister = false }) => {
   const [loading, setLoading] = useState(false);
@@ -11,7 +12,9 @@ export const Auth: React.FC<{ initialIsRegister?: boolean }> = ({ initialIsRegis
     email: '',
     password: '',
     username: '',
-    usia: '',
+    day: '',
+    month: '',
+    year: '',
     gender: 'Other'
   });
 
@@ -40,14 +43,30 @@ export const Auth: React.FC<{ initialIsRegister?: boolean }> = ({ initialIsRegis
 
     try {
       if (isRegister) {
+        if (!formData.day || !formData.month || !formData.year) {
+          alert('Mohon lengkapi tanggal lahir Anda.');
+          setLoading(false);
+          return;
+        }
+        const birthDateStr = `${formData.year}-${formData.month.padStart(2, '0')}-${formData.day.padStart(2, '0')}`;
+        const dateObj = new Date(birthDateStr);
+        const today = new Date();
+        let usiaNum = today.getFullYear() - dateObj.getFullYear();
+        const m = today.getMonth() - dateObj.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < dateObj.getDate())) usiaNum--;
+        const zodiacData = getZodiacFromDate(parseInt(formData.day), parseInt(formData.month));
+        const zodiacName = zodiacData ? zodiacData.name : 'Unknown';
+
         const { data, error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
           options: {
             data: {
               username: formData.username,
-              usia: parseInt(formData.usia),
-              gender: formData.gender
+              usia: usiaNum,
+              gender: formData.gender,
+              birth_date: birthDateStr,
+              zodiac: zodiacName
             }
           }
         });
@@ -118,18 +137,49 @@ export const Auth: React.FC<{ initialIsRegister?: boolean }> = ({ initialIsRegis
         </div>
 
         {isRegister && (
-          <div className="grid grid-cols-2 gap-3 md:gap-4">
-            <div className="relative group">
-              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-rpg-text transition-colors" />
-              <input
-                type="number"
-                placeholder="Usia"
+          <>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] ml-2 flex items-center gap-2">
+              <Calendar className="w-3.5 h-3.5" /> Tanggal Lahir
+            </label>
+            <div className="grid grid-cols-3 gap-2 md:gap-3">
+              <select
                 required
-                className="w-full pl-12 pr-4 py-3 md:py-4 bg-rpg-black/50 border border-rpg-border/50 focus:border-rpg-primary rounded-xl md:rounded-2xl outline-none transition-all text-rpg-text placeholder:text-neutral-600 text-sm md:text-base"
-                value={formData.usia}
-                onChange={(e) => setFormData({ ...formData, usia: e.target.value })}
-              />
+                className="w-full px-3 py-3 md:py-4 bg-rpg-black/50 border border-rpg-border/50 focus:border-rpg-primary rounded-xl md:rounded-2xl outline-none transition-all text-rpg-text appearance-none text-center font-bold text-sm md:text-base"
+                value={formData.day}
+                onChange={(e) => setFormData({ ...formData, day: e.target.value })}
+              >
+                <option value="" disabled className="bg-rpg-card">Tgl</option>
+                {Array.from({ length: 31 }, (_, i) => (
+                  <option key={i+1} value={String(i+1)} className="bg-rpg-card">{i+1}</option>
+                ))}
+              </select>
+              <select
+                required
+                className="w-full px-3 py-3 md:py-4 bg-rpg-black/50 border border-rpg-border/50 focus:border-rpg-primary rounded-xl md:rounded-2xl outline-none transition-all text-rpg-text appearance-none text-center font-bold text-sm md:text-base"
+                value={formData.month}
+                onChange={(e) => setFormData({ ...formData, month: e.target.value })}
+              >
+                <option value="" disabled className="bg-rpg-card">Bln</option>
+                {["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"].map((m, i) => (
+                  <option key={i+1} value={String(i+1)} className="bg-rpg-card">{m}</option>
+                ))}
+              </select>
+              <select
+                required
+                className="w-full px-3 py-3 md:py-4 bg-rpg-black/50 border border-rpg-border/50 focus:border-rpg-primary rounded-xl md:rounded-2xl outline-none transition-all text-rpg-text appearance-none text-center font-bold text-sm md:text-base"
+                value={formData.year}
+                onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+              >
+                <option value="" disabled className="bg-rpg-card">Tahun</option>
+                {Array.from({ length: 100 }, (_, i) => {
+                  const year = new Date().getFullYear() - i;
+                  return <option key={year} value={String(year)} className="bg-rpg-card">{year}</option>;
+                })}
+              </select>
             </div>
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:gap-4">
             <div className="relative group">
               <VenusAndMars className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-rpg-text transition-colors pointer-events-none" />
               <select
@@ -148,6 +198,7 @@ export const Auth: React.FC<{ initialIsRegister?: boolean }> = ({ initialIsRegis
               </div>
             </div>
           </div>
+          </>
         )}
 
         <button
