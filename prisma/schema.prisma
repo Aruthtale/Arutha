@@ -184,6 +184,18 @@ model chat_logs {
   category   String?        @default("arbiter") @db.VarChar(255)
 }
 
+model AiCache {
+  id         String   @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  cache_key  String   @unique(map: "cache_key") @db.VarChar(255)
+  model      String?  @db.Text
+  prompt     String?  @db.Text
+  response   Json
+  created_at DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  expires_at DateTime @map("expires_at") @db.Timestamp(0)
+
+  @@map("ai_cache")
+}
+
 enum chat_logs_role {
   user
   assistant

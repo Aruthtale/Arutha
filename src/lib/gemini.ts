@@ -54,7 +54,6 @@ const MODELS_STABLE = [
   'gemini-3.5-flash',
   'gemini-3.1-flash-lite-preview',
   'gemini-3.1-flash-lite',
-  'gemini-3-flash-preview',
   'gemini-3.1-pro-preview'
 ];
 
@@ -345,7 +344,7 @@ export async function generateDailyQuests(stats: Stats, moodContext?: string, is
   const prompt = `Game master ARUTHA. Buat paket misi lengkap berdasarkan stats: JIWA:${stats.JIWA}, RAGA:${stats.RAGA}, HARTA:${stats.HARTA}, ILMU:${stats.ILMU}, KARMA:${stats.KARMA}.${moodPrompt}${burnoutPrompt}${refreshPrompt} 
 
   ${isWeeklyPool ? '' : `Hasilkan total 6 misi dalam format JSON:
-  - 3 misi "DAILY" (Ritual harian ringan, XP: 100-200)
+  - 3 misi "DAILY" (Ritual harian ringan/Rites, XP: 100-200. Ini adalah misi utama harian yang harus diselesaikan untuk mendapatkan bonus harian).
   - 2 misi "WEEKLY" (Tantangan menengah seminggu, XP: 500-1000)
   - 1 misi "MONTHLY" (Pencapaian besar sebulan, XP: 2500-5000)`}
 

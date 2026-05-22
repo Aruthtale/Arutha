@@ -237,14 +237,66 @@ export default function Dashboard() {
                     )}
                   </div>
                 ) : (
-                  filteredQuests.length > 0 ? (
-                    filteredQuests.map(q => <QuestCard key={q.id} quest={q} onAction={setActiveQuestInput} />)
-                  ) : (
-                    <div className="col-span-full glass-panel p-24 text-center border-dashed border-rpg-border flex flex-col items-center gap-6">
-                      <Sparkles className="w-16 h-16 text-jiwa/20 animate-pulse" />
-                      <h4 className="text-2xl font-black uppercase tracking-widest text-neutral-500">Semua Misi Selesai</h4>
-                    </div>
-                  )
+                  <>
+                    {questFilter === 'DAILY' && quests.filter(q => q.quest_type === 'DAILY' || !q.quest_type).length > 0 && (
+                      <div className="col-span-full mb-4">
+                        <div className={cn(
+                          "glass-panel p-6 border-l-4 transition-all duration-500 flex flex-col md:flex-row items-center justify-between gap-6",
+                          quests.filter(q => (q.quest_type === 'DAILY' || !q.quest_type) && q.completed).length === quests.filter(q => q.quest_type === 'DAILY' || !q.quest_type).length
+                            ? "border-green-500 bg-green-500/5"
+                            : "border-jiwa bg-jiwa/5"
+                        )}>
+                          <div className="flex items-center gap-4">
+                            <div className={cn(
+                              "w-12 h-12 rounded-full flex items-center justify-center border-2",
+                              quests.filter(q => (q.quest_type === 'DAILY' || !q.quest_type) && q.completed).length === quests.filter(q => q.quest_type === 'DAILY' || !q.quest_type).length
+                                ? "border-green-500 bg-green-500/20 text-green-500"
+                                : "border-jiwa bg-jiwa/20 text-jiwa"
+                            )}>
+                              <Trophy className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h4 className="text-lg font-black uppercase tracking-tight">Progres Ritual Harian</h4>
+                              <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em]">Selesaikan semua Rites untuk bonus +300 XP</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-6 w-full md:w-auto">
+                            <div className="flex-1 md:w-48">
+                              <div className="flex justify-between items-end mb-2 px-1">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500">Completion</span>
+                                <span className="text-xs font-black text-white">
+                                  {quests.filter(q => (q.quest_type === 'DAILY' || !q.quest_type) && q.completed).length} / {quests.filter(q => q.quest_type === 'DAILY' || !q.quest_type).length}
+                                </span>
+                              </div>
+                              <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                                <motion.div 
+                                  initial={{ width: 0 }}
+                                  animate={{ 
+                                    width: `${(quests.filter(q => (q.quest_type === 'DAILY' || !q.quest_type) && q.completed).length / (quests.filter(q => q.quest_type === 'DAILY' || !q.quest_type).length || 1)) * 100}%` 
+                                  }}
+                                  className={cn(
+                                    "h-full rounded-full transition-all duration-1000",
+                                    quests.filter(q => (q.quest_type === 'DAILY' || !q.quest_type) && q.completed).length === quests.filter(q => q.quest_type === 'DAILY' || !q.quest_type).length
+                                      ? "bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)]"
+                                      : "bg-jiwa shadow-[0_0_15px_rgba(139,92,246,0.4)]"
+                                  )}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {filteredQuests.length > 0 ? (
+                      filteredQuests.map(q => <QuestCard key={q.id} quest={q} onAction={setActiveQuestInput} />)
+                    ) : (
+                      <div className="col-span-full glass-panel p-24 text-center border-dashed border-rpg-border flex flex-col items-center gap-6">
+                        <Sparkles className="w-16 h-16 text-jiwa/20 animate-pulse" />
+                        <h4 className="text-2xl font-black uppercase tracking-widest text-neutral-500">Semua Misi Selesai</h4>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </section>

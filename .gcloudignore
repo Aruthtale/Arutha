@@ -1,0 +1,11 @@
+# This file instructs gcloud which files to ignore when uploading to Cloud Build.
+# We do NOT ignore .env, Dockerfile, or nginx.conf so they can be uploaded and used at build time.
+
+.git
+.gitignore
+node_modules/
+dist/
+android/
+capacitor.config.ts
+*.md
+cloudbuild.yaml

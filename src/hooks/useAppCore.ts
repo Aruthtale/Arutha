@@ -562,6 +562,41 @@ export function useAppCore() {
              proof_photo_url: storedPhotoUrl || null
            });
 
+          // CHECK FOR DAILY COMPLETION BONUS
+          const dailyRites = updatedDailies.filter(q => q.quest_type === 'DAILY' || !q.quest_type); // default is DAILY
+          const allRitesDone = dailyRites.length > 0 && dailyRites.every(q => q.completed);
+
+          if (allRitesDone) {
+            const startOfDay = new Date();
+            startOfDay.setHours(0,0,0,0);
+            
+            // Check if bonus already claimed today
+            const { data: existingBonus } = await supabase.from('arutha_quest_log')
+              .select('id')
+              .eq('user_id', dbUserId)
+              .eq('quest_id', 'DAILY_COMPLETION_BONUS')
+              .gte('created_at', startOfDay.toISOString())
+              .maybeSingle();
+
+            if (!existingBonus) {
+              const bonusXp = 300;
+              addXp(bonusXp);
+              
+              await supabase.from('arutha_quest_log').insert({
+                user_id: dbUserId,
+                quest_id: 'DAILY_COMPLETION_BONUS',
+                quest_type: 'DAILY',
+                title: 'Bonus Penyelesaian Harian (Rites)',
+                stat_type: 'KARMA', // Bonus gives Karma boost
+                xp_reward: bonusXp,
+                status: 'COMPLETED',
+                ai_feedback: 'Luar biasa, Pahlawan! Kamu telah menyelesaikan seluruh ritual harianmu. Ambisi dan disiplinmu adalah kunci pertumbuhan sejati.'
+              });
+              
+              useToast.getState().addToast(`SELAMAT! Bonus Penyelesaian Harian: +${bonusXp} XP!`, "success");
+            }
+          }
+
           if (dbUserId) await resetFatigue(dbUserId);
           setDecayResult(prev => prev ? { ...prev, status: 'ok', fatigueDays: 0 } : null);
 

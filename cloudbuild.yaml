@@ -1,12 +1,36 @@
 steps:
+  # 1. Create the .env file dynamically in the build context
+  - name: 'bash'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "VITE_SUPABASE_URL=${_VITE_SUPABASE_URL}" > .env
+        echo "VITE_SUPABASE_ANON_KEY=${_VITE_SUPABASE_ANON_KEY}" >> .env
+        echo "VITE_GEMINI_API_KEY=${_VITE_GEMINI_API_KEY}" >> .env
+        echo ".env file generated successfully!"
+
+  # 2. Build the Docker image using the generated .env file
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'build',
-      '--build-arg', 'VITE_SUPABASE_URL=${_VITE_SUPABASE_URL}',
-      '--build-arg', 'VITE_SUPABASE_ANON_KEY=${_VITE_SUPABASE_ANON_KEY}',
-      '--build-arg', 'VITE_GEMINI_API_KEY=${_VITE_GEMINI_API_KEY}',
       '-t', 'gcr.io/$PROJECT_ID/arutha',
       '.'
     ]
+
+  # 3. Push the image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/arutha']
+
+  # 4. Deploy the image to Google Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args: [
+      'run', 'deploy', 'arutha',
+      '--image', 'gcr.io/$PROJECT_ID/arutha',
+      '--region', 'asia-southeast1',
+      '--allow-unauthenticated'
+    ]
+
 images:
   - 'gcr.io/$PROJECT_ID/arutha'

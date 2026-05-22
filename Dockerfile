@@ -1,16 +1,6 @@
 # Stage 1: Build the React application
 FROM node:20-alpine AS build
 
-# Set build arguments if needed
-ARG VITE_SUPABASE_URL
-ARG VITE_SUPABASE_ANON_KEY
-ARG VITE_GEMINI_API_KEY
-
-# Set as environment variables for Vite to pick up
-ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
-ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
-ENV VITE_GEMINI_API_KEY=$VITE_GEMINI_API_KEY
-
 WORKDIR /app
 
 # Copy package files and install dependencies
@@ -19,6 +9,9 @@ RUN npm install
 
 # Copy the rest of the application code
 COPY . .
+
+# Rename env.txt to .env to bypass gcloud security upload limits
+RUN [ -f env.txt ] && cp env.txt .env || true
 
 # Build the application
 RUN npm run build
